@@ -5,5 +5,19 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "ruff>=0.14.1",
+    "annotated-types==0.7.0",
+    "click==8.3.0",
+    "colorama==0.4.6",
+    "greenlet==3.2.4",
+    "gunicorn==23.0.0",
+    "h11==0.16.0",
+    "packaging==25.0",
+    "pydantic==2.12.3",
+    "pydantic-core==2.41.4",
+    "ruff==0.14.1",
+    "sqlalchemy==2.0.44",
+    "sqlmodel==0.0.27",
+    "typing-extensions==4.15.0",
+    "typing-inspection==0.4.2",
+    "uvicorn==0.38.0",
 ]

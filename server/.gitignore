@@ -1,0 +1,77 @@
+# ===========================
+# 🐍 Python & Virtual Env
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ===========================
+# 📦 Package Managers
+# ===========================
+# uv / pip cache
+.uv_cache/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+
+# ===========================
+# ⚙️ Build & Distribution
+# ===========================
+build/
+dist/
+*.egg
+*.manifest
+*.spec
+
+# ===========================
+# 🧪 Testing & Coverage
+# ===========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+
+# ===========================
+# 🧠 Type Checking / Linting
+# ===========================
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+.pyre/
+.pytype/
+
+# ===========================
+# 🧩 IDEs & Editors
+# ===========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===========================
+# 🗂️ Logs & Temp Files
+# ===========================
+*.log
+logs/
+tmp/
+temp/
+
+# ===========================
+# 🧰 Local Tooling & Misc
+# ===========================
+# dotenv files (keep sample envs!)
+.env
+.env.*
+!.env.example
+
+# OS junk files
+.DS_Store
+Thumbs.db

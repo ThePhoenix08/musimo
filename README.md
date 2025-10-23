@@ -1,5 +1,23 @@
 # 🚧 Work in Progress 🚧
 
+## instructions on project setup
+- Please follow below commands for intital backend setup
+1. Clone the Repository
+```bash
+git clone "https://github.com/ThePhoenix08/musimo.git"
+cd "./server"
+```
+
+2. Install dependencies
+```bash
+uv sync
+```
+
+3. Run the backend server
+```bash
+uvicorn main:app --port 8000 --reload
+```
+
 ## instructions for installing a package in backend
 - Please use below command file installing a package
 ```bash

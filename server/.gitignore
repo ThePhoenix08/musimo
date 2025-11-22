@@ -76,3 +76,8 @@ temp/
 # OS junk files
 .DS_Store
 Thumbs.db
+
+.\musimo\server\uploads
+./uploads
+/uploads
+# ===========================

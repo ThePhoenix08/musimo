@@ -1,14 +1,72 @@
-from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+import uvicorn
+from src.routes import auth, user, transaction, model
+from src.services.supabase_client import get_supabase_client
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("🎵 Musimo API Starting...")
+    try:
+        supabase = get_supabase_client()
+        print("✅ Supabase connected successfully")
+    except Exception as e:
+        print(f"❌ Supabase connection failed: {e}")
+    
+    yield
+    
+    # Shutdown
+    print("🎵 Musimo API Shutting down...")
 
+app = FastAPI(
+    title="Musimo API",
+    description="AI-powered music emotion detection and instrument classification",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+app.include_router(user.router, prefix="/user", tags=["User"])
+app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
+app.include_router(model.router, prefix="/model", tags=["Model"])
 
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+async def root():
+    return {
+        "message": "Welcome to Musimo ",
+        "version": "1.0.0",
+        "status": "active"
+    }
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)}
+    )
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

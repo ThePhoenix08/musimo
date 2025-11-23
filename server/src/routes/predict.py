@@ -2,12 +2,12 @@
 from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Form
 from typing import Dict, Literal
 from pathlib import Path
-from ..schemas.schemas import ModelPrediction
+from src.schemas.schemas import ModelPrediction
 from src.services.dependencies import get_current_user
 from src.services.audio_service import AudioService
 from src.models.model_service import ModelService
-from src.services.supabase_client import get_supabase_client
-from ..services.config import settings
+from src.services.database_client import get_supabase_client
+from src.services.config import settings
 import os
 import secrets
 

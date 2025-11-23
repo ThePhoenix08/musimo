@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from src.routes import auth, user, transaction, predict
-from src.services.supabase_client import get_supabase_client
+from src.services.database_client import get_supabase_client
+
 import uvicorn
 
 @asynccontextmanager

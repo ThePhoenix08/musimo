@@ -1,10 +1,10 @@
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from typing import Dict, Optional
-
-from ..schemas.schemas import TransactionResponse, TransactionList
+from src.schemas.schemas import TransactionResponse, TransactionList
 from src.services.dependencies import get_current_user
-from src.services.supabase_client import get_supabase_client
+from src.services.database_client import get_supabase_client
+
 
 router = APIRouter()
 

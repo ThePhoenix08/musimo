@@ -2,23 +2,21 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-import uvicorn
 from src.routes import auth, user, transaction, model
 from src.services.supabase_client import get_supabase_client
+import uvicorn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+
     print("🎵 Musimo API Starting...")
     try:
         supabase = get_supabase_client()
         print("✅ Supabase connected successfully")
     except Exception as e:
         print(f"❌ Supabase connection failed: {e}")
-    
     yield
-    
-    # Shutdown
+
     print("🎵 Musimo API Shutting down...")
 
 app = FastAPI(
@@ -37,7 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
@@ -55,7 +52,6 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-# Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(

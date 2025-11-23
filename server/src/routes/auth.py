@@ -108,13 +108,11 @@ async def login(credentials: UserLogin):
     otp = AuthService.generate_otp()
     await AuthService.store_otp(credentials.email, otp)
     
-    
     send_otp_email(credentials.email, otp)
     
     return {
         "message": "OTP successfully sent. Please check your email.",
         "requires_otp": True,
-
     }
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -141,3 +139,8 @@ async def refresh_access_token(user_id: str = Depends(verify_refresh_token)):
 @router.post("/logout")
 async def logout():
     return {"message": "Logged out successfully"}
+
+# @router.post("/logout")
+# async def logout(token: str = Depends(get_current_token)):
+#     await AuthService.blacklist_token(token)
+#     return {"message": "Logged out successfully"}

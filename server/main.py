@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from src.routes import auth, user, transaction, model
+from src.routes import auth, user, transaction, predict
 from src.services.supabase_client import get_supabase_client
 import uvicorn
 
@@ -38,7 +38,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
-app.include_router(model.router, prefix="/model", tags=["Model"])
+app.include_router(predict.router, prefix="/model", tags=["Model"])
 
 @app.get("/")
 async def root():

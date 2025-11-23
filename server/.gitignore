@@ -71,7 +71,13 @@ temp/
 .env
 .env.*
 !.env.example
+/.env.example
 
 # OS junk files
 .DS_Store
 Thumbs.db
+
+.\musimo\server\uploads
+./uploads
+/uploads
+# ===========================

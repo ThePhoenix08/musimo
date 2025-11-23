@@ -15,7 +15,6 @@ async def register(user_data: UserRegistration):
         email=user_data.email,
         password=user_data.password
     )
-    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -117,8 +116,7 @@ async def login(credentials: UserLogin):
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_access_token(user_id: str = Depends(verify_refresh_token)):
-    """Refresh access token using refresh token"""
-    
+        
     user = await AuthService.get_user_by_id(user_id)
     if not user:
         raise HTTPException(

@@ -37,6 +37,14 @@ class OTPRequiredResponse(BaseModel):
     message: str
     requires_otp: bool
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=8)
+    confirm_password: str = Field(..., min_length=8)
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str

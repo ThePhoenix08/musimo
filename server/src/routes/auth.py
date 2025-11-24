@@ -1,7 +1,10 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from ..services.email_service import send_otp_email
-from ..schemas.schemas import (OTPRequiredResponse, UserRegistration, UserLogin, OTPRequest, OTPVerify,TokenResponse, RefreshTokenRequest )
-from ..services.auth_service import AuthService
+from datetime import datetime, timedelta
+from httpcore import Request
+from fastapi import APIRouter, HTTPException, status, Depends , Body , Request
+from src.services.database_client import get_supabase_client
+from src.services.email_service import send_otp_email
+from src.schemas.schemas import (ForgotPasswordRequest, OTPRequiredResponse, ResetPasswordRequest, UserRegistration, UserLogin, OTPRequest, OTPVerify,TokenResponse, RefreshTokenRequest )
+from src.services.auth_service import AuthService
 from src.services.dependencies import verify_refresh_token
 
 router = APIRouter()
@@ -133,6 +136,93 @@ async def refresh_access_token(user_id: str = Depends(verify_refresh_token)):
         access_token=access_token,
         refresh_token=refresh_token
     )
+
+@router.post("/forgot-password")
+async def forgot_password(request: Request ,request_data: ForgotPasswordRequest = Body(...)):
+    user = await AuthService.get_user_by_email(request_data.email)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    otp = AuthService.generate_otp()
+    request.session["password_reset"] = {
+        "email": request_data.email,
+        "otp": otp,
+        "expires_at": (datetime.utcnow() + timedelta(minutes=5)).isoformat()
+    }
+    email_sent=send_otp_email(request_data.email, otp)
+    if not email_sent:
+        raise HTTPException(
+            status_code=500,
+            detail="OTP generated but failed to send email"
+        )
+    return {
+        "message": f"OTP sent successfully to your {request_data.email}",
+    }
+    
+
+@router.post("/verify-password")
+async def verify_password_reset(request: Request , request_data: ResetPasswordRequest= Body(...)):
+    session_data = request.session.get("password_reset")
+    if not session_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No password reset request found"
+        )
+    if not session_data or session_data["email"] != request_data.email:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired OTP session"
+        )
+    
+    if datetime.utcnow() > datetime.fromisoformat(session_data["expires_at"]):
+        request.session.pop("password_reset", None)
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired"
+        )
+    
+    if session_data["otp"] != request_data.otp:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP"
+        )
+    
+    if request_data.new_password != request_data.confirm_password:
+        raise HTTPException(
+            status_code=400,
+            detail="Passwords do not match"
+        )
+    
+    user = await AuthService.get_user_by_email(request_data.email)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    new_password_hash = AuthService.hash_password(request_data.new_password)
+
+    supabase = get_supabase_client()
+
+    update_result = supabase.table("users") \
+        .update({"password": new_password_hash}) \
+        .eq("id", user["id"]) \
+        .execute()
+
+    if not update_result.data:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to reset password"
+        )
+
+    request.session.pop("password_reset", None)
+
+    return {"message": "Password reset successfully"}
+
+    
 
 @router.post("/logout")
 async def logout():

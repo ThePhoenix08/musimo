@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int = 10
     OTP_LENGTH: int = 6
     
+    # Session
+    SESSION_SECRET_KEY: str = os.getenv("SESSION_SECRET_KEY")
+
     # CORS
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:5173",

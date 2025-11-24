@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 from contextlib import asynccontextmanager
 from src.routes import auth, user, transaction, predict
 from src.services.database_client import get_supabase_client
-
+import os
 import uvicorn
 
 @asynccontextmanager
@@ -26,6 +27,12 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+# Session middleware
+secret_key = os.getenv("SESSION_SECRET_KEY")
+if not secret_key:
+    raise ValueError("SESSION_SECRET_KEY environment variable is not set")
+
+app.add_middleware(SessionMiddleware, secret_key=secret_key)
 
 # CORS middleware
 app.add_middleware(

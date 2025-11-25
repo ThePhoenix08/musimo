@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 from passlib.context import CryptContext
-from src.services.config import settings
+from ..core.settings import settings
 from src.services.database_client import get_supabase_client
 from datetime import datetime, timedelta
 from jose import JWTError, jwt

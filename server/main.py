@@ -2,8 +2,9 @@ import sys
 sys.dont_write_bytecode = True  # keeps logs clean
 
 # Compact error traces
-from src.utils.error_setup import setup_error_beautifier
+from src.core.error_setup import setup_error_beautifier
 
+from src.core.settings import settings
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -12,9 +13,7 @@ from contextlib import asynccontextmanager
 from src.middlewares.error_handler import register_exception_handlers
 from src.routes import auth, user, transaction, predict
 from src.services.database_client import get_supabase_client
-import os
 import uvicorn
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,11 +39,10 @@ app = FastAPI(
 register_exception_handlers(app)
 
 # Session middleware
-secret_key = os.getenv("SESSION_SECRET_KEY")
-if not secret_key:
+if not settings.SESSION_SECRET_KEY:
     raise ValueError("SESSION_SECRET_KEY environment variable is not set")
 
-app.add_middleware(SessionMiddleware, secret_key=secret_key)
+app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
 
 # CORS middleware
 app.add_middleware(

@@ -7,7 +7,7 @@ from src.services.dependencies import get_current_user
 from src.services.audio_service import AudioService
 from src.models.model_service import ModelService
 from src.services.database_client import get_supabase_client
-from src.services.config import settings
+from ..core.settings import settings
 import os
 import secrets
 

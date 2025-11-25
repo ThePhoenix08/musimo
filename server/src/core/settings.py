@@ -1,0 +1,69 @@
+from typing import List, Literal
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, ValidationError
+
+from ..utils.env_check import print_env_summary
+from .logger_setup import logger
+from pathlib import Path
+from dotenv import dotenv_values, load_dotenv
+import os
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  # goes from src/core → server/
+ENV_PATH = BASE_DIR / ".env"
+
+load_dotenv(ENV_PATH)
+
+class Settings(BaseSettings):
+    print("⚙️ Instantiating Settings class now...")
+
+    # APPLICATION
+    ENV: Literal["dev", "prod"] = Field("dev", description="Environment: dev, staging, prod")
+    APP_NAME: str = "Musimo"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = True
+
+    # Supabase
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
+    SUPABASE_SERVICE_KEY: str
+
+    # JWT
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # I/O
+    MAX_FILE_SIZE: int = 10485760  # 10MB
+    UPLOAD_DIR: str = "uploads"
+    # ALLOWED_AUDIO_EXTENSIONS: List[str] = [".mp3", ".wav", ".flac", ".ogg", ".m4a"]
+    ALLOWED_AUDIO_EXTENSIONS: str = ".mp3,.wav,.flac,.ogg,.m4a"
+
+    # OTP
+    OTP_EXPIRE_MINUTES: int = 10
+    OTP_LENGTH: int = 6
+
+    # Session
+    SESSION_SECRET_KEY: str | None = None
+
+    # CORS
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+
+    # Email
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = "mpkadam2004@gmail.com"
+    SMTP_PASSWORD: str
+    EMAIL_FROM: str = "noreply@musimo.com"
+    MAIL_FROM_NAME: str = "Musimo Team"
+
+    model_config = SettingsConfigDict(env_file=str(ENV_PATH), extra="ignore", case_sensitive=True)
+
+try:
+    settings = Settings()
+    logger.info(f"✅ Loaded settings for ENV='{settings.ENV}' (DEBUG={settings.DEBUG})")
+    print_env_summary(settings)
+except ValidationError as e:
+    logger.error("\n🔥 Settings validation failed:\n", e)
+    raise
+

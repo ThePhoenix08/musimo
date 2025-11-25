@@ -1,7 +1,7 @@
 import smtplib
 from email.message import EmailMessage
 import os
-from .config import settings
+from ..core.settings import settings
 
 
 def send_otp_email(receiver_email: str, otp: str) -> bool:

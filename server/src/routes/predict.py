@@ -1,15 +1,18 @@
 # API routes for Musical AI model predictions
-from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Form
-from typing import Dict, Literal
-from pathlib import Path
-from src.schemas.schemas import ModelPrediction
-from src.services.dependencies import get_current_user
-from src.services.audio_service import AudioService
-from src.models.model_service import ModelService
-from ..core.settings import settings
-from src.core.app_registry import AppRegistry
 import os
 import secrets
+from pathlib import Path
+from typing import Dict, Literal
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+
+from src.core.app_registry import AppRegistry
+from src.models.model_service import ModelService
+from src.schemas.schemas import ModelPrediction
+from src.services.audio_service import AudioService
+from src.services.dependencies import get_current_user
+
+from ..core.settings import settings
 
 router = APIRouter()
 

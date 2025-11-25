@@ -1,7 +1,8 @@
 # Pydantic Models for request and response schemas
-from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Optional, Literal
 from datetime import datetime
+from typing import Literal, Optional
+
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # Auth Schemas

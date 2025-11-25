@@ -1,15 +1,18 @@
 # // security and authentication service
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict
-from passlib.context import CryptContext
-from ..core.settings import settings
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
 import secrets
 import string
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Optional
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
 from ..core.app_registry import AppRegistry
+from ..core.settings import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
 class AuthService:
 
     @staticmethod

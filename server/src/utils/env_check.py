@@ -1,8 +1,11 @@
-from typing import Any
-from colorama import Fore, Style, init as colorama_init
 import os
+from typing import Any
+
+from colorama import Fore, Style
+from colorama import init as colorama_init
 
 colorama_init(autoreset=True)
+
 
 def mask_value(value: Any, visible: int = 3) -> str:
     """

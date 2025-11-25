@@ -1,8 +1,10 @@
-import pretty_errors
 from pathlib import Path
+
+import pretty_errors
 
 # Root dir of your server (the folder where you run uvicorn main:app)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 
 def setup_error_beautifier(enable=True):
     if not enable:
@@ -15,14 +17,15 @@ def setup_error_beautifier(enable=True):
         lines_before=2,
         lines_after=2,
         display_link=True,
-        code_color='  ' + pretty_errors.YELLOW,
-        line_color=pretty_errors.RED + '> ' + pretty_errors.WHITE,
+        code_color="  " + pretty_errors.YELLOW,
+        line_color=pretty_errors.RED + "> " + pretty_errors.WHITE,
         display_locals=False,
         truncate_code=True,
         truncate_locals=True,
         top_first=False,
         inner_exception_separator=True,
-        inner_exception_message = pretty_errors.MAGENTA + "\n During handling of the above exception, another exception occurred:\n"
+        inner_exception_message=pretty_errors.MAGENTA
+        + "\n During handling of the above exception, another exception occurred:\n",
     )
 
     # Trim paths to be relative to your server root

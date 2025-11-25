@@ -1,23 +1,21 @@
-from datetime import datetime
 import sys
-sys.dont_write_bytecode = True  # keeps logs clean
+from datetime import datetime, UTC
 
 # Compact error traces
-from src.core.app_registry import AppRegistry
-from src.core.error_setup import setup_error_beautifier
+sys.dont_write_bytecode = True  # keeps logs clean
 
-from src.core.settings import settings
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from starlette.middleware.sessions import SessionMiddleware
-from contextlib import asynccontextmanager
-from src.middlewares.error_handler import register_exception_handlers
-from src.routes import auth, user, transaction, predict
 import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
+from src.core.app_registry import AppRegistry
 from src.core.db_connect import lifespan
-from datetime import datetime, UTC
+from src.core.error_setup import setup_error_beautifier
+from src.core.global_error_hook import setup_global_error_hooks
+from src.core.settings import settings
+from src.middlewares.error_handler import register_exception_handlers
+from src.routes import auth, predict, transaction, user
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -25,7 +23,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
-
+setup_global_error_hooks()
 register_exception_handlers(app)
 
 # Session middleware
@@ -48,6 +46,7 @@ app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
 app.include_router(predict.router, prefix="/model", tags=["Model"])
 
+
 @app.get("/", tags=["System"])
 async def root():
     """Root route showing app metadata and status."""
@@ -61,6 +60,7 @@ async def root():
         "timestamp": datetime.now(UTC).isoformat() + "Z",
     }
 
+
 @app.get("/health", tags=["System"])
 async def health_check():
     """Basic health check endpoint for uptime monitoring."""
@@ -71,6 +71,7 @@ async def health_check():
         "supabase": db_status,
         "timestamp": datetime.now(UTC).isoformat() + "Z",
     }
+
 
 if __name__ == "__main__":
     setup_error_beautifier(enable=True)

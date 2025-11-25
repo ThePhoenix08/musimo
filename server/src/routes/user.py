@@ -1,12 +1,14 @@
-from fastapi import APIRouter, HTTPException, status, Depends
 from typing import Dict
 
-from src.schemas.schemas import UserProfile, UserProfileUpdate, PasswordChange
-from src.services.dependencies import get_current_user
-from src.services.auth_service import AuthService
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from src.core.app_registry import AppRegistry
+from src.schemas.schemas import PasswordChange, UserProfile, UserProfileUpdate
+from src.services.auth_service import AuthService
+from src.services.dependencies import get_current_user
 
 router = APIRouter()
+
 
 @router.get("/profile", response_model=UserProfile)
 async def get_profile(current_user: Dict = Depends(get_current_user)):

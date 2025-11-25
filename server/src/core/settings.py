@@ -1,20 +1,24 @@
+from pathlib import Path
 from typing import List, Literal
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from dotenv import load_dotenv
 from pydantic import Field, ValidationError
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ..utils.env_check import print_env_summary
 from .logger_setup import logger
-from pathlib import Path
-from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # goes from src/core → server/
 ENV_PATH = BASE_DIR / ".env"
 
 load_dotenv(ENV_PATH)
 
+
 class Settings(BaseSettings):
     # APPLICATION
-    ENV: Literal["dev", "prod"] = Field("dev", description="Environment: dev, staging, prod")
+    ENV: Literal["dev", "prod"] = Field(
+        "dev", description="Environment: dev, staging, prod"
+    )
     APP_NAME: str = "Musimo"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
@@ -54,7 +58,10 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@musimo.com"
     MAIL_FROM_NAME: str = "Musimo Team"
 
-    model_config = SettingsConfigDict(env_file=str(ENV_PATH), extra="ignore", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_PATH), extra="ignore", case_sensitive=True
+    )
+
 
 try:
     settings = Settings()
@@ -63,4 +70,3 @@ try:
 except ValidationError as e:
     logger.error("\n🔥 Settings validation failed:\n", e)
     raise
-

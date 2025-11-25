@@ -1,6 +1,7 @@
+import os
 import smtplib
 from email.message import EmailMessage
-import os
+
 from ..core.settings import settings
 
 

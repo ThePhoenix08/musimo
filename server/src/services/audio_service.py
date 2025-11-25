@@ -4,13 +4,14 @@ Audio processing service for generating mel spectrograms
 
 import librosa
 import librosa.display
-import numpy as np
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")  # Use non-GUI backend
-import matplotlib.pyplot as plt
-from pathlib import Path
 import os
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 
 
 class AudioService:

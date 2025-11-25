@@ -3,9 +3,10 @@ ML Model service for emotion detection and instrument classification
 NOTE: This is a placeholder - integrate your actual trained models here
 """
 
-import numpy as np
-from typing import Dict, Literal
 import random
+from typing import Dict, Literal
+
+import numpy as np
 
 
 class ModelService:

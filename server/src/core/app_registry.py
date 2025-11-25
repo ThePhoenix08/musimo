@@ -1,7 +1,10 @@
 from __future__ import annotations
-from fastapi import FastAPI
-from typing import Optional, Any
+
 import threading
+from typing import Any, Optional
+
+from fastapi import FastAPI
+
 
 class AppRegistry:
     """

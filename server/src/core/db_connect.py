@@ -1,16 +1,21 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from supabase import create_client, Client
-from ..core.settings import settings
+from supabase import Client, create_client
+
 from ..core.app_registry import AppRegistry
+from ..core.settings import settings
+
 
 def create_supabase_client() -> Client:
     """Create a new Supabase client using default API key."""
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
+
 def create_supabase_admin_client() -> Client:
     """Create a new Supabase client using service key."""
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -1,20 +1,22 @@
 from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from httpcore import Request
-from fastapi import APIRouter, HTTPException, status, Depends, Body, Request
-from src.services.email_service import send_otp_email
+
 from src.schemas.schemas import (
     ForgotPasswordRequest,
-    OTPRequiredResponse,
-    ResetPasswordRequest,
-    UserRegistration,
-    UserLogin,
     OTPRequest,
+    OTPRequiredResponse,
     OTPVerify,
-    TokenResponse,
     RefreshTokenRequest,
+    ResetPasswordRequest,
+    TokenResponse,
+    UserLogin,
+    UserRegistration,
 )
 from src.services.auth_service import AuthService
 from src.services.dependencies import verify_refresh_token
+from src.services.email_service import send_otp_email
 
 router = APIRouter()
 

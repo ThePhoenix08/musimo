@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Query
 from typing import Dict, Optional
-from src.schemas.schemas import TransactionResponse, TransactionList
-from src.services.dependencies import get_current_user
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
 from src.core.app_registry import AppRegistry
+from src.schemas.schemas import TransactionList, TransactionResponse
+from src.services.dependencies import get_current_user
 
 router = APIRouter()
+
 
 @router.get("/", response_model=TransactionList)
 async def get_transactions(

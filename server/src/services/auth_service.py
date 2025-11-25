@@ -3,15 +3,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 from passlib.context import CryptContext
 from ..core.settings import settings
-from src.services.database_client import get_supabase_client
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 import secrets
 import string
+from ..core.app_registry import AppRegistry
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 class AuthService:
 
     @staticmethod
@@ -68,7 +66,7 @@ class AuthService:
 
     @staticmethod
     async def store_otp(email: str, otp: str) -> bool:
-        supabase = get_supabase_client()
+        supabase = AppRegistry.get_state("supabase")
         try:
             expire_at = datetime.utcnow() + timedelta(
                 minutes=settings.OTP_EXPIRE_MINUTES
@@ -92,7 +90,7 @@ class AuthService:
 
     @staticmethod
     async def verify_otp(email: str, otp: str) -> bool:
-        supabase = get_supabase_client()
+        supabase = AppRegistry.get_state("supabase")
         try:
             result = (
                 supabase.table("otp_verification")
@@ -129,7 +127,7 @@ class AuthService:
     async def create_user(
         name: str, username: str, email: str, password: str
     ) -> Optional[Dict]:
-        supabase = get_supabase_client()
+        supabase = AppRegistry.get_state("supabase")
         try:
             existing = (
                 supabase.table("users")
@@ -165,7 +163,7 @@ class AuthService:
 
     @staticmethod
     async def get_user_by_email(email: str) -> Optional[Dict]:
-        supabase = get_supabase_client()
+        supabase = AppRegistry.get_state("supabase")
         try:
             result = supabase.table("users").select("*").eq("email", email).execute()
             return result.data[0] if result.data else None
@@ -175,7 +173,7 @@ class AuthService:
 
     @staticmethod
     async def get_user_by_id(user_id: str) -> Optional[Dict]:
-        supabase = get_supabase_client()
+        supabase = AppRegistry.get_state("supabase")
         try:
             result = (
                 supabase.table("users")

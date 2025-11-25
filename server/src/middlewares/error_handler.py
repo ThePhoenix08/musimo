@@ -19,7 +19,6 @@ def format_trace(exc: Exception) -> str:
         formatted.append(f"{path}:{f.lineno} in {f.name}()")
     return " → ".join(formatted) or str(exc)
 
-
 async def general_exception_handler(request: Request, exc: Exception):
     tb_summary = format_trace(exc)
     error_message = f"{exc.__class__.__name__}: {str(exc)}"
@@ -49,7 +48,6 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"error": "Database Error", "details": str(exc)},
     )
-
 
 def register_exception_handlers(app):
     app.add_exception_handler(Exception, general_exception_handler)

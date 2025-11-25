@@ -12,22 +12,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from contextlib import asynccontextmanager
 from src.middlewares.error_handler import register_exception_handlers
 from src.routes import auth, user, transaction, predict
-from src.services.database_client import get_supabase_client
 import uvicorn
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-
-    print("🎵 Musimo API Starting...")
-    try:
-        supabase = get_supabase_client()
-        print("✅ Supabase connected successfully")
-    except Exception as e:
-        print(f"❌ Supabase connection failed: {e}")
-    yield
-
-    print("🎵 Musimo API Shutting down...")
-
+from src.core.db_connect import lifespan
 
 app = FastAPI(
     title="Musimo API",
@@ -67,14 +54,6 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=500, content={"detail": "Internal server error", "error": str(exc)}
-    )
-
 
 if __name__ == "__main__":
     setup_error_beautifier(enable=True)

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from httpcore import Request
 from fastapi import APIRouter, HTTPException, status, Depends, Body, Request
-from src.services.database_client import get_supabase_client
 from src.services.email_service import send_otp_email
 from src.schemas.schemas import (
     ForgotPasswordRequest,
@@ -195,7 +194,7 @@ async def verify_password_reset(
 
     new_password_hash = AuthService.hash_password(request_data.new_password)
 
-    supabase = get_supabase_client()
+    supabase = request.app.state.supabase
 
     update_result = (
         supabase.table("users")

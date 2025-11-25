@@ -6,8 +6,8 @@ from src.schemas.schemas import ModelPrediction
 from src.services.dependencies import get_current_user
 from src.services.audio_service import AudioService
 from src.models.model_service import ModelService
-from src.services.database_client import get_supabase_client
 from ..core.settings import settings
+from src.core.app_registry import AppRegistry
 import os
 import secrets
 
@@ -81,7 +81,7 @@ async def predict_audio(
             model_type=model_type, melspectrogram_path=str(spectrogram_path)
         )
 
-        supabase = get_supabase_client()
+        supabase = AppRegistry.get_state("supabase")
 
         transaction_data = {
             "transaction_id": transaction_id,
@@ -120,7 +120,7 @@ async def predict_audio(
         raise
     except Exception as e:
         try:
-            supabase = get_supabase_client()
+            supabase = AppRegistry.get_state("supabase")
             log_data = {
                 "user_id": current_user["id"],
                 "action": "model_prediction",

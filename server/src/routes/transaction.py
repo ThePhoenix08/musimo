@@ -2,11 +2,9 @@ from fastapi import APIRouter, HTTPException, status, Depends, Query
 from typing import Dict, Optional
 from src.schemas.schemas import TransactionResponse, TransactionList
 from src.services.dependencies import get_current_user
-from src.services.database_client import get_supabase_client
-
+from src.core.app_registry import AppRegistry
 
 router = APIRouter()
-
 
 @router.get("/", response_model=TransactionList)
 async def get_transactions(
@@ -17,7 +15,7 @@ async def get_transactions(
 ):
     """paginated list of user's transactions"""
 
-    supabase = get_supabase_client()
+    supabase = AppRegistry.get_state("supabase")
 
     try:
         offset = (page - 1) * page_size
@@ -67,7 +65,7 @@ async def get_transaction(
 ):
     """Get specific transaction by ID"""
 
-    supabase = get_supabase_client()
+    supabase = AppRegistry.get_state("supabase")
 
     try:
         result = (
@@ -109,7 +107,7 @@ async def delete_transaction(
 ):
     """Delete a transaction"""
 
-    supabase = get_supabase_client()
+    supabase = AppRegistry.get_state("supabase")
 
     try:
         existing = (
@@ -147,7 +145,7 @@ async def delete_transaction(
 async def get_transaction_summary(current_user: Dict = Depends(get_current_user)):
     """Get summary statistics of transactions"""
 
-    supabase = get_supabase_client()
+    supabase = AppRegistry.get_state("supabase")
 
     try:
         result = (

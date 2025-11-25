@@ -1,7 +1,9 @@
+from datetime import datetime
 import sys
 sys.dont_write_bytecode = True  # keeps logs clean
 
 # Compact error traces
+from src.core.app_registry import AppRegistry
 from src.core.error_setup import setup_error_beautifier
 
 from src.core.settings import settings
@@ -15,11 +17,12 @@ from src.routes import auth, user, transaction, predict
 import uvicorn
 
 from src.core.db_connect import lifespan
+from datetime import datetime, UTC
 
 app = FastAPI(
-    title="Musimo API",
+    title=settings.APP_NAME,
     description="AI-powered music emotion detection and instrument classification",
-    version="1.0.0",
+    version=settings.APP_VERSION,
     lifespan=lifespan,
 )
 
@@ -45,15 +48,29 @@ app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
 app.include_router(predict.router, prefix="/model", tags=["Model"])
 
-
-@app.get("/")
+@app.get("/", tags=["System"])
 async def root():
-    return {"message": "Welcome to Musimo ", "version": "1.0.0", "status": "active"}
+    """Root route showing app metadata and status."""
+    return {
+        "app_name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "environment": settings.ENV,
+        "debug": settings.DEBUG,
+        "status": "active",
+        "message": f"Welcome to {settings.APP_NAME} 🎵",
+        "timestamp": datetime.now(UTC).isoformat() + "Z",
+    }
 
-
-@app.get("/health")
+@app.get("/health", tags=["System"])
 async def health_check():
-    return {"status": "healthy"}
+    """Basic health check endpoint for uptime monitoring."""
+    supabase = AppRegistry.get_state("supabase")
+    db_status = "connected" if supabase else "disconnected"
+    return {
+        "status": "healthy" if supabase else "degraded",
+        "supabase": db_status,
+        "timestamp": datetime.now(UTC).isoformat() + "Z",
+    }
 
 if __name__ == "__main__":
     setup_error_beautifier(enable=True)

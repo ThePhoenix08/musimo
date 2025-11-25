@@ -17,7 +17,6 @@ def setup_error_beautifier(enable=True):
         display_link=True,
         code_color='  ' + pretty_errors.YELLOW,
         line_color=pretty_errors.RED + '> ' + pretty_errors.WHITE,
-        trace_lines=1,  # One line per traceback level
         display_locals=False,
         truncate_code=True,
         truncate_locals=True,

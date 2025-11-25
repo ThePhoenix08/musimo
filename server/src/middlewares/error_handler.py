@@ -8,7 +8,6 @@ import logging
 
 logger = logging.getLogger("uvicorn.error")
 
-
 def format_trace(exc: Exception) -> str:
     """Compact one-line traceback with relative path"""
     tb = traceback.extract_tb(sys.exc_info()[2])

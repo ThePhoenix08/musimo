@@ -5,8 +5,7 @@ from pydantic import Field, ValidationError
 from ..utils.env_check import print_env_summary
 from .logger_setup import logger
 from pathlib import Path
-from dotenv import dotenv_values, load_dotenv
-import os
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # goes from src/core → server/
 ENV_PATH = BASE_DIR / ".env"
@@ -14,8 +13,6 @@ ENV_PATH = BASE_DIR / ".env"
 load_dotenv(ENV_PATH)
 
 class Settings(BaseSettings):
-    print("⚙️ Instantiating Settings class now...")
-
     # APPLICATION
     ENV: Literal["dev", "prod"] = Field("dev", description="Environment: dev, staging, prod")
     APP_NAME: str = "Musimo"
@@ -62,7 +59,7 @@ class Settings(BaseSettings):
 try:
     settings = Settings()
     logger.info(f"✅ Loaded settings for ENV='{settings.ENV}' (DEBUG={settings.DEBUG})")
-    print_env_summary(settings)
+    # print_env_summary(settings)
 except ValidationError as e:
     logger.error("\n🔥 Settings validation failed:\n", e)
     raise

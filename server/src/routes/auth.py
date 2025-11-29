@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
-from httpcore import Request
 
 from src.schemas.schemas import (
     ForgotPasswordRequest,

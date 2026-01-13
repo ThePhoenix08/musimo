@@ -7,7 +7,6 @@
     "ms-toolsai.tensorboard",
     "pkief.material-icon-theme",
     "ms-python.black-formatter",
-    "ms-python.flake8",
     "ms-python.isort"
   ]
 }

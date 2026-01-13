@@ -62,7 +62,6 @@ class Settings(BaseSettings):
         env_file=str(ENV_PATH), extra="ignore", case_sensitive=True
     )
 
-
 try:
     settings = Settings()
     logger.info(f"✅ Loaded settings for ENV='{settings.ENV}' (DEBUG={settings.DEBUG})")

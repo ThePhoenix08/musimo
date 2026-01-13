@@ -1,3 +1,6 @@
+import os
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN optimizations for TensorFlow
+
 import sys
 from datetime import datetime, UTC
 
@@ -15,7 +18,7 @@ from src.core.error_setup import setup_error_beautifier
 from src.core.global_error_hook import setup_global_error_hooks
 from src.core.settings import settings
 from src.middlewares.error_handler import register_exception_handlers
-from src.routes import auth, predict, transaction, user
+from src.routes import auth, predict, transaction, user, debug
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -45,7 +48,8 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
 app.include_router(predict.router, prefix="/model", tags=["Model"])
-
+if settings.ENV == "dev":
+    app.include_router(debug.router, prefix="/debug", tags=["Debug"])
 
 @app.get("/", tags=["System"])
 async def root():

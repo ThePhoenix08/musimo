@@ -4,7 +4,9 @@ from pathlib import Path
 import json
 import torch
 
-EMOTION_MODEL_CHECKPOINT = Path(__file__).resolve().parent.parent.parent / "checkpoints/A2G9_VGG_clean.pt"
+BASE =  Path(__file__).resolve()
+EMOTION_MODEL_CHECKPOINT = BASE.parent.parent.parent / "checkpoints/emotion/A2G9_VGG_clean.pt"
+VGGISH_MODEL_DIR = BASE.parent.parent.parent / "checkpoints/vggish_local"
 
 class ConfigManager(BaseSettings):
     """
@@ -23,6 +25,7 @@ class ConfigManager(BaseSettings):
     # 🔹 PATHS & ENVIRONMENT
     # ------------------------------------------------------------------
     MODEL_PATH: str = Field(default=EMOTION_MODEL_CHECKPOINT.as_posix())
+    VGGISH_MODEL_DIR: str = Field(default=VGGISH_MODEL_DIR.as_posix())
     CONFIG_JSON_PATH: str = Field(default="config.json")
     DEVICE: str = Field(default="cuda" if torch.cuda.is_available() else "cpu")
 

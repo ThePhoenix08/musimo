@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 import numpy as np
-import tensorflow_hub as hub
+import tensorflow as tf
 
 MODEL_EMBEDDING_OPTIONS = {
     'vggish': {
@@ -18,8 +18,9 @@ class AudioEmbeddingExtractor:
 
     def __init__(
             self, 
+            model_path: str,
             model_type: str = "vggish",
-            device: str = "cpu"
+            device: str = "cpu",
         ):
         self.model_type = model_type.lower()
         self.device = device
@@ -29,7 +30,8 @@ class AudioEmbeddingExtractor:
 
         info = MODEL_EMBEDDING_OPTIONS[self.model_type]
         self.embedding_dim = info['dims']
-        self._model = hub.KerasLayer(info['hub_url'], trainable=False)
+        # self._model = hub.KerasLayer(info['hub_url'], trainable=False)
+        self._model = tf.saved_model.load(model_path)
 
     def __call__(self, waveform: Tensor) -> Tensor:
          # Convert torch tensor → numpy

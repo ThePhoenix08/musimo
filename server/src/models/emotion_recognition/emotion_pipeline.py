@@ -33,7 +33,9 @@ class GEMS9Pipeline:
         })
 
         self.embedding_extractor = AudioEmbeddingExtractor(
-            model_type=self.cfg.EMBEDDING_TYPE, device=self.device
+            model_path=self.cfg.VGGISH_MODEL_DIR,
+            model_type=self.cfg.EMBEDDING_TYPE,
+            device=self.device
         )
 
         checkpoint = torch.load(Path(self.cfg.MODEL_PATH), map_location=self.device, weights_only=True)

@@ -84,3 +84,7 @@ Thumbs.db
 
 # checkpoint files
 checkpoints/
+
+# Ignore runtime audio files
+src/models/audio_separation/temp/uploads/*
+src/models/audio_separation/temp/outputs/*

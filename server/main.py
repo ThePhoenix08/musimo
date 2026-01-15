@@ -19,6 +19,8 @@ from src.core.global_error_hook import setup_global_error_hooks
 from src.core.settings import settings
 from src.middlewares.error_handler import register_exception_handlers
 from src.routes import auth, predict, transaction, user, debug
+from src.models.audio_separation.app.routes.audio import router as audio_router
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -48,6 +50,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
 app.include_router(predict.router, prefix="/model", tags=["Model"])
+app.include_router(audio_router)
 if settings.ENV == "dev":
     app.include_router(debug.router, prefix="/debug", tags=["Debug"])
 

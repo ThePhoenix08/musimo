@@ -19,6 +19,7 @@ dependencies = [
     "cryptography>=46.0.3",
     "cycler>=0.12.1",
     "decorator>=5.2.1",
+    "demucs>=4.0.1",
     "deprecation>=2.1.0",
     "dnspython>=2.8.0",
     "ecdsa>=0.19.1",

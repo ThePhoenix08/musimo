@@ -76,7 +76,7 @@ class ConfigManager(BaseSettings):
         "Peacefulness": 1.0,
         "Power": 1.0,
         "Joyful Activation": 1.0,
-        "Tension": 0.7,
+        "Tension": 0.4,
         "Sadness": 1.0,
     }
 

@@ -59,7 +59,7 @@ const EmotionPredTest = () => {
       }
 
       const response = await fetch(
-        `http://localhost:8000/debug/predict-audio?prediction_type=${predictionType}`,
+        `http://localhost:8000/debug/api/audio/predict-audio?prediction_type=${predictionType}`,
         {
           method: "POST",
           body: formData,

@@ -13,29 +13,29 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.app_registry import AppRegistry
-from src.core.db_connect import lifespan
+from src.core.supabase_connect import lifespan
 from src.core.error_setup import setup_error_beautifier
 from src.core.global_error_hook import setup_global_error_hooks
-from src.core.settings import settings
+from src.core.settings import CONSTANTS
 from src.middlewares.error_handler import register_exception_handlers
 from src.routes import auth, predict, transaction, user, debug
 from src.models.audio_separation.app.routes.audio import router as audio_router
 
 
 app = FastAPI(
-    title=settings.APP_NAME,
+    title=CONSTANTS.APP_NAME,
     description="AI-powered music emotion detection and instrument classification",
-    version=settings.APP_VERSION,
+    version=CONSTANTS.APP_VERSION,
     lifespan=lifespan,
 )
 setup_global_error_hooks()
 register_exception_handlers(app)
 
 # Session middleware
-if not settings.SESSION_SECRET_KEY:
+if not CONSTANTS.SESSION_SECRET_KEY:
     raise ValueError("SESSION_SECRET_KEY environment variable is not set")
 
-app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
+app.add_middleware(SessionMiddleware, secret_key=CONSTANTS.SESSION_SECRET_KEY)
 
 # CORS middleware
 app.add_middleware(
@@ -51,19 +51,19 @@ app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
 app.include_router(predict.router, prefix="/model", tags=["Model"])
 app.include_router(audio_router)
-if settings.ENV == "dev":
+if CONSTANTS.ENV == "dev":
     app.include_router(debug.router, prefix="/debug", tags=["Debug"])
 
 @app.get("/", tags=["System"])
 async def root():
     """Root route showing app metadata and status."""
     return {
-        "app_name": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "environment": settings.ENV,
-        "debug": settings.DEBUG,
+        "app_name": CONSTANTS.APP_NAME,
+        "version": CONSTANTS.APP_VERSION,
+        "environment": CONSTANTS.ENV,
+        "debug": CONSTANTS.DEBUG,
         "status": "active",
-        "message": f"Welcome to {settings.APP_NAME} 🎵",
+        "message": f"Welcome to {CONSTANTS.APP_NAME} 🎵",
         "timestamp": datetime.now(UTC).isoformat() + "Z",
     }
 

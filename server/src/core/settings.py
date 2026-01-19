@@ -13,7 +13,6 @@ ENV_PATH = BASE_DIR / ".env"
 
 load_dotenv(ENV_PATH)
 
-
 class Settings(BaseSettings):
     # APPLICATION
     ENV: Literal["dev", "prod"] = Field(
@@ -27,6 +26,13 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_KEY: str
     SUPABASE_SERVICE_KEY: str
+
+    # Database
+    DATABASE_HOST: str
+    DATABASE_PORT: int = 5432
+    DATABASE_NAME: str = "postgres"
+    DATABASE_USER: str = "postgres"
+    DATABASE_PASSWORD: str
 
     # JWT
     JWT_SECRET_KEY: str
@@ -63,9 +69,9 @@ class Settings(BaseSettings):
     )
 
 try:
-    settings = Settings()
-    logger.info(f"✅ Loaded settings for ENV='{settings.ENV}' (DEBUG={settings.DEBUG})")
-    # print_env_summary(settings)
+    CONSTANTS = Settings()
+    logger.info(f"✅ Loaded settings for ENV='{CONSTANTS.ENV}' (DEBUG={CONSTANTS.DEBUG})")
+    # print_env_summary(CONSTANTS)
 except ValidationError as e:
     logger.error("\n🔥 Settings validation failed:\n", e)
     raise

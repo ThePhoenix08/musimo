@@ -12,7 +12,7 @@ from src.schemas.schemas import ModelPrediction
 from src.services.audio_service import AudioService
 from src.services.dependencies import get_current_user
 
-from ..core.settings import settings
+from ..core.settings import CONSTANTS
 
 router = APIRouter()
 
@@ -30,23 +30,23 @@ async def predict_audio(
 ):
 
     file_ext = os.path.splitext(audio_file.filename)[1].lower()
-    if file_ext not in settings.ALLOWED_AUDIO_EXTENSIONS:
+    if file_ext not in CONSTANTS.ALLOWED_AUDIO_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid audio format. Allowed: {', '.join(settings.ALLOWED_AUDIO_EXTENSIONS)}",
+            detail=f"Invalid audio format. Allowed: {', '.join(CONSTANTS.ALLOWED_AUDIO_EXTENSIONS)}",
         )
 
     contents = await audio_file.read()
-    if len(contents) > settings.MAX_FILE_SIZE:
+    if len(contents) > CONSTANTS.MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size exceeds maximum of {settings.MAX_FILE_SIZE / (1024*1024):.1f}MB",
+            detail=f"File size exceeds maximum of {CONSTANTS.MAX_FILE_SIZE / (1024*1024):.1f}MB",
         )
 
     try:
         transaction_id = generate_transaction_id()
 
-        upload_dir = Path(settings.UPLOAD_DIR)
+        upload_dir = Path(CONSTANTS.UPLOAD_DIR)
         audio_dir = upload_dir / "audio" / current_user["id"]
         spectrogram_dir = upload_dir / "spectrograms" / current_user["id"]
 

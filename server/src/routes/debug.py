@@ -12,47 +12,64 @@ import logging
 from ..models.model_service import ModelService
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/audio", tags=["Audio Analysis"])
+router = APIRouter(prefix="/api/audio", tags=["Debug"])
 
 
 # =========================== EMOTION ENDPOINTS ===========================
 
-@router.post("/predict-emotion")
-async def predict_emotion(
+# @router.post("/predict-emotion")
+# async def predict_emotion(
+#     file: UploadFile = File(..., description="Audio file for emotion detection"),
+#     prediction_type: str = Query(
+#         default="both",
+#         description="Prediction type: 'static', 'dynamic', or 'both'"
+#     )
+# ):
+#     """
+#     Predict emotion from audio file
+    
+#     **Prediction Types:**
+#     - static: Static emotion prediction
+#     - dynamic: Dynamic emotion prediction
+#     - both: Both static and dynamic predictions
+#     """
+#     temp_path = None
+    
+#     try:
+#         # Save uploaded file
+#         temp_path = NamedTemporaryFile(delete=False, suffix=".wav")
+#         with open(temp_path.name, "wb") as buffer:
+#             shutil.copyfileobj(file.file, buffer)
+        
+#         # Predict emotion
+#         result = await ModelService.predict_emotion(temp_path.name, prediction_type)
+        
+#         return JSONResponse(content=result)
+        
+#     except Exception as e:
+#         logger.error(f"Emotion prediction error: {e}", exc_info=True)
+#         raise HTTPException(status_code=500, detail=str(e))
+#     finally:
+#         # Cleanup temp file
+#         if temp_path and os.path.exists(temp_path.name):
+#             os.unlink(temp_path.name)
+
+@router.post("/predict-audio")
+async def debug_predict_audio(
     file: UploadFile = File(..., description="Audio file for emotion detection"),
     prediction_type: str = Query(
         default="both",
         description="Prediction type: 'static', 'dynamic', or 'both'"
     )
 ):
-    """
-    Predict emotion from audio file
-    
-    **Prediction Types:**
-    - static: Static emotion prediction
-    - dynamic: Dynamic emotion prediction
-    - both: Both static and dynamic predictions
-    """
-    temp_path = None
-    
-    try:
-        # Save uploaded file
-        temp_path = NamedTemporaryFile(delete=False, suffix=".wav")
-        with open(temp_path.name, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        
-        # Predict emotion
-        result = await ModelService.predict_emotion(temp_path.name, prediction_type)
-        
-        return JSONResponse(content=result)
-        
-    except Exception as e:
-        logger.error(f"Emotion prediction error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        # Cleanup temp file
-        if temp_path and os.path.exists(temp_path.name):
-            os.unlink(temp_path.name)
+    ModelService.initialize_emotion_pipeline()
+
+    temp_path = NamedTemporaryFile(delete=False, suffix=".wav")
+    with open(temp_path.name, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    result = await ModelService.predict_emotion(temp_path, prediction_type)
+    return result
 
 
 # =========================== INSTRUMENT ENDPOINTS ===========================

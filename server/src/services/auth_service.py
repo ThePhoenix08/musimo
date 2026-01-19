@@ -8,7 +8,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from ..core.app_registry import AppRegistry
-from ..core.settings import settings
+from ..core.settings import CONSTANTS
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -35,27 +35,27 @@ class AuthService:
     def create_access_token(data: dict) -> str:
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            minutes=CONSTANTS.ACCESS_TOKEN_EXPIRE_MINUTES
         )
         to_encode.update({"exp": expire, "type": "access"})
         return jwt.encode(
-            to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+            to_encode, CONSTANTS.JWT_SECRET_KEY, algorithm=CONSTANTS.JWT_ALGORITHM
         )
 
     @staticmethod
     def create_refresh_token(data: dict) -> str:
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.utcnow() + timedelta(days=CONSTANTS.REFRESH_TOKEN_EXPIRE_DAYS)
         to_encode.update({"exp": expire, "type": "refresh"})
         return jwt.encode(
-            to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+            to_encode, CONSTANTS.JWT_SECRET_KEY, algorithm=CONSTANTS.JWT_ALGORITHM
         )
 
     @staticmethod
     def decode_token(token: str) -> Optional[Dict]:
         try:
             payload = jwt.decode(
-                token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+                token, CONSTANTS.JWT_SECRET_KEY, algorithms=[CONSTANTS.JWT_ALGORITHM]
             )
             return payload
         except JWTError:
@@ -64,7 +64,7 @@ class AuthService:
     @staticmethod
     def generate_otp() -> str:
         return "".join(
-            secrets.choice(string.digits) for _ in range(settings.OTP_LENGTH)
+            secrets.choice(string.digits) for _ in range(CONSTANTS.OTP_LENGTH)
         )
 
     @staticmethod
@@ -72,7 +72,7 @@ class AuthService:
         supabase = AppRegistry.get_state("supabase")
         try:
             expire_at = datetime.utcnow() + timedelta(
-                minutes=settings.OTP_EXPIRE_MINUTES
+                minutes=CONSTANTS.OTP_EXPIRE_MINUTES
             )
 
             supabase.table("otp_verification").delete().eq("email", email).execute()

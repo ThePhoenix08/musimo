@@ -6,9 +6,10 @@ from typing import Dict, Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
+from src.schemas.modelPrediction import ModelPrediction
 from src.core.app_registry import AppRegistry
 from src.models.model_service import ModelService
-from src.schemas.schemas import ModelPrediction
+# from src.schemas.schemas import ModelPrediction
 from src.services.audio_service import AudioService
 from src.services.dependencies import get_current_user
 

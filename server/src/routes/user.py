@@ -3,7 +3,7 @@ from typing import Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.core.app_registry import AppRegistry
-from src.schemas.schemas import PasswordChange, UserProfile, UserProfileUpdate
+from src.schemas.user import PasswordChange, UserProfile, UserProfileUpdate
 from src.services.auth_service import AuthService
 from src.services.dependencies import get_current_user
 

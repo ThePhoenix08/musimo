@@ -3,7 +3,7 @@ from typing import Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.core.app_registry import AppRegistry
-from src.schemas.schemas import TransactionList, TransactionResponse
+from src.schemas.transaction import TransactionList, TransactionResponse
 from src.services.dependencies import get_current_user
 
 router = APIRouter()

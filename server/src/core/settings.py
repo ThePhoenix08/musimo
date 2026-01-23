@@ -2,8 +2,9 @@ from pathlib import Path
 from typing import List, Literal
 
 from dotenv import load_dotenv
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 from ..utils.env_check import print_env_summary
 from .logger_setup import logger
@@ -34,6 +35,18 @@ class Settings(BaseSettings):
     DATABASE_USER: str = "postgres"
     DATABASE_PASSWORD: str
 
+
+    @computed_field
+    @property
+    def ASYNC_DATABASE_URL(self) -> str:
+        return f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+
+    @computed_field
+    @property
+    def SYNC_DATABASE_URL(self) -> str:
+        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+    
+    
     # JWT
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"

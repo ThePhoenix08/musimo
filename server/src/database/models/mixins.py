@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declarative_mixin, declared_attr
 from sqlalchemy import TIMESTAMP, ForeignKey, func
@@ -28,17 +29,17 @@ class UUIDMixin:
 class TimestampMixin:
     """Mixin to add created_at and updated_at timestamp columns to a SQLAlchemy model."""
     
-    created_at: Mapped = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),
         nullable=False
     )
-    updated_at: Mapped = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False
-    )
+)
 
 if TYPE_CHECKING:
     from .user import User

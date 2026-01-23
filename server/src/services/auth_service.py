@@ -1,12 +1,18 @@
 # // security and authentication service
 import secrets
+from sqlalchemy import select
 import string
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
+from uuid import uuid4
 
+import bcrypt
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.jwt import create_access_token, create_refresh_token
+from src.database.models.user import User
 from ..core.app_registry import AppRegistry
 from ..core.settings import CONSTANTS
 
@@ -42,14 +48,7 @@ class AuthService:
             to_encode, CONSTANTS.JWT_SECRET_KEY, algorithm=CONSTANTS.JWT_ALGORITHM
         )
 
-    @staticmethod
-    def create_refresh_token(data: dict) -> str:
-        to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(days=CONSTANTS.REFRESH_TOKEN_EXPIRE_DAYS)
-        to_encode.update({"exp": expire, "type": "refresh"})
-        return jwt.encode(
-            to_encode, CONSTANTS.JWT_SECRET_KEY, algorithm=CONSTANTS.JWT_ALGORITHM
-        )
+    
 
     @staticmethod
     def decode_token(token: str) -> Optional[Dict]:
@@ -61,108 +60,133 @@ class AuthService:
         except JWTError:
             return None
 
-    @staticmethod
-    def generate_otp() -> str:
-        return "".join(
-            secrets.choice(string.digits) for _ in range(CONSTANTS.OTP_LENGTH)
-        )
+    # @staticmethod
+    # def generate_otp() -> str:
+    #     return "".join(
+    #         secrets.choice(string.digits) for _ in range(CONSTANTS.OTP_LENGTH)
+    #     )
 
-    @staticmethod
-    async def store_otp(email: str, otp: str) -> bool:
-        supabase = AppRegistry.get_state("supabase")
-        try:
-            expire_at = datetime.utcnow() + timedelta(
-                minutes=CONSTANTS.OTP_EXPIRE_MINUTES
-            )
+    # @staticmethod
+    # async def store_otp(email: str, otp: str) -> bool:
+    #     supabase = AppRegistry.get_state("supabase")
+    #     try:
+    #         expire_at = datetime.utcnow() + timedelta(
+    #             minutes=CONSTANTS.OTP_EXPIRE_MINUTES
+    #         )
 
-            supabase.table("otp_verification").delete().eq("email", email).execute()
+    #         supabase.table("otp_verification").delete().eq("email", email).execute()
 
-            supabase.table("otp_verification").insert(
-                {
-                    "email": email,
-                    "otp": otp,
-                    "expire_at": expire_at.isoformat(),
-                    "verified": False,
-                }
-            ).execute()
+    #         supabase.table("otp_verification").insert(
+    #             {
+    #                 "email": email,
+    #                 "otp": otp,
+    #                 "expire_at": expire_at.isoformat(),
+    #                 "verified": False,
+    #             }
+    #         ).execute()
 
-            return True
-        except Exception as e:
-            print(f"Error storing OTP: {e}")
-            return False
+    #         return True
+    #     except Exception as e:
+    #         print(f"Error storing OTP: {e}")
+    #         return False
 
-    @staticmethod
-    async def verify_otp(email: str, otp: str) -> bool:
-        supabase = AppRegistry.get_state("supabase")
-        try:
-            result = (
-                supabase.table("otp_verification")
-                .select("*")
-                .eq("email", email)
-                .eq("otp", otp)
-                .eq("verified", False)
-                .execute()
-            )
+    # @staticmethod
+    # async def verify_otp(email: str, otp: str) -> bool:
+    #     supabase = AppRegistry.get_state("supabase")
+    #     try:
+    #         result = (
+    #             supabase.table("otp_verification")
+    #             .select("*")
+    #             .eq("email", email)
+    #             .eq("otp", otp)
+    #             .eq("verified", False)
+    #             .execute()
+    #         )
 
-            if not result.data:
-                return False
+    #         if not result.data:
+    #             return False
 
-            otp_record = result.data[0]
-            expire_at = otp_record["expire_at"]
-            if isinstance(expire_at, str):
-                expire_at = datetime.fromisoformat(expire_at.replace("Z", "+00:00"))
+    #         otp_record = result.data[0]
+    #         expire_at = otp_record["expire_at"]
+    #         if isinstance(expire_at, str):
+    #             expire_at = datetime.fromisoformat(expire_at.replace("Z", "+00:00"))
 
-            now = datetime.now(timezone.utc)
+    #         now = datetime.now(timezone.utc)
 
-            if now > expire_at:
-                return False
+    #         if now > expire_at:
+    #             return False
 
-            supabase.table("otp_verification").update({"verified": True}).eq(
-                "id", otp_record["id"]
-            ).execute()
+    #         supabase.table("otp_verification").update({"verified": True}).eq(
+    #             "id", otp_record["id"]
+    #         ).execute()
 
-            return True
-        except Exception as e:
-            print(f"Error verifying OTP: {e}")
-            return False
+    #         return True
+    #     except Exception as e:
+    #         print(f"Error verifying OTP: {e}")
+    #         return False
 
     @staticmethod
     async def create_user(
-        name: str, username: str, email: str, password: str
-    ) -> Optional[Dict]:
-        supabase = AppRegistry.get_state("supabase")
-        try:
-            existing = (
-                supabase.table("users")
-                .select("email, username")
-                .or_(f"email.eq.{email},username.eq.{username}")
-                .execute()
-            )
-
-            if existing.data:
-                return None
-
-            user_id = AuthService.generate_user_id()
-            hashed_password = AuthService.hash_password(password)
-
-            result = (
-                supabase.table("users")
-                .insert(
-                    {
-                        "id": user_id,
-                        "name": name,
-                        "username": username,
-                        "email": email,
-                        "password": hashed_password,
-                    }
-                )
-                .execute()
-            )
-
-            return result.data[0] if result.data else None
-        except Exception as e:
-            print(f"Error creating user: {e}")
+        name: str,
+        username: str,
+        email: str,
+        password: str,
+        db: AsyncSession
+    ) -> Optional[Tuple[User, dict]]:
+        """
+        Create a new user in the database and return the user and JWT tokens.
+        Returns None if email or username already exists.
+        """
+        # Check for existing user by email or username
+        result = await db.execute(
+            select(User).where((User.email == email) | (User.username == username))
+        )
+        existing_user = result.scalar_one_or_none()
+        if existing_user:
             return None
+
+        # Hash the password securely
+        pwd_bytes = password.encode('utf-8')
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
+
+
+        # Create new user instance
+        user = User(
+            id=uuid4(),
+            name=name,
+            username=username,
+            email=email,
+            password=hashed_password
+        )
+
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)  # refresh to get generated fields like ID
+
+        # Generate JWT tokens
+        tokens = {
+            "access_token": create_access_token(user_id=str(user.id)),
+            "refresh_token": create_refresh_token(user_id=str(user.id))
+        }
+
+        return user, tokens
+    
+
+    @staticmethod
+    async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
+        # Fetch user from DB
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return None
+            
+        # Verify bcrypt hash (expects bytes)
+        if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+            return None
+            
+        return user
 
     @staticmethod
     async def get_user_by_email(email: str) -> Optional[Dict]:

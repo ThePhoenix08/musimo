@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Mapped, mapped_column, String, relationship
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .mixins import TimestampMixin, UUIDMixin
 from ..base import Base
@@ -23,5 +24,5 @@ class User(
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
 
-    audios = relationship("Audio", back_populates="user", cascade="all, delete-orphan")
-    reports = relationship("AnalysisReport", back_populates="user", cascade="all, delete-orphan")
+    # audios = relationship("Audio", back_populates="user", cascade="all, delete-orphan")
+    # reports = relationship("AnalysisReport", back_populates="user", cascade="all, delete-orphan")

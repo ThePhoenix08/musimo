@@ -2,8 +2,8 @@
 Postprocessing module
 Handles formatting and enhancing prediction results
 """
-from typing import Dict, List
 import logging
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 

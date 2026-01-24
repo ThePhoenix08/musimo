@@ -126,7 +126,7 @@ async def delete_transaction(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found"
             )
 
-        result = (
+        _result = (
             supabase.table("transactions")
             .delete()
             .eq("transaction_id", transaction_id)

@@ -1,7 +1,7 @@
-import torch
-from torch import Tensor
 import numpy as np
 import tensorflow as tf
+import torch
+from torch import Tensor
 
 MODEL_EMBEDDING_OPTIONS = {
     'vggish': {

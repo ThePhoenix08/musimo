@@ -6,6 +6,7 @@ from supabase import Client, create_client
 from .app_registry import AppRegistry
 from .settings import CONSTANTS
 
+
 def create_supabase_client() -> Client:
     """Create a new Supabase client using default API key."""
     return create_client(CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_KEY)

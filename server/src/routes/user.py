@@ -106,7 +106,7 @@ async def delete_account(current_user: Dict = Depends(get_current_user)):
         #     .execute()
 
         # 2: Hard delete (remove from database)
-        result = supabase.table("users").delete().eq("id", current_user["id"]).execute()
+        _result = supabase.table("users").delete().eq("id", current_user["id"]).execute()
 
         return {"message": "Account deleted successfully"}
 

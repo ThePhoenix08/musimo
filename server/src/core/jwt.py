@@ -1,6 +1,7 @@
 # app/core/jwt.py
 from datetime import datetime, timedelta
 from typing import Optional
+
 from jose import jwt
 
 from src.core.settings import CONSTANTS  # Your Pydantic settings

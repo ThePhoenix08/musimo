@@ -1,6 +1,6 @@
 # app/db/base.py
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase
 
 # optional naming convention (helps with Alembic migrations)
 metadata = MetaData(
@@ -15,3 +15,28 @@ metadata = MetaData(
 
 class Base(DeclarativeBase):
     metadata = metadata
+
+
+from src.database.models import (  # noqa: E402
+    analysis_job,
+    analysis_result,
+    audio_feature,
+    audio_file,
+    log,
+    model,
+    project,
+    seperated_source,
+    user,
+)
+
+__all__ = [
+    "analysis_job",
+    "analysis_result",
+    "audio_feature",
+    "audio_file",
+    "log",
+    "model",
+    "project",
+    "seperated_source",
+    "user",
+]

@@ -2,12 +2,13 @@
 Audio Analysis Router
 Handles both emotion detection and instrument classification endpoints
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query
-from fastapi.responses import JSONResponse
-from tempfile import NamedTemporaryFile
-import shutil
-import os
 import logging
+import os
+import shutil
+from tempfile import NamedTemporaryFile
+
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi.responses import JSONResponse
 
 from ..models.model_service import ModelService
 

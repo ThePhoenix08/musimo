@@ -1,11 +1,6 @@
 import os
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN optimizations for TensorFlow
-
 import sys
-from datetime import datetime, UTC
-
-# Compact error traces
-sys.dont_write_bytecode = True  # keeps logs clean
+from datetime import UTC, datetime
 
 import uvicorn
 from fastapi import FastAPI
@@ -13,14 +8,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.app_registry import AppRegistry
-from src.core.supabase_connect import lifespan
 from src.core.error_setup import setup_error_beautifier
 from src.core.global_error_hook import setup_global_error_hooks
 from src.core.settings import CONSTANTS
+from src.core.supabase_connect import lifespan
 from src.middlewares.error_handler import register_exception_handlers
-from src.routes import auth, predict, transaction, user, debug
 from src.models.audio_separation.app.routes.audio import router as audio_router
+from src.routes import auth, debug, predict, transaction, user
 
+# Disable oneDNN optimizations for TensorFlow
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
+# Compact error traces
+sys.dont_write_bytecode = True  # keeps logs clean
 
 app = FastAPI(
     title=CONSTANTS.APP_NAME,

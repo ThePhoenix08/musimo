@@ -2,11 +2,12 @@
 Model inference module
 Handles model loading and prediction
 """
+import json
+import logging
+from typing import Dict
+
 import numpy as np
 import tensorflow as tf
-from typing import Dict, List, Tuple
-import logging
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class InstrumentDetector:
         try:
             logger.info(f"Loading model from: {self.model_path}")
             self.model = tf.keras.models.load_model(self.model_path)
-            logger.info(f"Model loaded successfully!")
+            logger.info("Model loaded successfully!")
             logger.info(f"Model input shape: {self.model.input_shape}")
             logger.info(f"Model output shape: {self.model.output_shape}")
         except Exception as e:

@@ -1,8 +1,9 @@
-from pydantic_settings import BaseSettings
-from pydantic import Field
-from pathlib import Path
 import json
+from pathlib import Path
+
 import torch
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 BASE =  Path(__file__).resolve()
 EMOTION_MODEL_CHECKPOINT = BASE.parent.parent.parent / "checkpoints/emotion/A2G9_VGG_clean.pt"

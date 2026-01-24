@@ -1,16 +1,22 @@
 import asyncio
-import torch
-import numpy as np
-from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from .pipeline.preprocessor import Preprocessor
+from enum import Enum
+from pathlib import Path
+
+import numpy as np
+import torch
+
+from .config import ConfigManager
 from .pipeline.embedding import AudioEmbeddingExtractor
 from .pipeline.inference import GEMS9EmotionRecognizer
-from .pipeline.postprocessor import EmotionPostprocessor, StaticPrediction, DynamicPrediction, CombinedPrediction
+from .pipeline.postprocessor import (
+    CombinedPrediction,
+    DynamicPrediction,
+    EmotionPostprocessor,
+    StaticPrediction,
+)
+from .pipeline.preprocessor import Preprocessor
 
-from dataclasses import dataclass
-from enum import Enum
-from .config import ConfigManager
 
 class PredictionType(Enum):
     STATIC = "static"

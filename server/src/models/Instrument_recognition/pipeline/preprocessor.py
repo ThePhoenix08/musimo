@@ -2,10 +2,11 @@
 Audio preprocessing module
 Handles loading and preparing audio files for the model
 """
-import numpy as np
-import librosa
-from typing import Tuple, Optional
 import logging
+from typing import Tuple
+
+import librosa
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,7 @@
 # app/schemas/analysis.py
 from datetime import datetime
-from typing import Literal, Dict
+from typing import Dict, Literal
+
 from pydantic import BaseModel
 
 

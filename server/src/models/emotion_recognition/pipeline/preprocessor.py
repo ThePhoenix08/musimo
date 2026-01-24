@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+
 import torch
 import torchaudio
 from torch import Tensor
+
 
 @dataclass
 class Preprocessing_Config:

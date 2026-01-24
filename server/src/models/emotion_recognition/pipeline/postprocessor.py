@@ -1,7 +1,9 @@
-import torch
-import numpy as np
-from dataclasses import dataclass, asdict
 import json
+from dataclasses import asdict, dataclass
+
+import numpy as np
+import torch
+
 
 @dataclass
 class StaticPrediction:

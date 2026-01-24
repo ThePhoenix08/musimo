@@ -1,10 +1,17 @@
+# ------------------------------------------------------
+# Import app metadata (ONLY metadata, not sessions)
+# ------------------------------------------------------
 import sys
-from pathlib import Path
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
+from src.core.settings import CONSTANTS
+from src.database.base import Base
+
 # ------------------------------------------------------
 # Load environment
 # ------------------------------------------------------
@@ -15,13 +22,6 @@ load_dotenv()
 # ------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parents[1]  # server/
 sys.path.insert(0, str(BASE_DIR))
-
-# ------------------------------------------------------
-# Import app metadata (ONLY metadata, not sessions)
-# ------------------------------------------------------
-from src.core.settings import CONSTANTS
-from src.database.base import Base
-import src.database.models  # ensure models are registered
 
 # ------------------------------------------------------
 # Alembic configuration
@@ -36,6 +36,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
 
 # ------------------------------------------------------
 # Offline migrations

@@ -1,14 +1,11 @@
-from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 from src.core.jwt import create_access_token, create_refresh_token
-from src.schemas.otp import OTPRequest, OTPRequiredResponse, OTPVerify
 from src.database.session import get_db
 from src.schemas.auth import AuthResponse, LoginResponse, UserLogin, UserRegistration
-
+from src.schemas.otp import OTPRequest, OTPVerify
 from src.services.auth_service import AuthService
 from src.services.dependencies import verify_refresh_token
 from src.services.email_service import send_otp_email

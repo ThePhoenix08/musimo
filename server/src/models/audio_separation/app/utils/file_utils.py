@@ -1,5 +1,5 @@
-import uuid
 import shutil
+import uuid
 from pathlib import Path
 
 UPLOAD_DIR = Path("temp/uploads")

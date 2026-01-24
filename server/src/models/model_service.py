@@ -3,9 +3,10 @@ ML Model service for emotion detection and instrument classification
 """
 
 import json
-import sys
 import os
+import sys
 from typing import Dict
+
 from .emotion_recognition.config import ConfigManager
 from .emotion_recognition.emotion_pipeline import GEMS9Pipeline, PredictionType
 

@@ -2,10 +2,11 @@
 Feature embeddings module
 Extract intermediate representations from the model
 """
+import logging
+from typing import Dict
+
 import numpy as np
 import tensorflow as tf
-from typing import Dict, Optional
-import logging
 
 logger = logging.getLogger(__name__)
 

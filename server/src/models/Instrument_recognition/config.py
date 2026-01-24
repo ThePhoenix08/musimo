@@ -3,7 +3,8 @@ Configuration file for Instrument Detection API
 Contains all model parameters and settings
 """
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
 
 class Config:
     """Configuration class for the instrument detection model"""

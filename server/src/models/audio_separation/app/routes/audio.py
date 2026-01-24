@@ -1,9 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import FileResponse
-from src.models.audio_separation.app.utils.file_utils import save_temp_audio
-from src.models.audio_separation.app.pipelines.separation import separate_audio
 from pathlib import Path
 
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+
+from src.models.audio_separation.app.pipelines.separation import separate_audio
+from src.models.audio_separation.app.utils.file_utils import save_temp_audio
 
 router = APIRouter(prefix="/audio", tags=["Audio"])
 
@@ -18,7 +19,7 @@ async def separate_audio_route(file: UploadFile = File(...)):
     job_id, audio_path = save_temp_audio(file)
 
     try:
-        stems = separate_audio(audio_path, job_id)
+        _stems = separate_audio(audio_path, job_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

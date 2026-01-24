@@ -2,16 +2,15 @@
 Complete instrument detection pipeline
 Orchestrates all components for end-to-end prediction
 """
-import time
 import logging
+import time
 from typing import Dict, Optional
-from pathlib import Path
 
-from .pipeline.preprocessor import AudioPreprocessor
+from .config import Config
+from .pipeline.embeddings import FeatureExtractor
 from .pipeline.inference import InstrumentDetector
 from .pipeline.postprocessor import ResultPostprocessor
-from .pipeline.embeddings import FeatureExtractor
-from .config import Config
+from .pipeline.preprocessor import AudioPreprocessor
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +160,7 @@ class InstrumentDetectionPipeline:
             Audio metadata dictionary
         """
         import os
+
         import librosa
         
         try:

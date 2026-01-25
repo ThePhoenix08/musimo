@@ -85,4 +85,4 @@ try:
     # print_env_summary(CONSTANTS)
 except ValidationError as e:
     logger.error("\n🔥 Settings validation failed:\n", e)
-    raise
+    raise e

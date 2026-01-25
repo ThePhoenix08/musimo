@@ -9,10 +9,10 @@ from ..enums import AudioFormat, AudioSourceType
 from ..mixins import TimestampMixin, UserReferenceMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from server.src.database.models.analysis_job import AnalysisJob
-    from server.src.database.models.audio_feature import AudioFeature
-    from server.src.database.models.log import Log
-    from server.src.database.models.seperated_source import SeparatedSource
+    from src.database.models.analysis_job import AnalysisJob
+    from src.database.models.audio_feature import AudioFeature
+    from src.database.models.log import Log
+    from src.database.models.seperated_source import SeparatedSource
 
 class AudioFile(
     UUIDMixin,

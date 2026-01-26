@@ -6,6 +6,12 @@ export const AVAILABLE_TESTS = [
         active: true
     },
     {
+        name: "Emotion Detection Test - Web socket",
+        description: "Test to evaluate emotion detection capabilities using WebSocket.",
+        route: "/debug/emotion-websocket",
+        active: true
+    },
+    {
         name: "Instrument Recognition Test",
         description: "Test to evaluate instrument recognition capabilities.",
         route: "/debug/instrument",

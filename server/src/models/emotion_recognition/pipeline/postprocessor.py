@@ -1,5 +1,6 @@
 import json
 from dataclasses import asdict, dataclass
+from typing import Dict
 
 import numpy as np
 import torch
@@ -55,3 +56,11 @@ class EmotionPostprocessor:
     def to_dynamic(self, preds: np.ndarray, timestamps, duration, segment_duration):
         emotions = {n: preds[:, i].tolist() for i, n in enumerate(self.emotion_names)}
         return DynamicPrediction(timestamps, emotions, duration, segment_duration)
+
+def format_prediction_result(result) -> Dict:
+    if hasattr(result, "to_json"):
+        return json.loads(result.to_json())
+    elif isinstance(result, dict):
+        return result
+    else:
+        raise TypeError("Unexpected prediction result type.")

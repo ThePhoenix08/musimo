@@ -13,7 +13,8 @@ from src.core.global_error_hook import setup_global_error_hooks
 from src.core.settings import CONSTANTS
 from src.core.supabase_connect import lifespan
 from src.middlewares.exception_handler import register_exception_handlers
-from src.routes import debug, register_routes
+from src.models.model_service import ModelService
+from src.routes import debug, register_routes, ws_router
 from src.schemas import ApiResponse
 
 # PRE-STARTUP CONFIGURATION
@@ -48,8 +49,10 @@ app.add_middleware(
 
 # ROUTER REGISTRATION
 register_routes(app)
+app.include_router(ws_router.router)
 if CONSTANTS.ENV == "dev":
     app.include_router(debug.router, prefix="/debug", tags=["Debug"])
+
 
 # SYSTEM ROUTES
 @app.get("/", tags=["System"])
@@ -63,6 +66,12 @@ async def root():
         "status": "active",
         "message": f"Welcome to {CONSTANTS.APP_NAME} 🎵",
         "timestamp": datetime.now(UTC).isoformat() + "Z",
+        "endpoints": {
+            "websocket_emotion": "/ws/analyze-emotion",
+            "websocket_instrument": "/ws/analyze-instrument",
+            "rest_docs": "/docs",
+            "rest_health": "/health",
+        },
     }
     return ApiResponse(success=True, data=data)
 
@@ -72,16 +81,29 @@ async def health_check():
     """Basic health check endpoint for uptime monitoring."""
     supabase = AppRegistry.get_state("supabase")
     db_status = "connected" if supabase else "disconnected"
+    health = await ModelService.health_check()
+
+    all_healthy = (
+        health["emotion_detection"]["status"] == "healthy"
+        and health["instrument_detection"]["available"]
+    )
     return ApiResponse(
         success=True,
         data={
             "status": "healthy" if supabase else "degraded",
+            "emotion_detection": health["emotion_detection"],
+            "instrument_detection": health["instrument_detection"],
             "supabase": db_status,
             "timestamp": datetime.now(UTC).isoformat() + "Z",
+            "models": health,
+            "message": (
+                "All models loaded" if all_healthy else "Some models unavailable"
+            ),
         },
     )
+
 
 # MAIN ENTRY POINT
 if __name__ == "__main__":
     setup_error_beautifier(enable=True)
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

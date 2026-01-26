@@ -3,6 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from supabase import Client, create_client
 
+from src.core.logger_setup import logger
+from src.models.model_service import ModelService
+
 from .app_registry import AppRegistry
 from .settings import CONSTANTS
 
@@ -23,7 +26,7 @@ async def lifespan(app: FastAPI):
     FastAPI lifespan context.
     Handles startup and shutdown events.
     """
-    print("🎵 Musimo API Starting...")
+    logger.info("🎵 Musimo API Starting...")
     AppRegistry.register(app)  # ✅ register globally
 
     try:
@@ -34,7 +37,16 @@ async def lifespan(app: FastAPI):
         app.state.supabase = None
         print(f"❌ Supabase connection failed: {e}")
 
+    try:
+        logger.info("📦 Loading emotion detection model...")
+        ModelService.initialize_emotion_pipeline()
+        logger.info("✅ Emotion detection model loaded successfully")
+
+    except Exception as e:
+        logger.error(f"❌ Failed to load emotion model: {e}")
+        # Don't fail startup, but log the error
+
     yield  # Hand control to FastAPI (app runs here)
 
     app.state.supabase = None
-    print("🎵 Musimo API Shutting down...")
+    logger.info("🎵 Musimo API Shutting down...")

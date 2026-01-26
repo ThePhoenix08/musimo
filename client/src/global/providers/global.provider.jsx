@@ -1,12 +1,12 @@
-import { BrowserRouter } from 'react-router';
+import { BrowserRouter as Router } from 'react-router';
 
 function GlobalProvider({ children }) {
   return (
     <>
       {/* Add global context providers here */}
-      <BrowserRouter>
+      <Router>
           {children}
-      </BrowserRouter>
+      </Router>
     </>
   );
 }

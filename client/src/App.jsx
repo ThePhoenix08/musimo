@@ -5,6 +5,7 @@ import AuthLayout from "./global/layouts/AuthLayout.wrapper";
 import AppLayout from "./global/layouts/AppLayout.wrapper";
 import LoginPage from "@/features/auth/pages/Login.page.jsx";
 import RegisterPage from "@/features/auth/pages/Register.page.jsx";
+import NotFoundPage from "@/shared/pages/NotFound.page.jsx";
 
 import DebugPage from "@/features/debug/debug.page.jsx";
 import EmotionPredTest from "@/features/debug/tests/emotion/emotionPred.test.jsx";
@@ -32,7 +33,7 @@ function App() {
             </Route>
           </Route>
 
-          <Route path="*" element={<div>404 Not Found</div>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Router>
     </div>

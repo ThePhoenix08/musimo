@@ -17,6 +17,7 @@ class Base(DeclarativeBase):
     metadata = metadata
 
 
+from src.database.models import separated_source
 from src.database.models import (  # noqa: E402
     analysis_job,
     analysis_result,
@@ -25,7 +26,6 @@ from src.database.models import (  # noqa: E402
     log,
     model,
     project,
-    seperated_source,
     user,
 )
 
@@ -37,6 +37,6 @@ __all__ = [
     "log",
     "model",
     "project",
-    "seperated_source",
+    "separated_source",
     "user",
 ]

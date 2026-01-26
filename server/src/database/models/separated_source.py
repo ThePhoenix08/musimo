@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .audio_file import AudioFile
 
 
-class SeperatedSource(UUIDMixin, TimestampMixin, Base):
+class SeparatedSource(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "separated_sources"
 
     parent_audio_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("audio_files.id", ondelete="CASCADE"), index=True)

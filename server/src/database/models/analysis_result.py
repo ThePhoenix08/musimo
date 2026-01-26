@@ -14,9 +14,11 @@ if TYPE_CHECKING:
 class AnalysisResult(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "analysis_results"
 
-    job_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("analysis_jobs.id", ondelete="CASCADE"), unique=True)
-    results: Mapped[dict] = mapped_column(JSON)
-    summary_text: Mapped[str | None] = mapped_column(Text)
-    visualization_paths: Mapped[dict | None] = mapped_column(JSON)
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("analysis_jobs.id", ondelete="CASCADE"),
+        unique=True,
+    )
 
-    job: Mapped["AnalysisJob"] = relationship("AnalysisJob", back_populates="result", lazy="selectin")
+    results: Mapped[dict] = mapped_column(JSON)
+
+    job = relationship("AnalysisJob", back_populates="result")

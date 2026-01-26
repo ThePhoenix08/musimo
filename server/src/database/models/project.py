@@ -15,9 +15,14 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
     __tablename__ = "projects"
 
     name: Mapped[str] = mapped_column(String(150), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    audio_files: Mapped[List["AudioFile"]] = relationship(
+    description: Mapped[str | None] = mapped_column(Text)
+
+    user = relationship("User", back_populates="projects")
+
+    audio_files: Mapped[list["AudioFile"]] = relationship(
+        "AudioFile",
         back_populates="project",
+        cascade="all, delete-orphan",
         lazy="selectin",
     )
 from sqlalchemy import Column, Integer, String, Float, Text, TIMESTAMP, func, ForeignKey, JSON

@@ -5,10 +5,8 @@ from .audio_file import AudioFile
 from .log import Log
 from .model import Model
 from .project import Project
-from .separated_source import SeparatedSource
+from .seperated_source import SeperatedSource
 from .user import User
-from .project import Project
-# from .analysis import AnalysisRequest, AnalysisReport, AudioAnalysis, AudioMetadata
 
 __all__ = [
     "AnalysisJob",
@@ -18,7 +16,6 @@ __all__ = [
     "Log",
     "Model",
     "Project",
-    "SeparatedSource",
+    "SeperatedSource",
     "User",
 ]
-

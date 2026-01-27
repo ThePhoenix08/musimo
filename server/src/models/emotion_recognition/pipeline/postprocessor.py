@@ -12,8 +12,10 @@ class StaticPrediction:
     duration_seconds: float
     num_segments: int
     model_version: str = "GEMS-9"
-    
-    def to_json(self): return json.dumps(asdict(self), indent=2)
+
+    def to_json(self):
+        return json.dumps(asdict(self), indent=2)
+
 
 @dataclass
 class DynamicPrediction:
@@ -21,18 +23,21 @@ class DynamicPrediction:
     emotions: dict
     duration_seconds: float
     segment_duration: float
-    
-    def to_json(self): return json.dumps(asdict(self), indent=2)
+
+    def to_json(self):
+        return json.dumps(asdict(self), indent=2)
+
 
 @dataclass
 class CombinedPrediction:
     static: StaticPrediction
     dynamic: DynamicPrediction
-    
-    def to_json(self): return json.dumps({
-        "static": asdict(self.static),
-        "dynamic": asdict(self.dynamic)
-    }, indent=2)
+
+    def to_json(self):
+        return json.dumps(
+            {"static": asdict(self.static), "dynamic": asdict(self.dynamic)}, indent=2
+        )
+
 
 class EmotionPostprocessor:
     """Handles label scaling and prediction formatting."""
@@ -56,6 +61,7 @@ class EmotionPostprocessor:
     def to_dynamic(self, preds: np.ndarray, timestamps, duration, segment_duration):
         emotions = {n: preds[:, i].tolist() for i, n in enumerate(self.emotion_names)}
         return DynamicPrediction(timestamps, emotions, duration, segment_duration)
+
 
 def format_prediction_result(result) -> Dict:
     if hasattr(result, "to_json"):

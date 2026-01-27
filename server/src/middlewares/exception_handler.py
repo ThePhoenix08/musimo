@@ -64,5 +64,6 @@ def register_exception_handlers(app):
                 error=ApiError(code="INTERNAL_SERVER_ERROR", message=str(exc)),
             ).model_dump(),
         )
-    
+
+
 __all__ = ["register_exception_handlers"]

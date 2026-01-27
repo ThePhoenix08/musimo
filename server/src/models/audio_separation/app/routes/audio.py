@@ -8,10 +8,10 @@ from src.models.audio_separation.app.utils.file_utils import save_temp_audio
 
 router = APIRouter(prefix="/audio", tags=["Audio"])
 
+
 @router.post("/separate")
 async def separate_audio_route(file: UploadFile = File(...)):
 
-    
     if not file.filename.lower().endswith((".wav", ".mp3", ".flac")):
         raise HTTPException(status_code=400, detail="Unsupported audio format")
 
@@ -29,29 +29,24 @@ async def separate_audio_route(file: UploadFile = File(...)):
             "bass": f"/audio/download/{job_id}/bass",
             "drums": f"/audio/download/{job_id}/drums",
             "other": f"/audio/download/{job_id}/other",
-            "vocals": f"/audio/download/{job_id}/vocals"
-        }
+            "vocals": f"/audio/download/{job_id}/vocals",
+        },
     }
 
 
 @router.get("/download/{job_id}/{stem}")
 def download_stem(job_id: str, stem: str):
 
-    stem_dir=Path("temp/outputs")/job_id/"htdemucs"/job_id
+    stem_dir = Path("temp/outputs") / job_id / "htdemucs" / job_id
 
-    allowed={"vocals", "drums", "bass", "other"}
+    allowed = {"vocals", "drums", "bass", "other"}
 
     if stem not in allowed:
         raise HTTPException(status_code=400, detail="Invalid stem")
-
 
     stem_path = stem_dir / f"{stem}.wav"
 
     if not stem_path.exists():
         raise HTTPException(status_code=404, detail="Stem not found")
 
-    return FileResponse(
-        stem_path,
-        media_type="audio/wav",
-        filename=f"{stem}.wav"
-    )
+    return FileResponse(stem_path, media_type="audio/wav", filename=f"{stem}.wav")

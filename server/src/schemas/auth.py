@@ -17,6 +17,7 @@ class UserRegistration(BaseModel):
             raise ValueError("Username must be alphanumeric (underscores allowed)")
         return v.lower()
 
+
 class AuthResponse(BaseModel):
     user_id: UUID
     username: str

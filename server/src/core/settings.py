@@ -12,6 +12,7 @@ ENV_PATH = BASE_DIR / ".env"
 
 load_dotenv(ENV_PATH)
 
+
 class Settings(BaseSettings):
     # APPLICATION
     ENV: Literal["dev", "prod"] = Field(
@@ -33,7 +34,6 @@ class Settings(BaseSettings):
     DATABASE_USER: str = "postgres"
     DATABASE_PASSWORD: str
 
-
     @computed_field
     @property
     def ASYNC_DATABASE_URL(self) -> str:
@@ -43,8 +43,7 @@ class Settings(BaseSettings):
     @property
     def SYNC_DATABASE_URL(self) -> str:
         return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
-    
-    
+
     # JWT
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
@@ -79,9 +78,12 @@ class Settings(BaseSettings):
         env_file=str(ENV_PATH), extra="ignore", case_sensitive=True
     )
 
+
 try:
     CONSTANTS = Settings()
-    logger.info(f"✅ Loaded settings for ENV='{CONSTANTS.ENV}' (DEBUG={CONSTANTS.DEBUG})")
+    logger.info(
+        f"✅ Loaded settings for ENV='{CONSTANTS.ENV}' (DEBUG={CONSTANTS.DEBUG})"
+    )
     # print_env_summary(CONSTANTS)
 except ValidationError as e:
     logger.error("\n🔥 Settings validation failed:\n", e)

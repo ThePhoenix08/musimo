@@ -10,7 +10,7 @@ class AnalysisRequestSchema(BaseModel):
         "emotion_prediction",
         "instrument_detection",
         "audio_segmentation",
-        "feature_extraction"
+        "feature_extraction",
     ]
     config: Dict
 

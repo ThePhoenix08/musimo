@@ -20,4 +20,6 @@ class Model(UUIDMixin, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     checkpoint_path: Mapped[str | None] = mapped_column(String(500))
 
-    analysis_jobs: Mapped[list["AnalysisJob"]] = relationship(back_populates="model", lazy="selectin")
+    analysis_jobs: Mapped[list["AnalysisJob"]] = relationship(
+        back_populates="model", lazy="selectin"
+    )

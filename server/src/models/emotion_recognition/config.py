@@ -5,9 +5,12 @@ import torch
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-BASE =  Path(__file__).resolve()
-EMOTION_MODEL_CHECKPOINT = BASE.parent.parent.parent / "checkpoints/emotion/A2G9_VGG_clean.pt"
+BASE = Path(__file__).resolve()
+EMOTION_MODEL_CHECKPOINT = (
+    BASE.parent.parent.parent / "checkpoints/emotion/A2G9_VGG_clean.pt"
+)
 VGGISH_MODEL_DIR = BASE.parent.parent.parent / "checkpoints/vggish_local"
+
 
 class ConfigManager(BaseSettings):
     """

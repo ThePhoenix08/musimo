@@ -10,12 +10,8 @@ if TYPE_CHECKING:
     from .project import Project
 
 
-class User(
-    UUIDMixin,
-    TimestampMixin,
-    Base
-):
-    __tablename__ = 'users'
+class User(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "users"
 
     # id VARCHAR(12) PRIMARY KEY,
     # name VARCHAR(100) NOT NULL,
@@ -32,7 +28,5 @@ class User(
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
 
     projects: Mapped[List["Project"]] = relationship(
-        "Project",
-        back_populates="user",
-        lazy="selectin"
+        "Project", back_populates="user", lazy="selectin"
     )

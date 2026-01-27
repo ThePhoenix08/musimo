@@ -18,14 +18,26 @@ if TYPE_CHECKING:
 class AnalysisJob(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
     __tablename__ = "analysis_jobs"
 
-    audio_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("audio_files.id", ondelete="CASCADE"), index=True)
-    model_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("models.id", ondelete="SET NULL"), nullable=True)
+    audio_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("audio_files.id", ondelete="CASCADE"), index=True
+    )
+    model_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("models.id", ondelete="SET NULL"), nullable=True
+    )
     analysis_type: Mapped[AnalysisType] = mapped_column(Enum(AnalysisType))
     status: Mapped[JobStatus] = mapped_column(Enum(JobStatus), default=JobStatus.QUEUED)
     log: Mapped[str | None] = mapped_column(Text)
 
     # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="analysis_jobs", lazy="selectin")
-    audio: Mapped["AudioFile"] = relationship("AudioFile", back_populates="analysis_jobs", lazy="selectin")
-    model: Mapped["Model"] = relationship("Model", back_populates="analysis_jobs", lazy="selectin")
-    result: Mapped["AnalysisResult"] = relationship(back_populates="job", uselist=False, lazy="selectin")
+    user: Mapped["User"] = relationship(
+        "User", back_populates="analysis_jobs", lazy="selectin"
+    )
+    audio: Mapped["AudioFile"] = relationship(
+        "AudioFile", back_populates="analysis_jobs", lazy="selectin"
+    )
+    model: Mapped["Model"] = relationship(
+        "Model", back_populates="analysis_jobs", lazy="selectin"
+    )
+    result: Mapped["AnalysisResult"] = relationship(
+        back_populates="job", uselist=False, lazy="selectin"
+    )

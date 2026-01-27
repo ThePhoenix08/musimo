@@ -8,6 +8,7 @@ OUTPUT_DIR = Path("temp/outputs")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+
 def save_temp_audio(file):
     file_id = str(uuid.uuid4())
     file_path = UPLOAD_DIR / f"{file_id}.wav"
@@ -16,6 +17,7 @@ def save_temp_audio(file):
         shutil.copyfileobj(file.file, buffer)
 
     return file_id, file_path
+
 
 def cleanup_files(*paths):
     for path in paths:

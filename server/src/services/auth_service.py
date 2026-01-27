@@ -49,8 +49,6 @@ class AuthService:
             to_encode, CONSTANTS.JWT_SECRET_KEY, algorithm=CONSTANTS.JWT_ALGORITHM
         )
 
-    
-
     @staticmethod
     def decode_token(token: str) -> Optional[Dict]:
         try:
@@ -128,11 +126,7 @@ class AuthService:
 
     @staticmethod
     async def create_user(
-        name: str,
-        username: str,
-        email: str,
-        password: str,
-        db: AsyncSession
+        name: str, username: str, email: str, password: str, db: AsyncSession
     ) -> Optional[Tuple[User, dict]]:
         """
         Create a new user in the database and return the user and JWT tokens.
@@ -147,10 +141,9 @@ class AuthService:
             return None
 
         # Hash the password securely
-        pwd_bytes = password.encode('utf-8')
+        pwd_bytes = password.encode("utf-8")
         salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
-
+        hashed_password = bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
         # Create new user instance
         user = User(
@@ -158,7 +151,7 @@ class AuthService:
             name=name,
             username=username,
             email=email,
-            password=hashed_password
+            password=hashed_password,
         )
 
         db.add(user)
@@ -168,25 +161,26 @@ class AuthService:
         # Generate JWT tokens
         tokens = {
             "access_token": create_access_token(user_id=str(user.id)),
-            "refresh_token": create_refresh_token(user_id=str(user.id))
+            "refresh_token": create_refresh_token(user_id=str(user.id)),
         }
 
         return user, tokens
-    
 
     @staticmethod
-    async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
+    async def authenticate_user(
+        db: AsyncSession, email: str, password: str
+    ) -> Optional[User]:
         # Fetch user from DB
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
-        
+
         if not user:
             return None
-            
+
         # Verify bcrypt hash (expects bytes)
-        if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+        if not bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
             return None
-            
+
         return user
 
     @staticmethod

@@ -20,12 +20,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ws", tags=["WebSocket"])
 
 EMOTION_PIPELINE_STEPS = [
-    {'id': 'load_audio', 'name': 'Loading Audio File'},
-    {'id': 'preprocess', 'name': 'Preprocessing Audio'},
-    {'id': 'extract_embeddings', 'name': 'Extracting Audio Embeddings'},
-    {'id': 'predict', 'name': 'Running Emotion Model'},
-    {'id': 'postprocess', 'name': 'Formatting Results'},
+    {"id": "load_audio", "name": "Loading Audio File"},
+    {"id": "preprocess", "name": "Preprocessing Audio"},
+    {"id": "extract_embeddings", "name": "Extracting Audio Embeddings"},
+    {"id": "predict", "name": "Running Emotion Model"},
+    {"id": "postprocess", "name": "Formatting Results"},
 ]
+
 
 class ConnectionManager:
     """Manages active WebSocket connections"""

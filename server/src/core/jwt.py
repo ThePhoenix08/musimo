@@ -16,25 +16,23 @@ def create_access_token(user_id: str, expires_delta: Optional[timedelta] = None)
     """
     Generate a JWT access token for a user.
     """
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    payload = {
-        "sub": user_id,
-        "exp": expire,
-        "type": "access"
-    }
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    payload = {"sub": user_id, "exp": expire, "type": "access"}
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token
 
 
-def create_refresh_token(user_id: str, expires_delta: Optional[timedelta] = None) -> str:
+def create_refresh_token(
+    user_id: str, expires_delta: Optional[timedelta] = None
+) -> str:
     """
     Generate a JWT refresh token for a user.
     """
-    expire = datetime.utcnow() + (expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
-    payload = {
-        "sub": user_id,
-        "exp": expire,
-        "type": "refresh"
-    }
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    payload = {"sub": user_id, "exp": expire, "type": "refresh"}
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token

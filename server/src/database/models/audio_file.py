@@ -14,27 +14,33 @@ if TYPE_CHECKING:
     from src.database.models.log import Log
     from src.database.models.seperated_source import SeparatedSource
 
-class AudioFile(
-    UUIDMixin,
-    TimestampMixin,
-    UserReferenceMixin,
-    Base
-):
+
+class AudioFile(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
     __tablename__ = "audio_files"
 
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     duration: Mapped[float | None] = mapped_column(Float)
     sample_rate: Mapped[int | None] = mapped_column(Integer)
-    source_type: Mapped[AudioSourceType] = mapped_column(Enum(AudioSourceType), default=AudioSourceType.ORIGINAL)
+    source_type: Mapped[AudioSourceType] = mapped_column(
+        Enum(AudioSourceType), default=AudioSourceType.ORIGINAL
+    )
     status: Mapped[str] = mapped_column(String(50), default="uploaded")
     checksum: Mapped[str] = mapped_column(String(128), unique=True)
     channels: Mapped[int] = mapped_column(Integer)
-    format: Mapped[AudioFormat] = mapped_column(Enum(AudioFormat), default=AudioFormat.MP3)
+    format: Mapped[AudioFormat] = mapped_column(
+        Enum(AudioFormat), default=AudioFormat.MP3
+    )
 
     # Relationships
-    separated_sources: Mapped[list["SeparatedSource"]] = relationship(back_populates="parent_audio", lazy="selectin")
-    features: Mapped[list["AudioFeature"]] = relationship(back_populates="audio", lazy="selectin")
-    analysis_jobs: Mapped[list["AnalysisJob"]] = relationship(back_populates="audio", lazy="selectin")
+    separated_sources: Mapped[list["SeparatedSource"]] = relationship(
+        back_populates="parent_audio", lazy="selectin"
+    )
+    features: Mapped[list["AudioFeature"]] = relationship(
+        back_populates="audio", lazy="selectin"
+    )
+    analysis_jobs: Mapped[list["AnalysisJob"]] = relationship(
+        back_populates="audio", lazy="selectin"
+    )
     logs: Mapped[list["Log"]] = relationship(back_populates="audio", lazy="selectin")
 
 

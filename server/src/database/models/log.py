@@ -14,9 +14,13 @@ if TYPE_CHECKING:
 class Log(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "logs"
 
-    audio_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("audio_files.id", ondelete="CASCADE"), nullable=True)
+    audio_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("audio_files.id", ondelete="CASCADE"), nullable=True
+    )
     entity_type: Mapped[str] = mapped_column(String(50))
     message: Mapped[str] = mapped_column(Text)
     log_level: Mapped[str] = mapped_column(String(20), default="info")
 
-    audio: Mapped["AudioFile"] = relationship("AudioFile", back_populates="logs", lazy="selectin")
+    audio: Mapped["AudioFile"] = relationship(
+        "AudioFile", back_populates="logs", lazy="selectin"
+    )

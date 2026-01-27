@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,23 +12,23 @@ from src.services.email_service import send_otp_email
 router = APIRouter()
 
 
-@router.post("/register", 
-             status_code=status.HTTP_201_CREATED,
-             response_model=AuthResponse)
-async def register(user_data: UserRegistration, db:AsyncSession=Depends(get_db)):
+@router.post(
+    "/register", status_code=status.HTTP_201_CREATED, response_model=AuthResponse
+)
+async def register(user_data: UserRegistration, db: AsyncSession = Depends(get_db)):
     """Register a new user"""
     user, tokens = await AuthService.create_user(
         name=user_data.name,
         username=user_data.username,
         email=user_data.email,
         password=user_data.password,
-        db=db
+        db=db,
     )
 
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or username already exists"
+            detail="Email or username already exists",
         )
 
     # Return AuthResponse with tokens and user info
@@ -39,7 +38,7 @@ async def register(user_data: UserRegistration, db:AsyncSession=Depends(get_db))
         email=user.email,
         access_token=tokens["access_token"],
         refresh_token=tokens["refresh_token"],
-        token_type="bearer"
+        token_type="bearer",
     )
 
 
@@ -100,13 +99,12 @@ async def verify_otp_and_login(request: OTPVerify):
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(
-    loginRequest:UserLogin, 
-    db:AsyncSession=Depends(get_db)
-):
-    
-    user = await AuthService.authenticate_user(db, loginRequest.email, loginRequest.password)
-    
+async def login(loginRequest: UserLogin, db: AsyncSession = Depends(get_db)):
+
+    user = await AuthService.authenticate_user(
+        db, loginRequest.email, loginRequest.password
+    )
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -120,7 +118,6 @@ async def login(
         "refresh_token": create_refresh_token(user_id=str(user.id)),
         "token_type": "bearer",
     }
-
 
 
 @router.post("/refresh", response_model=LoginResponse)

@@ -1,5 +1,11 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Upload, PlayCircle, XCircle, CheckCircle, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useCallback } from "react";
+import {
+  Upload,
+  PlayCircle,
+  XCircle,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 
 const EmotionAnalyzer = () => {
   const [file, setFile] = useState(null);
@@ -9,77 +15,77 @@ const EmotionAnalyzer = () => {
   const [_, setCurrentStep] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [predictionType, setPredictionType] = useState('both');
-  
+  const [predictionType, setPredictionType] = useState("both");
+
   const wsRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const connectWebSocket = useCallback(() => {
     // Adjust URL to your backend
-    const ws = new WebSocket('ws://localhost:8000/ws/analyze-emotion');
-    
+    const ws = new WebSocket("ws://localhost:8000/ws/analyze-emotion");
+
     ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log("WebSocket connected");
     };
-    
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('Received:', data);
-      
+      console.log("Received:", data);
+
       switch (data.type) {
-        case 'connected':
-          console.log('Session ID:', data.session_id);
+        case "connected":
+          console.log("Session ID:", data.session_id);
           break;
-          
-        case 'step_started':
+
+        case "step_started":
           setSteps(data.all_steps);
           setCurrentStep(data.step.id);
           setOverallProgress(data.overall_progress);
           break;
-          
-        case 'progress_update':
+
+        case "progress_update":
           setSteps(data.all_steps);
           setOverallProgress(data.overall_progress);
           break;
-          
-        case 'step_completed':
+
+        case "step_completed":
           setSteps(data.all_steps);
           setOverallProgress(data.overall_progress);
           break;
-          
-        case 'pipeline_completed':
+
+        case "pipeline_completed":
           setSteps(data.all_steps);
           setOverallProgress(100);
           break;
-          
-        case 'analysis_complete':
+
+        case "analysis_complete":
           setResult(data.result);
           setIsAnalyzing(false);
           setOverallProgress(100);
           break;
-          
-        case 'error':
-        case 'pipeline_failed':
+
+        case "error":
+        case "pipeline_failed":
           setError(data.error);
           setIsAnalyzing(false);
           break;
-          
+
         default:
-          console.log('Unknown message type:', data.type);
+          console.log("Unknown message type:", data.type);
       }
     };
-    
+
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setError('Connection error');
+      console.error("WebSocket error:", error);
+      setError("Connection error");
       setIsAnalyzing(false);
     };
-    
+
     ws.onclose = () => {
-      console.log('WebSocket disconnected');
+      console.log("WebSocket disconnected");
       wsRef.current = null;
     };
-    
+
     wsRef.current = ws;
     return ws;
   }, []);
@@ -97,15 +103,15 @@ const EmotionAnalyzer = () => {
 
   const analyzeAudio = async () => {
     if (!file) return;
-    
+
     setIsAnalyzing(true);
     setError(null);
     setResult(null);
     setSteps([]);
     setOverallProgress(0);
-    
+
     const ws = connectWebSocket();
-    
+
     // Wait for connection
     await new Promise((resolve) => {
       const checkConnection = setInterval(() => {
@@ -115,25 +121,27 @@ const EmotionAnalyzer = () => {
         }
       }, 100);
     });
-    
+
     // Convert file to base64
     const reader = new FileReader();
     reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      
-      ws.send(JSON.stringify({
-        action: 'analyze',
-        file_data: base64,
-        filename: file.name,
-        prediction_type: predictionType
-      }));
+      const base64 = reader.result.split(",")[1];
+
+      ws.send(
+        JSON.stringify({
+          action: "analyze",
+          file_data: base64,
+          filename: file.name,
+          prediction_type: predictionType,
+        }),
+      );
     };
     reader.readAsDataURL(file);
   };
 
   const cancelAnalysis = () => {
     if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({ action: 'cancel' }));
+      wsRef.current.send(JSON.stringify({ action: "cancel" }));
       wsRef.current.close();
     }
     setIsAnalyzing(false);
@@ -141,14 +149,16 @@ const EmotionAnalyzer = () => {
 
   const getStepIcon = (status) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'in_progress':
+      case "in_progress":
         return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
-        return <div className="w-5 h-5 rounded-full border-2 border-gray-300" />;
+        return (
+          <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+        );
     }
   };
 
@@ -161,9 +171,7 @@ const EmotionAnalyzer = () => {
             <h1 className="text-4xl font-bold text-gray-800 mb-2">
               🎵 Emotion Analyzer
             </h1>
-            <p className="text-gray-600">
-              Analyze emotions in audio using AI
-            </p>
+            <p className="text-gray-600">Analyze emotions in audio using AI</p>
           </div>
 
           {/* File Upload */}
@@ -175,7 +183,7 @@ const EmotionAnalyzer = () => {
               onChange={handleFileSelect}
               className="hidden"
             />
-            
+
             <button
               onClick={() => fileInputRef.current?.click()}
               className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-purple-400 transition-colors"
@@ -183,7 +191,7 @@ const EmotionAnalyzer = () => {
             >
               <Upload className="w-12 h-12 mx-auto text-gray-400 mb-3" />
               <p className="text-gray-600">
-                {file ? file.name : 'Click to upload audio file'}
+                {file ? file.name : "Click to upload audio file"}
               </p>
             </button>
           </div>
@@ -223,8 +231,12 @@ const EmotionAnalyzer = () => {
               {/* Overall Progress */}
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium text-gray-700">Overall Progress</span>
-                  <span className="text-purple-600">{overallProgress.toFixed(1)}%</span>
+                  <span className="font-medium text-gray-700">
+                    Overall Progress
+                  </span>
+                  <span className="text-purple-600">
+                    {overallProgress.toFixed(1)}%
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                   <div
@@ -240,13 +252,13 @@ const EmotionAnalyzer = () => {
                   <div
                     key={step.id}
                     className={`border rounded-lg p-4 transition-all ${
-                      step.status === 'in_progress'
-                        ? 'border-blue-400 bg-blue-50'
-                        : step.status === 'completed'
-                        ? 'border-green-300 bg-green-50'
-                        : step.status === 'failed'
-                        ? 'border-red-300 bg-red-50'
-                        : 'border-gray-200'
+                      step.status === "in_progress"
+                        ? "border-blue-400 bg-blue-50"
+                        : step.status === "completed"
+                          ? "border-green-300 bg-green-50"
+                          : step.status === "failed"
+                            ? "border-red-300 bg-red-50"
+                            : "border-gray-200"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -261,7 +273,7 @@ const EmotionAnalyzer = () => {
                           </div>
                         )}
                       </div>
-                      {step.status === 'in_progress' && (
+                      {step.status === "in_progress" && (
                         <div className="text-sm text-blue-600">
                           {step.progress.toFixed(0)}%
                         </div>
@@ -272,8 +284,8 @@ const EmotionAnalyzer = () => {
                         </div>
                       )}
                     </div>
-                    
-                    {step.status === 'in_progress' && step.progress > 0 && (
+
+                    {step.status === "in_progress" && step.progress > 0 && (
                       <div className="mt-2 w-full bg-gray-200 rounded-full h-1">
                         <div
                           className="bg-blue-500 h-full transition-all duration-300"
@@ -307,28 +319,37 @@ const EmotionAnalyzer = () => {
           {result && (
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-gray-800">Results</h2>
-              
+
               {result.static && (
                 <div className="bg-purple-50 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-3">Static Emotions</h3>
+                  <h3 className="font-semibold text-lg mb-3">
+                    Static Emotions
+                  </h3>
                   <div className="grid grid-cols-3 gap-3">
-                    {Object.entries(result.static.emotions).map(([emotion, value]) => (
-                      <div key={emotion} className="bg-white rounded p-3">
-                        <div className="text-sm text-gray-600 capitalize">{emotion}</div>
-                        <div className="text-xl font-bold text-purple-600">
-                          {(value * 100).toFixed(1)}%
+                    {Object.entries(result.static.emotions).map(
+                      ([emotion, value]) => (
+                        <div key={emotion} className="bg-white rounded p-3">
+                          <div className="text-sm text-gray-600 capitalize">
+                            {emotion}
+                          </div>
+                          <div className="text-xl font-bold text-purple-600">
+                            {(value * 100).toFixed(1)}%
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 </div>
               )}
 
               {result.dynamic && (
                 <div className="bg-blue-50 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-3">Dynamic Emotions</h3>
+                  <h3 className="font-semibold text-lg mb-3">
+                    Dynamic Emotions
+                  </h3>
                   <p className="text-sm text-gray-600">
-                    {result.dynamic.timestamps?.length || 0} time segments analyzed
+                    {result.dynamic.timestamps?.length || 0} time segments
+                    analyzed
                   </p>
                 </div>
               )}

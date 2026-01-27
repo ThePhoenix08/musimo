@@ -358,7 +358,11 @@ const RadarChartSection = ({
           <RadarChart data={radarData}>
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent formatter={(value) => `${value.toFixed(2)}`} />}
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => `${value.toFixed(2)}`}
+                />
+              }
             />
             <PolarGrid gridType="circle" />
             <PolarAngleAxis dataKey="emotion" />

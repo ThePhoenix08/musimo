@@ -8,7 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
 const AvailableTests = () => {
   return (
@@ -27,7 +27,8 @@ const AvailableTests = () => {
             <TableRow key={test.route}>
               <TableCell>
                 <Link to={test.route} className="text-blue-500 hover:underline">
-                  {test.name}{"🔗"}
+                  {test.name}
+                  {"🔗"}
                 </Link>
               </TableCell>
               <TableCell>{test.description}</TableCell>

@@ -28,8 +28,7 @@ function App() {
 
         {/* AUTHENTICATED */}
         <Route element={<AuthLayout />}>
-          <Route path="/app" element={<AppLayout />}>
-          </Route>
+          <Route path="/app" element={<AppLayout />}></Route>
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

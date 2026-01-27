@@ -11,6 +11,7 @@ from sqlalchemy import engine_from_config, pool
 
 from src.core.settings import CONSTANTS
 from src.database.base import Base
+from src.database import models
 
 # ------------------------------------------------------
 # Load environment

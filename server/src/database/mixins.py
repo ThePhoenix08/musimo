@@ -13,16 +13,9 @@ from sqlalchemy.orm import (
 )
 
 if TYPE_CHECKING:
+    from .models.audio_file import AudioFile
     from .models.project import Project
     from .models.user import User
-
-
-class IDMixin:
-    """Mixin to add an integer primary key column to a SQLAlchemy model."""
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True, autoincrement=True, unique=True, nullable=False
-    )
 
 
 class UUIDMixin:
@@ -68,14 +61,14 @@ class UserReferenceMixin:
     def user(cls) -> Mapped["User"]:
         return relationship(
             "User",
-            back_populates=cls.__tablename__,  # optionally set a dynamic backref name
+            back_populates=cls.__tablename__,
+            foreign_keys=[cls.user_id],
             lazy="selectin",
         )
 
 
 @declarative_mixin
 class ProjectReferenceMixin:
-
     @declared_attr
     def project_id(cls) -> Mapped[uuid.UUID]:
         return mapped_column(
@@ -85,5 +78,26 @@ class ProjectReferenceMixin:
     @declared_attr
     def project(cls) -> Mapped["Project"]:
         return relationship(
-            "Project", back_populates=cls.__tablename__, lazy="selectin"
+            "Project",
+            back_populates=cls.__tablename__,
+            foreign_keys=[cls.project_id],
+            lazy="selectin",
+        )
+
+
+@declarative_mixin
+class AudioFileReferenceMixin:
+    @declared_attr
+    def audio_file_id(cls) -> Mapped[uuid.UUID]:
+        return mapped_column(
+            ForeignKey("audio_files.id", ondelete="CASCADE"), nullable=False, index=True
+        )
+
+    @declared_attr
+    def audio_file(cls) -> Mapped["AudioFile"]:
+        return relationship(
+            "AudioFile",
+            back_populates=cls.__tablename__,
+            foreign_keys=[cls.audio_file_id],
+            lazy="selectin",
         )

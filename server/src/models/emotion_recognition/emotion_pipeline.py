@@ -99,7 +99,9 @@ class GEMS9Pipeline:
                     batch,
                     lambda msg, prog: (
                         tracker.update_progress(
-                            "predict", 30 + prog * 0.5, msg  # 30-80%
+                            "predict",
+                            30 + prog * 0.5,
+                            msg,  # 30-80%
                         )
                         if tracker
                         else None
@@ -153,7 +155,7 @@ class GEMS9Pipeline:
                 if tracker:
                     progress = 5 + ((i + 1) / num_segments) * 90  # 5-95%
                     await tracker.update_progress(
-                        "predict", progress, f"Processed segment {i+1}/{num_segments}"
+                        "predict", progress, f"Processed segment {i + 1}/{num_segments}"
                     )
 
         preds = np.array(preds_list)

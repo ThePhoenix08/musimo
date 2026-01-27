@@ -1,5 +1,6 @@
 from src.models.audio_separation.app.routes.audio import router as audio_router
-from . import auth, predict, transaction, user, ws_router
+
+from . import auth, predict, transaction, user
 
 
 def register_routes(app):

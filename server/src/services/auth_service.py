@@ -21,7 +21,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
-
     @staticmethod
     def generate_user_id() -> str:
         letters = "".join(secrets.choice(string.ascii_letters) for _ in range(6))

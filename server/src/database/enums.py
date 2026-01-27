@@ -3,6 +3,10 @@ import enum
 
 class AudioSourceType(enum.Enum):
     ORIGINAL = "original"
+    SEPARATED = "separated"
+
+
+class SeparatedSourceLabel(enum.Enum):
     VOCALS = "vocals"
     DRUMS = "drums"
     BASS = "bass"
@@ -24,6 +28,13 @@ class AudioFormat(enum.Enum):
     OGG = "ogg"
 
 
+class AudioFileStatus(enum.Enum):
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+    FAILED = "failed"
+
+
 class FeatureType(enum.Enum):
     LOW_LEVEL = "low_level"
     MID_LEVEL = "mid_level"
@@ -37,3 +48,36 @@ class JobStatus(enum.Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class OtpType(enum.Enum):
+    EMAIL_VERIFICATION = "email_verification"
+    PASSWORD_RESET = "password_reset"
+    TWO_FACTOR_AUTH = "two_factor_auth"
+
+
+class LogLevel(enum.Enum):
+    info = "info"
+    warning = "warning"
+    error = "error"
+    debug = "debug"
+
+
+class EntityType(enum.Enum):
+    audio_file = "audio_file"
+    analysis_record = "analysis_record"
+    project = "project"
+
+
+__all__ = [
+    "AudioSourceType",
+    "SeparatedSourceLabel",
+    "AnalysisType",
+    "AudioFormat",
+    "AudioFileStatus",
+    "FeatureType",
+    "JobStatus",
+    "OtpType",
+    "LogLevel",
+    "EntityType",
+]

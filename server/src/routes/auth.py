@@ -100,7 +100,6 @@ async def verify_otp_and_login(request: OTPVerify):
 
 @router.post("/login", response_model=LoginResponse)
 async def login(loginRequest: UserLogin, db: AsyncSession = Depends(get_db)):
-
     user = await AuthService.authenticate_user(
         db, loginRequest.email, loginRequest.password
     )
@@ -122,7 +121,6 @@ async def login(loginRequest: UserLogin, db: AsyncSession = Depends(get_db)):
 
 @router.post("/refresh", response_model=LoginResponse)
 async def refresh_access_token(user_id: str = Depends(verify_refresh_token)):
-
     user = await AuthService.get_user_by_id(user_id)
     if not user:
         raise HTTPException(

@@ -47,7 +47,7 @@ class AudioPreprocessor:
                 duration=self.duration,
                 mono=True,  # Convert to mono
             )
-            logger.info(f"Loaded audio: {audio_path} | Duration: {len(y)/sr:.2f}s")
+            logger.info(f"Loaded audio: {audio_path} | Duration: {len(y) / sr:.2f}s")
             return y, sr
         except Exception as e:
             logger.error(f"Failed to load audio {audio_path}: {e}")

@@ -1,26 +1,33 @@
+import enum
 import uuid
-from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from src.database.base import Base
+from sqlalchemy import JSON, Enum, Index, Text
+from sqlalchemy.orm import Mapped, mapped_column
+from src.database.enums import EntityType, LogLevel
 
-from ..base import Base
-from ..mixins import TimestampMixin, UUIDMixin
+from src.database.mixins import (
+    TimestampMixin,
+    UserReferenceMixin,
+    UUIDMixin,
+)
 
-if TYPE_CHECKING:
-    from .audio_file import AudioFile
 
+class Log(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
+    entity_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
+    entity_type: Mapped[EntityType] = mapped_column(Enum(EntityType), nullable=False)
 
-class Log(UUIDMixin, TimestampMixin, Base):
-    __tablename__ = "logs"
-
-    audio_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("audio_files.id", ondelete="CASCADE"), nullable=True
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    log_level: Mapped[LogLevel] = mapped_column(
+        Enum(LogLevel), default=LogLevel.info, nullable=False
     )
-    entity_type: Mapped[str] = mapped_column(String(50))
-    message: Mapped[str] = mapped_column(Text)
-    log_level: Mapped[str] = mapped_column(String(20), default="info")
 
-    audio: Mapped["AudioFile"] = relationship(
-        "AudioFile", back_populates="logs", lazy="selectin"
-    )
+    data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    __table_args__ = (Index("ix_logs_entity_ref", "entity_type", "entity_id"),)
+
+    def __repr__(self) -> str:
+        return (
+            f"<Log {self.log_level.value.upper()} "
+            f"[{self.entity_type}:{self.entity_id}] - {self.message[:40]!r}>"
+        )

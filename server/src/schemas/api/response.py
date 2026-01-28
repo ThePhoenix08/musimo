@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Generic, Optional, TypeVar
 
 from pydantic import BaseModel, Field
+
 from src.schemas.api.error import ApiError
 
 T = TypeVar("T")

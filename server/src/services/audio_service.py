@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 
 
 class AudioService:
-
     @staticmethod
     def generate_melspectrogram(audio_path: str, output_path: str) -> bool:
         """

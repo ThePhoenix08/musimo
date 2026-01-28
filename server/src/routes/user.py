@@ -25,7 +25,6 @@ async def get_profile(current_user: Dict = Depends(get_current_user)):
 async def update_profile(
     profile_update: UserProfileUpdate, current_user: Dict = Depends(get_current_user)
 ):
-
     if not profile_update.name:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update"
@@ -95,7 +94,6 @@ async def change_password(
 
 @router.delete("/account")
 async def delete_account(current_user: Dict = Depends(get_current_user)):
-
     supabase = AppRegistry.get_state("supabase")
 
     try:
@@ -121,7 +119,6 @@ async def delete_account(current_user: Dict = Depends(get_current_user)):
 
 @router.get("/stats")
 async def get_user_stats(current_user: Dict = Depends(get_current_user)):
-
     supabase = AppRegistry.get_state("supabase")
 
     try:

@@ -30,7 +30,6 @@ async def predict_audio(
     model_type: Literal["emotion_detection", "instrument_classification"] = Form(...),
     current_user: Dict = Depends(get_current_user),
 ):
-
     file_ext = os.path.splitext(audio_file.filename)[1].lower()
     if file_ext not in CONSTANTS.ALLOWED_AUDIO_EXTENSIONS:
         raise HTTPException(
@@ -42,7 +41,7 @@ async def predict_audio(
     if len(contents) > CONSTANTS.MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size exceeds maximum of {CONSTANTS.MAX_FILE_SIZE / (1024*1024):.1f}MB",
+            detail=f"File size exceeds maximum of {CONSTANTS.MAX_FILE_SIZE / (1024 * 1024):.1f}MB",
         )
 
     try:

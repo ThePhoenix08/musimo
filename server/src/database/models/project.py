@@ -1,21 +1,30 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, List, Optional
 
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..base import Base
-from ..mixins import TimestampMixin, UserReferenceMixin, UUIDMixin
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .audio_file import AudioFile
+    from src.database.models import AnalysisRecord
+
+from src.database.base import Base
+from src.database.mixins import (
+    AudioFileReferenceMixin,
+    TimestampMixin,
+    UserReferenceMixin,
+    UUIDMixin,
+)
 
 
-class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
-    __tablename__ = "projects"
-
+class Project(
+    UUIDMixin, TimestampMixin, UserReferenceMixin, AudioFileReferenceMixin, Base
+):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    audio_files: Mapped[List["AudioFile"]] = relationship(
+    analysis_records: Mapped[List["AnalysisRecord"]] = relationship(
+        "AnalysisRecord",
         back_populates="project",
         lazy="selectin",
     )

@@ -5,7 +5,6 @@ from ..core.settings import CONSTANTS
 
 
 def send_otp_email(receiver_email: str, otp: str) -> bool:
-
     sender_email = CONSTANTS.SMTP_USERNAME
     sender_password = CONSTANTS.SMTP_PASSWORD
     smtp_host = CONSTANTS.SMTP_HOST or "smtp.gmail.com"

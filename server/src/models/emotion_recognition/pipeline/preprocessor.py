@@ -120,7 +120,7 @@ class Preprocessor:
             if progress_callback and (i % 10 == 0 or i == NUM_SEGMENTS - 1):
                 progress = 30 + (i / NUM_SEGMENTS) * 70  # 30-100%
                 await progress_callback(
-                    f"Segmented {i+1}/{NUM_SEGMENTS} chunks", progress
+                    f"Segmented {i + 1}/{NUM_SEGMENTS} chunks", progress
                 )
 
         if not segments:

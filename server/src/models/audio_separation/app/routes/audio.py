@@ -11,7 +11,6 @@ router = APIRouter(prefix="/audio", tags=["Audio"])
 
 @router.post("/separate")
 async def separate_audio_route(file: UploadFile = File(...)):
-
     if not file.filename.lower().endswith((".wav", ".mp3", ".flac")):
         raise HTTPException(status_code=400, detail="Unsupported audio format")
 
@@ -36,7 +35,6 @@ async def separate_audio_route(file: UploadFile = File(...)):
 
 @router.get("/download/{job_id}/{stem}")
 def download_stem(job_id: str, stem: str):
-
     stem_dir = Path("temp/outputs") / job_id / "htdemucs" / job_id
 
     allowed = {"vocals", "drums", "bass", "other"}

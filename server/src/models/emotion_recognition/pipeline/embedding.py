@@ -90,7 +90,7 @@ class AudioEmbeddingExtractor:
                 if i % update_interval == 0 or i == num_segments - 1:
                     progress = ((i + 1) / num_segments) * 100
                     await progress_callback(
-                        f"Extracted embedding {i+1}/{num_segments}", progress
+                        f"Extracted embedding {i + 1}/{num_segments}", progress
                     )
 
         result = torch.stack(embeddings, dim=0)

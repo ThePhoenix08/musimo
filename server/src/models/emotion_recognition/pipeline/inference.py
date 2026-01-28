@@ -133,7 +133,7 @@ class GEMS9EmotionRecognizer(nn.Module):
             if progress_callback and i % 2 == 0:  # Update every 2 layers
                 progress = 60 + ((i + 1) / len(self.classifier)) * 40
                 await progress_callback(
-                    f"Classifier layer {i+1}/{len(self.classifier)}", progress
+                    f"Classifier layer {i + 1}/{len(self.classifier)}", progress
                 )
 
         # Emotion prediction

@@ -99,7 +99,7 @@ function EnhancedLoginRightSection() {
           >
             Unlock Your Music's
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-pink-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-cyan-400 to-pink-400">
               True Potential
             </span>
           </motion.h2>

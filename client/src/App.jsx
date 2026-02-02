@@ -14,7 +14,7 @@ import AvailableTests from "@/features/debug/availableTests.jsx";
 
 function App() {
   return (
-    <div className="w-screen h-screen flex flex-col overflow-hidden bg-background">
+    <div className="w-screen h-screen flex flex-col bg-background">
       <Routes>
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<LandingPage />} />

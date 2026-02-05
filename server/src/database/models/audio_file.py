@@ -1,7 +1,9 @@
-from typing import TYPE_CHECKING
 import uuid
-from sqlalchemy import Enum, Float, Integer, String, ForeignKey
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from src.database.base import Base
 from src.database.enums import (
     AudioFileStatus,
@@ -10,10 +12,10 @@ from src.database.enums import (
     SeparatedSourceLabel,
 )
 from src.database.mixins import (
-    UUIDMixin,
+    ProjectReferenceMixin,
     TimestampMixin,
     UserReferenceMixin,
-    ProjectReferenceMixin,
+    UUIDMixin,
 )
 
 if TYPE_CHECKING:
@@ -63,11 +65,6 @@ class AudioFile(
 
 
 class SeparatedAudioFile(AudioFile):
-    id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("audio_files.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-
     parent_audio_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("audio_files.id", ondelete="SET NULL"),
         index=True,

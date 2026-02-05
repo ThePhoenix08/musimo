@@ -1,14 +1,12 @@
 import datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, Enum, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from src.database.mixins import TimestampMixin, UserReferenceMixin, UUIDMixin
-from src.database.base import Base
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.settings import CONSTANTS
+from src.database.base import Base
 from src.database.enums import OtpType
+from src.database.mixins import TimestampMixin, UserReferenceMixin, UUIDMixin
 
 
 class Otp(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):

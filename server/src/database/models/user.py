@@ -9,7 +9,6 @@ from ..mixins import TimestampMixin, UUIDMixin
 if TYPE_CHECKING:
     from .otp import Otp
     from .project import Project
-    from .log import Log
 
 
 class User(UUIDMixin, TimestampMixin, Base):

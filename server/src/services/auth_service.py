@@ -1,29 +1,36 @@
 # // security and authentication service
 import secrets
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Literal, Optional, Tuple, TypedDict
+from typing import Literal, Optional
 from uuid import uuid4
 
 import argon2
 import jwt
+from fastapi import Request
 from jose import JWTError
-from server.src.core.settings import CONSTANTS
-from server.src.database.models import RefreshToken
-from server.src.schemas.token import (
-    Access_Token_Payload,
-    Refresh_Token_Payload,
-)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.settings import CONSTANTS
+from src.database.models import RefreshToken
 from src.database.models.user import User
+from src.schemas.token import (
+    Access_Token_Payload,
+    Refresh_Token_Payload,
+)
 
 
-class STORE_REFRESH_TOKEN_PAYLOAD(TypedDict):
+@dataclass
+class STORE_REFRESH_TOKEN_METADATA:
     user_id: str
-    device_info: Optional[str]
     ip_address: Optional[str]
     user_agent: Optional[str]
+
+    def __init__(self, request: Request, user_id: str):
+        self.user_id = user_id
+        self.ip_address = request.client.host if request.client else None
+        self.user_agent = request.headers.get("User-Agent")
 
 
 def FIND_ALL_USERS_BY_EMAIL_OR_USERNAME_QUERY(email: str, username: str):
@@ -111,11 +118,9 @@ class AuthService:
 
     @staticmethod
     async def store_refresh_token(
-        db: AsyncSession, token_str: str, data: STORE_REFRESH_TOKEN_PAYLOAD
+        db: AsyncSession, token_str: str, data: STORE_REFRESH_TOKEN_METADATA
     ) -> RefreshToken:
         refresh_token = RefreshToken(
-            device_info=data.device_info,
-            user_agent=data.user_agent,
             ip_address=data.ip_address,
             user_id=data.user_id,
             token=token_str,
@@ -177,7 +182,7 @@ class AuthService:
     @staticmethod
     async def create_user(
         db: AsyncSession, name: str, username: str, email: str, password: str
-    ) -> Optional[Tuple[User, dict]]:
+    ) -> Optional[User]:
         """
         Create a new user in the database and return the user and JWT tokens.
         Returns None if email or username already exists.
@@ -201,14 +206,7 @@ class AuthService:
         await db.commit()
         await db.refresh(user)
 
-        tokens = {
-            "access_token": AuthService.create_access_token(subject_id=str(user.id)),
-            "refresh_token": AuthService.create_refresh_token(subject_id=str(user.id)),
-        }
-
-        await AuthService.store_refresh_token(db, user.id, tokens["refresh_token"])
-
-        return user, tokens
+        return user
 
     @staticmethod
     async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -252,5 +250,16 @@ class AuthService:
             return False
 
         token.revoked = True
+        await db.commit()
+        return True
+
+    @staticmethod
+    async def set_email_as_verfied(db: AsyncSession, user_id: str) -> bool:
+        result = await db.execute(FIND_USER_BY_ID_QUERY(user_id))
+        user: User = result.scaler_one_or_none()
+        if not user:
+            return False
+
+        user.email_verified = True
         await db.commit()
         return True

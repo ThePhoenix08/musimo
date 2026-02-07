@@ -11,6 +11,7 @@ from src.database.mixins import TimestampMixin, UserReferenceMixin, UUIDMixin
 
 class Otp(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
     code: Mapped[str] = mapped_column(String(CONSTANTS.OTP_LENGTH), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
     purpose: Mapped[OtpType] = mapped_column(
         Enum(OtpType), default=OtpType.EMAIL_VERIFICATION
     )

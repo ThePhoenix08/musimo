@@ -3,7 +3,6 @@ import string
 from datetime import UTC, datetime, timedelta
 from typing import Optional
 
-from server.src.database.models.user import User
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,15 +45,15 @@ class OtpService:
 
     @staticmethod
     async def create_and_store_otp(
-        db: AsyncSession, user: Optional[User], email: str, purpose: OtpType
-    ) -> bool:
+        db: AsyncSession, user_id: str, email: str, purpose: OtpType
+    ) -> Optional[Otp]:
         otp_code = await OtpService._generate_otp()
         expires_at = datetime.now(UTC) + timedelta(minutes=CONSTANTS.OTP_EXPIRE_MINUTES)
 
         await db.execute(SET_UNUSED_OTPS_FOR_DELETE_MUTATION(email, purpose.value))
 
         otp = Otp(
-            user=user,
+            user_id=user_id,
             email=email,
             code=otp_code,
             purpose=purpose,

@@ -2,17 +2,16 @@ from pathlib import Path
 
 import pretty_errors
 
-# Root dir of your server (the folder where you run uvicorn main:app)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def setup_error_beautifier(enable=True):
-    if not enable:
-        return  # Use default Python tracebacks
+def setup_error_beautifier(IS_DEV: bool = True, enable: bool = True) -> None:
+    if not enable or not IS_DEV:
+        return
 
     pretty_errors.configure(
         separator_character="─",
-        filename_display=pretty_errors.FILENAME_EXTENDED,  # relative to CWD
+        filename_display=pretty_errors.FILENAME_EXTENDED,
         line_number_first=True,
         lines_before=2,
         lines_after=2,
@@ -24,15 +23,17 @@ def setup_error_beautifier(enable=True):
         truncate_locals=True,
         top_first=False,
         inner_exception_separator=True,
-        inner_exception_message=pretty_errors.MAGENTA
-        + "\n During handling of the above exception, another exception occurred:\n",
+        inner_exception_message=(
+            pretty_errors.MAGENTA
+            + "\n During handling of the above exception, another exception occurred:\n"
+        ),
     )
 
-    # Trim paths to be relative to your server root
-    def trim_path(path):
+    def trim_path(path: str) -> str:
         try:
             return str(Path(path).relative_to(PROJECT_ROOT))
         except Exception:
             return path
 
     pretty_errors.replace_filename = trim_path
+    pretty_errors.replace_stderr()

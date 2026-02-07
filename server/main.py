@@ -1,15 +1,35 @@
+# ruff: noqa: I001, E402
+
 import os
+from typing import Literal
+
+ENV: Literal["dev", "prod"] = os.getenv("ENV", "dev").lower()
+IS_DEV = ENV == "dev"
+
+from src.core.pretty_errors import setup_error_beautifier
+
+setup_error_beautifier(IS_DEV=IS_DEV, enable=True)
+
+from src.core.logger_setup import logger
+
+logger.info("Logger initialized")
+
+from src.core.error_hooks import setup_global_error_hooks
+
+setup_global_error_hooks()
+
+
 import sys
 from datetime import UTC, datetime
+
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+
 from src.core.app_registry import AppRegistry
-from src.core.error_setup import setup_error_beautifier
-from src.core.global_error_hook import setup_global_error_hooks
 from src.core.settings import CONSTANTS
 from src.core.supabase_connect import lifespan
 from src.middlewares.exception_handler import register_exception_handlers
@@ -17,11 +37,11 @@ from src.models.model_service import ModelService
 from src.routes import debug, register_routes, ws_router
 from src.schemas import ApiResponse
 
-# PRE-STARTUP CONFIGURATION
+
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 sys.dont_write_bytecode = True
 
-# APP INITIALIZATION
+
 app = FastAPI(
     title=CONSTANTS.APP_NAME,
     description="AI-powered music emotion detection and instrument classification",
@@ -29,12 +49,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ERROR HANDLING SETUP
-setup_global_error_hooks()
+
 register_exception_handlers(app)
 
-# MIDDLEWARE SETUP
-# Session middleware
+
 if not CONSTANTS.SESSION_SECRET_KEY:
     raise ValueError("SESSION_SECRET_KEY environment variable is not set")
 
@@ -47,17 +65,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ROUTER REGISTRATION
+
 register_routes(app)
 app.include_router(ws_router.router)
 if CONSTANTS.ENV == "dev":
     app.include_router(debug.router, prefix="/debug", tags=["Debug"])
 
 
-# SYSTEM ROUTES
 @app.get("/", tags=["System"])
 async def root():
-    """Root route showing app metadata and status."""
     data = {
         "app_name": CONSTANTS.APP_NAME,
         "version": CONSTANTS.APP_VERSION,
@@ -78,7 +94,6 @@ async def root():
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    """Basic health check endpoint for uptime monitoring."""
     supabase = AppRegistry.get_state("supabase")
     db_status = "connected" if supabase else "disconnected"
     health = await ModelService.health_check()
@@ -103,7 +118,5 @@ async def health_check():
     )
 
 
-# MAIN ENTRY POINT
 if __name__ == "__main__":
-    setup_error_beautifier(enable=True)
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

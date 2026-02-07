@@ -1,208 +1,256 @@
 # // security and authentication service
 import secrets
-import string
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from datetime import UTC, datetime, timedelta
+from typing import Literal, Optional, Tuple, TypedDict
 from uuid import uuid4
 
-import bcrypt
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import argon2
+import jwt
+from jose import JWTError
+from server.src.core.settings import CONSTANTS
+from server.src.database.models import RefreshToken
+from server.src.schemas.token import (
+    Access_Token_Payload,
+    Refresh_Token_Payload,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.jwt import create_access_token, create_refresh_token
 from src.database.models.user import User
 
-from ..core.app_registry import AppRegistry
-from ..core.settings import CONSTANTS
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+class STORE_REFRESH_TOKEN_PAYLOAD(TypedDict):
+    user_id: str
+    device_info: Optional[str]
+    ip_address: Optional[str]
+    user_agent: Optional[str]
+
+
+def FIND_ALL_USERS_BY_EMAIL_OR_USERNAME_QUERY(email: str, username: str):
+    return select(User).where((User.email == email) | (User.username == username))
+
+
+def FIND_USER_BY_EMAIL_QUERY(email: str):
+    return select(User).where(User.email == email)
+
+
+def FIND_USER_BY_ID_QUERY(user_id: str):
+    return select(User).where(User.id == user_id)
+
+
+def FIND_REFRESH_TOKEN_QUERY(refresh_token: str):
+    return select(RefreshToken).where(RefreshToken.token == refresh_token)
 
 
 class AuthService:
     @staticmethod
-    def generate_user_id() -> str:
-        letters = "".join(secrets.choice(string.ascii_letters) for _ in range(6))
-        numbers = "".join(secrets.choice(string.digits) for _ in range(6))
-        combined = list(letters + numbers)
-        secrets.SystemRandom().shuffle(combined)
-        return "".join(combined)
-
-    @staticmethod
     def hash_password(password: str) -> str:
-        return pwd_context.hash(password)
+        return argon2.hash(password)
 
     @staticmethod
-    def verify_password(plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
-
-    @staticmethod
-    def create_access_token(data: dict) -> str:
-        to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(
-            minutes=CONSTANTS.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-        to_encode.update({"exp": expire, "type": "access"})
-        return jwt.encode(
-            to_encode, CONSTANTS.JWT_SECRET_KEY, algorithm=CONSTANTS.JWT_ALGORITHM
-        )
-
-    @staticmethod
-    def decode_token(token: str) -> Optional[Dict]:
+    def verify_password(password: str, hashed: str) -> bool:
         try:
-            payload = jwt.decode(
-                token, CONSTANTS.JWT_SECRET_KEY, algorithms=[CONSTANTS.JWT_ALGORITHM]
+            argon2.verify_password(password, hashed)
+        except Exception:
+            return False
+
+    @staticmethod
+    def get_expiry_timestamp(
+        expiry_constant_secs: int, given_expires_delta: Optional[timedelta] = None
+    ):
+        now = datetime.datetime.now()
+        expires_delta = given_expires_delta or timedelta(seconds=expiry_constant_secs)
+        return (now + expires_delta).timestamp()
+
+    @staticmethod
+    def get_current_timestamp():
+        return datetime.datetime.now().timestamp()
+
+    @staticmethod
+    def create_access_token(subject_id: int, expires_delta: Optional[timedelta] = None):
+        EXPIRY = AuthService.get_expiry_timestamp(
+            CONSTANTS.ACCESS_TOKEN_EXPIRE_SECONDS, expires_delta
+        )
+
+        payload = Access_Token_Payload(
+            sub=subject_id,
+            iat=int(AuthService.get_current_timestamp()),
+            exp=int(EXPIRY),
+        )
+
+        encoded = jwt.encode(
+            payload,
+            CONSTANTS.JWT_ACCESS_TOKEN_SECRET,
+            algorithm=CONSTANTS.JWT_ALGORITHM,
+        )
+
+        return encoded
+
+    @staticmethod
+    def create_refresh_token(
+        subject_id: int, expires_delta: Optional[timedelta] = None
+    ):
+        EXPIRY = AuthService.get_expiry_timestamp(
+            CONSTANTS.REFRESH_TOKEN_EXPIRE_SECONDS, expires_delta
+        )
+
+        payload = Refresh_Token_Payload(
+            sub=subject_id,
+            iat=int(AuthService.get_current_timestamp()),
+            exp=int(EXPIRY),
+            jti=secrets.token_urlsafe(16),
+        )
+
+        encoded = jwt.encode(
+            payload,
+            CONSTANTS.JWT_REFRESH_TOKEN_SECRET,
+            algorithm=CONSTANTS.JWT_ALGORITHM,
+        )
+
+        return encoded
+
+    @staticmethod
+    async def store_refresh_token(
+        db: AsyncSession, token_str: str, data: STORE_REFRESH_TOKEN_PAYLOAD
+    ) -> RefreshToken:
+        refresh_token = RefreshToken(
+            device_info=data.device_info,
+            user_agent=data.user_agent,
+            ip_address=data.ip_address,
+            user_id=data.user_id,
+            token=token_str,
+            revoked=False,
+        )
+
+        db.add(refresh_token)
+        await db.commit()
+        await db.refresh(refresh_token)
+        return refresh_token
+
+    @staticmethod
+    async def rotate_access_token(
+        db: AsyncSession, old_refresh_token: str
+    ) -> Optional[dict]:
+        payload = AuthService.decode_token(old_refresh_token)
+        if not payload or payload.get("type") != "refresh":
+            return None
+
+        user_id = payload.get("sub")
+        if not user_id:
+            return None
+
+        result = await db.execute(FIND_REFRESH_TOKEN_QUERY(old_refresh_token))
+        stored_token = result.scaler_one_or_none()
+
+        if not stored_token:
+            return None
+
+        if stored_token.expires_at < datetime.now(UTC):
+            stored_token.revoked = True
+            await db.commit()
+            return None
+
+        new_access_token = AuthService.create_access_token(subject_id=user_id)
+        await db.commit()
+
+        return new_access_token
+
+    @staticmethod
+    def decode_token(token: str, type: Literal["access", "refresh"]):
+        try:
+            SECRET = (
+                CONSTANTS.JWT_ACCESS_TOKEN_SECRET
+                if type == "access"
+                else CONSTANTS.JWT_REFRESH_TOKEN_SECRET
             )
+            payload = jwt.decode(token, SECRET, algorithms=[CONSTANTS.JWT_ALGORITHM])
+
+            if type == "access":
+                payload = Access_Token_Payload(**payload)
+            elif type == "refresh":
+                payload = Refresh_Token_Payload(**payload)
+
             return payload
         except JWTError:
             return None
 
-    # @staticmethod
-    # def generate_otp() -> str:
-    #     return "".join(
-    #         secrets.choice(string.digits) for _ in range(CONSTANTS.OTP_LENGTH)
-    #     )
-
-    # @staticmethod
-    # async def store_otp(email: str, otp: str) -> bool:
-    #     supabase = AppRegistry.get_state("supabase")
-    #     try:
-    #         expire_at = datetime.utcnow() + timedelta(
-    #             minutes=CONSTANTS.OTP_EXPIRE_MINUTES
-    #         )
-
-    #         supabase.table("otp_verification").delete().eq("email", email).execute()
-
-    #         supabase.table("otp_verification").insert(
-    #             {
-    #                 "email": email,
-    #                 "otp": otp,
-    #                 "expire_at": expire_at.isoformat(),
-    #                 "verified": False,
-    #             }
-    #         ).execute()
-
-    #         return True
-    #     except Exception as e:
-    #         print(f"Error storing OTP: {e}")
-    #         return False
-
-    # @staticmethod
-    # async def verify_otp(email: str, otp: str) -> bool:
-    #     supabase = AppRegistry.get_state("supabase")
-    #     try:
-    #         result = (
-    #             supabase.table("otp_verification")
-    #             .select("*")
-    #             .eq("email", email)
-    #             .eq("otp", otp)
-    #             .eq("verified", False)
-    #             .execute()
-    #         )
-
-    #         if not result.data:
-    #             return False
-
-    #         otp_record = result.data[0]
-    #         expire_at = otp_record["expire_at"]
-    #         if isinstance(expire_at, str):
-    #             expire_at = datetime.fromisoformat(expire_at.replace("Z", "+00:00"))
-
-    #         now = datetime.now(timezone.utc)
-
-    #         if now > expire_at:
-    #             return False
-
-    #         supabase.table("otp_verification").update({"verified": True}).eq(
-    #             "id", otp_record["id"]
-    #         ).execute()
-
-    #         return True
-    #     except Exception as e:
-    #         print(f"Error verifying OTP: {e}")
-    #         return False
-
     @staticmethod
     async def create_user(
-        name: str, username: str, email: str, password: str, db: AsyncSession
+        db: AsyncSession, name: str, username: str, email: str, password: str
     ) -> Optional[Tuple[User, dict]]:
         """
         Create a new user in the database and return the user and JWT tokens.
         Returns None if email or username already exists.
         """
-        # Check for existing user by email or username
         result = await db.execute(
-            select(User).where((User.email == email) | (User.username == username))
+            FIND_ALL_USERS_BY_EMAIL_OR_USERNAME_QUERY(email, username)
         )
         existing_user = result.scalar_one_or_none()
         if existing_user:
             return None
 
-        # Hash the password securely
-        pwd_bytes = password.encode("utf-8")
-        salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
-
-        # Create new user instance
         user = User(
             id=uuid4(),
             name=name,
             username=username,
             email=email,
-            password=hashed_password,
+            password=AuthService.hash_password(password),
         )
 
         db.add(user)
         await db.commit()
-        await db.refresh(user)  # refresh to get generated fields like ID
+        await db.refresh(user)
 
-        # Generate JWT tokens
         tokens = {
-            "access_token": create_access_token(user_id=str(user.id)),
-            "refresh_token": create_refresh_token(user_id=str(user.id)),
+            "access_token": AuthService.create_access_token(subject_id=str(user.id)),
+            "refresh_token": AuthService.create_refresh_token(subject_id=str(user.id)),
         }
 
+        await AuthService.store_refresh_token(db, user.id, tokens["refresh_token"])
+
         return user, tokens
+
+    @staticmethod
+    async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
+        result = await db.execute(FIND_USER_BY_EMAIL_QUERY(email))
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
+        result = await db.execute(FIND_USER_BY_ID_QUERY(user_id))
+        return result.scalar_one_or_none()
 
     @staticmethod
     async def authenticate_user(
         db: AsyncSession, email: str, password: str
     ) -> Optional[User]:
-        # Fetch user from DB
-        result = await db.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
+        user = await AuthService.get_user_by_email(db, email)
 
         if not user:
             return None
 
-        # Verify bcrypt hash (expects bytes)
-        if not bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
+        if not AuthService.verify_password(password, user.password_hash):
             return None
 
         return user
 
     @staticmethod
-    async def get_user_by_email(email: str) -> Optional[Dict]:
-        supabase = AppRegistry.get_state("supabase")
-        try:
-            result = supabase.table("users").select("*").eq("email", email).execute()
-            return result.data[0] if result.data else None
-        except Exception as e:
-            print(f"Error getting user: {e}")
-            return None
+    async def invalidate_refresh_token(db: AsyncSession, refresh_token: str) -> bool:
+        result = await db.execute(FIND_REFRESH_TOKEN_QUERY(refresh_token))
+        record = result.scalar_one_or_none()
+        if not record or not record.revoked:
+            return False
+        record.revoked = True
+        await db.commit()
+        return True
 
     @staticmethod
-    async def get_user_by_id(user_id: str) -> Optional[Dict]:
-        supabase = AppRegistry.get_state("supabase")
-        try:
-            result = (
-                supabase.table("users")
-                .select("id, name, username, email, created_at")
-                .eq("id", user_id)
-                .execute()
-            )
-            return result.data[0] if result.data else None
-        except Exception as e:
-            print(f"Error getting user: {e}")
-            return None
+    async def logout_user(db: AsyncSession, refresh_token: str) -> bool:
+        result = await db.execute(FIND_REFRESH_TOKEN_QUERY(refresh_token))
+        token = result.scalar_one_or_none()
+        if not token:
+            return False
+
+        token.revoked = True
+        await db.commit()
+        return True

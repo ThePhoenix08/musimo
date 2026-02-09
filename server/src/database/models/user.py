@@ -7,8 +7,7 @@ from ..base import Base
 from ..mixins import TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from .otp import Otp
-    from .project import Project
+    from src.database.models import Log, Otp, Project, RefreshToken
 
 
 class User(UUIDMixin, TimestampMixin, Base):
@@ -25,4 +24,12 @@ class User(UUIDMixin, TimestampMixin, Base):
 
     projects: Mapped[List["Project"]] = relationship(
         "Project", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    logs: Mapped[List["Log"]] = relationship(
+        "Log", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    refresh_tokens: Mapped[List["RefreshToken"]] = relationship(
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )

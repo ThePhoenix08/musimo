@@ -2,11 +2,11 @@
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 from uuid import uuid4
 
-import argon2
 import jwt
+from argon2 import PasswordHasher
 from fastapi import Request
 from jose import ExpiredSignatureError, JWTError
 from sqlalchemy import select
@@ -51,13 +51,13 @@ def FIND_REFRESH_TOKEN_QUERY(refresh_token: str):
 
 class AuthService:
     @staticmethod
-    def hash_password(password: str) -> str:
-        return argon2.hash(password)
+    def hash_password(ph: PasswordHasher, password: str) -> str:
+        return ph.hash(password)
 
     @staticmethod
-    def verify_password(password: str, hashed: str) -> bool:
+    def verify_password(ph: PasswordHasher, password: str, hashed: str) -> bool:
         try:
-            argon2.verify_password(password, hashed)
+            ph.verify(hashed, password)
         except Exception:
             return False
 
@@ -194,7 +194,12 @@ class AuthService:
 
     @staticmethod
     async def create_user(
-        db: AsyncSession, name: str, username: str, email: str, password: str
+        db: AsyncSession,
+        ph: PasswordHasher,
+        name: str,
+        username: str,
+        email: str,
+        password: str,
     ) -> Optional[User]:
         """
         Create a new user in the database and return the user and JWT tokens.
@@ -212,7 +217,7 @@ class AuthService:
             name=name,
             username=username,
             email=email,
-            password=AuthService.hash_password(password),
+            password_hash=AuthService.hash_password(ph, password),
         )
 
         db.add(user)

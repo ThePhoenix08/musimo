@@ -15,17 +15,18 @@ from src.database.enums import (
 from src.database.mixins import (
     ProjectReferenceMixin,
     TimestampMixin,
-    UserReferenceMixin,
     UUIDMixin,
 )
 
 if TYPE_CHECKING:
-    from src.database.models.analysis_record import AnalysisRecord
+    from src.database.models import (
+        AnalysisRecord,
+        AudioFeature,
+        SeparationAnalysisRecord,
+    )
 
 
-class AudioFile(
-    UUIDMixin, TimestampMixin, UserReferenceMixin, ProjectReferenceMixin, Base
-):
+class AudioFile(UUIDMixin, TimestampMixin, ProjectReferenceMixin, Base):
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     file_name: Mapped[str] = mapped_column(String(256), nullable=False)
     duration: Mapped[float | None] = mapped_column(Float)
@@ -52,7 +53,7 @@ class AudioFile(
     # Relationships
     analysis_records: Mapped[list["AnalysisRecord"]] = relationship(
         "AnalysisRecord",
-        back_populates="audio",
+        back_populates="audio_file",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
@@ -60,6 +61,14 @@ class AudioFile(
     separated_sources: Mapped[list["SeparatedAudioFile"]] = relationship(
         "SeparatedAudioFile",
         back_populates="parent_audio",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        foreign_keys="SeparatedAudioFile.parent_audio_id",  # ✅ explicit join path
+    )
+
+    audio_features: Mapped[list["AudioFeature"]] = relationship(
+        "AudioFeature",
+        back_populates="audio_file",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
@@ -82,11 +91,22 @@ class SeparatedAudioFile(AudioFile):
         Enum(SeparatedSourceLabel)
     )
 
-    # Relationship to parent (original audio)
     parent_audio: Mapped["AudioFile"] = relationship(
         "AudioFile",
-        remote_side=["AudioFile.id"],
+        remote_side=[AudioFile.id],
         back_populates="separated_sources",
+        lazy="selectin",
+        foreign_keys=[parent_audio_id],  # ✅ same explicit FK
+    )
+
+    separation_analysis_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("separation_analysis_records.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+    separation_analysis: Mapped["SeparationAnalysisRecord"] = relationship(
+        "SeparationAnalysisRecord",
+        back_populates="separated_files",  # ✅ reciprocal link
         lazy="selectin",
     )
 

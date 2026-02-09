@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 
+from argon2 import PasswordHasher
 from fastapi import FastAPI
 from supabase import Client, create_client
 
 from src.core.logger_setup import logger
-from src.models.model_service import ModelService
 
+# from src.models.model_service import ModelService
 from .app_registry import AppRegistry
 from .settings import CONSTANTS
 
@@ -39,14 +40,17 @@ async def lifespan(app: FastAPI):
 
     try:
         logger.info("📦 Loading emotion detection model...")
-        ModelService.initialize_emotion_pipeline()
+        # ModelService.initialize_emotion_pipeline()
         logger.info("✅ Emotion detection model loaded successfully")
 
     except Exception as e:
         logger.error(f"❌ Failed to load emotion model: {e}")
         # Don't fail startup, but log the error
 
+    ph = PasswordHasher()
+    app.state.ph = ph
+
     yield  # Hand control to FastAPI (app runs here)
 
-    app.state.supabase = None
+    # app.state.supabase = None
     logger.info("🎵 Musimo API Shutting down...")

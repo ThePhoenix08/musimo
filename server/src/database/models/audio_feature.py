@@ -1,13 +1,12 @@
+import uuid
+from typing import TYPE_CHECKING
+
 from sqlalchemy import JSON, Enum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-import uuid
-
-from src.database.enums import FeatureType
 
 from src.database.base import Base
-from src.database.mixins import TimestampMixin, UUIDMixin, AudioFileReferenceMixin
-
-from typing import TYPE_CHECKING
+from src.database.enums import FeatureType
+from src.database.mixins import AudioFileReferenceMixin, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from src.database.models.analysis_record import FeatureAnalysisRecord

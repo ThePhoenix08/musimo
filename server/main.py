@@ -21,16 +21,13 @@ from src.core.error_hooks import setup_global_error_hooks
 
 setup_global_error_hooks()
 
-
 import sys
 from datetime import UTC, datetime
-
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-
 
 from src.core.app_registry import AppRegistry
 from src.core.settings import CONSTANTS

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from src.core.app_registry import AppRegistry
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.logger_setup import logger
@@ -28,15 +29,27 @@ router = APIRouter()
     response_model=RegisterUserResponse,
 )
 async def register(
-    request: Request, user_data: SignUpRequest, db: AsyncSession = Depends(get_db)
+    request: Request,
+    name: str = Form(...),
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
 ):
     """Register a new user"""
+    user_data = SignUpRequest(
+        name=name, username=username, email=email, password=password
+    )
+
+    ph = AppRegistry.get_state("ph")
+
     user = await AuthService.create_user(
         name=user_data.name,
         username=user_data.username,
         email=user_data.email,
         password=user_data.password,
         db=db,
+        ph=ph,
     )
     if not user:
         raise HTTPException(

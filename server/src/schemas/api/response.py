@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Generic, Optional, TypeVar
 
 from pydantic import BaseModel, Field
@@ -14,7 +14,7 @@ class ApiResponse(BaseModel, Generic[T]):
         description="Unique identifier for the response, useful for tracing and debugging.",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC).timestamp(),
         description="Timestamp of the response, useful for logging and debugging.",
     )
     success: bool = Field(..., description="Indicates if the request was successful.")

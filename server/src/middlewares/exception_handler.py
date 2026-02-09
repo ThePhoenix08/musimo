@@ -1,3 +1,4 @@
+import json
 import sys
 import traceback
 
@@ -28,15 +29,29 @@ def register_exception_handlers(app):
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ):
-        logger.warning(f"Validation error on {request.url}: {exc.errors()}")
+        errors = exc.errors()
+
+        try:
+            safe_errors = json.loads(json.dumps(errors, default=str))
+        except Exception:
+            safe_errors = [str(e) for e in errors]
+
+        top_error = safe_errors[0] if safe_errors else {}
+        field = ".".join(str(x) for x in top_error.get("loc", []))
+        msg = top_error.get("msg", "Validation error")
+
+        logger.warning(
+            f"Validation error on {request.url}: field='{field}' message='{msg}' details={safe_errors}"
+        )
+
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=ApiResponse(
                 success=False,
                 error=ApiError(
                     code="VALIDATION_ERROR",
-                    message="Invalid input.",
-                    details=exc.errors(),
+                    message=f"{field}: {msg}" if field else msg,
+                    details=safe_errors,
                 ),
             ).model_dump(),
         )

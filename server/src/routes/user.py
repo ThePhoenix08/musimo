@@ -77,7 +77,9 @@ async def change_password(
         password_change.current_password, db_user["password"]
     ):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    new_password_hash = AuthService.hash_password(password_change.new_password)
+
+    ph = AppRegistry.get_state("ph")
+    new_password_hash = AuthService.hash_password(ph, password_change.new_password)
 
     update_result = (
         supabase.table("users")

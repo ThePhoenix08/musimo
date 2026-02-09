@@ -7,6 +7,7 @@ from typing import Optional
 import numpy as np
 import torch
 
+from src.core.logger_setup import logger
 from src.models.emotion_recognition.config import ConfigManager
 from src.models.emotion_recognition.pipeline.embedding import AudioEmbeddingExtractor
 from src.models.emotion_recognition.pipeline.inference import GEMS9EmotionRecognizer
@@ -33,7 +34,7 @@ class GEMS9Pipeline:
     def __init__(self, config=None):
         self.cfg = config or ConfigManager.load_from_json()
         self.device = torch.device(self.cfg.DEVICE)
-        print(f"🚀 Initializing GEMS-9 Pipeline on {self.device}")
+        logger.info(f"🚀 Initializing GEMS-9 Pipeline on {self.device}")
 
         # Core Components
         self.preprocessor = Preprocessor(
@@ -74,7 +75,7 @@ class GEMS9Pipeline:
 
         # Thread pool for async ops
         self.executor = ThreadPoolExecutor(max_workers=self.cfg.NUM_WORKERS)
-        print("✅ GEMS-9 Pipeline Ready")
+        logger.info("✅ GEMS-9 Pipeline Ready")
 
     # ---------------------------------------------------------------
     # Core prediction logic

@@ -1,7 +1,8 @@
 # app/schemas/otp.py
 from pydantic import BaseModel, EmailStr, Field
-from server.src.core.settings import CONSTANTS
-from server.src.database.enums import OtpType
+
+from src.core.settings import CONSTANTS
+from src.database.enums import OtpType
 
 
 class OtpVerifyRequest(BaseModel):

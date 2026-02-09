@@ -13,6 +13,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from src.core.logger_setup import logger
+
 
 class AudioService:
     @staticmethod
@@ -59,7 +61,7 @@ class AudioService:
             return True
 
         except Exception as e:
-            print(f"Error generating mel spectrogram: {e}")
+            logger.error(f"Error generating mel spectrogram: {e}")
             return False
 
     @staticmethod
@@ -69,7 +71,7 @@ class AudioService:
             y, sr = librosa.load(audio_path, sr=None)
             return librosa.get_duration(y=y, sr=sr)
         except Exception as e:
-            print(f"Error getting audio duration: {e}")
+            logger.error(f"Error getting audio duration: {e}")
             return 0.0
 
     @staticmethod

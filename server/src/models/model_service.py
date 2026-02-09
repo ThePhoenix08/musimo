@@ -7,6 +7,7 @@ import os
 import sys
 from typing import Dict, Optional
 
+from src.core.logger_setup import logger
 from src.models.progress_tracker import ProgressTracker
 
 from .emotion_recognition.config import ConfigManager
@@ -23,7 +24,7 @@ try:
 
     INSTRUMENT_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Instrument detection not available: {e}")
+    logger.error(f"Warning: Instrument detection not available: {e}")
     INSTRUMENT_AVAILABLE = False
 
 

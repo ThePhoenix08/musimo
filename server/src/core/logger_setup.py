@@ -11,6 +11,16 @@ logger.setLevel(logging.DEBUG if IS_DEV else logging.INFO)
 
 stream_handler = logging.StreamHandler(sys.stdout)
 
+# --- Merge Uvicorn loggers into app logger ---
+uvicorn_loggers = ["uvicorn", "uvicorn.error", "uvicorn.access"]
+
+for name in uvicorn_loggers:
+    uvicorn_logger = logging.getLogger(name)
+    uvicorn_logger.handlers = []  # clear uvicorn’s default handlers
+    uvicorn_logger.propagate = True  # let logs bubble up
+    uvicorn_logger.setLevel(logger.level)
+    uvicorn_logger.addHandler(stream_handler)
+
 if IS_DEV:
     # Developer-friendly color logs
     from colorama import Fore, Style
@@ -28,9 +38,10 @@ if IS_DEV:
         }
 
         def format(self, record):
+            name = "uvicorn" if record.name.startswith("uvicorn") else record.name
             color = self.COLORS.get(record.levelname, "")
             time_str = datetime.now().strftime("%H:%M:%S")
-            msg = f"{color}{time_str} | {record.levelname:<8} | {record.name} | {record.getMessage()}{Style.RESET_ALL}"
+            msg = f"{color}{time_str} | {record.levelname:<8} | {name} | {record.getMessage()}{Style.RESET_ALL}"
             if record.exc_info:
                 msg += f"\n{self.formatException(record.exc_info)}"
             return msg

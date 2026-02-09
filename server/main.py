@@ -1,4 +1,7 @@
 # ruff: noqa: I001, E402
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 import os
 from typing import Literal
@@ -31,7 +34,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from src.core.app_registry import AppRegistry
 from src.core.settings import CONSTANTS
-from src.core.supabase_connect import lifespan
+from src.core.lifespan import lifespan
 from src.middlewares.exception_handler import register_exception_handlers
 from src.models.model_service import ModelService
 from src.routes import debug, register_routes, ws_router
@@ -119,4 +122,4 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_config=None)

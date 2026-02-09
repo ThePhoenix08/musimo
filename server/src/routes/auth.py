@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
-from src.core.app_registry import AppRegistry
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.app_registry import AppRegistry
 from src.core.logger_setup import logger
 from src.database.enums import OtpType
 from src.database.models.otp import Otp
@@ -29,7 +29,6 @@ router = APIRouter()
     response_model=RegisterUserResponse,
 )
 async def register(
-    request: Request,
     name: str = Form(...),
     username: str = Form(...),
     email: str = Form(...),
@@ -101,8 +100,15 @@ async def login(
 async def request_otp(
     request: OtpRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
+    current_user = await AuthService.get_user_by_email(db, request.email)
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if request.email != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -118,7 +124,7 @@ async def request_otp(
             detail="An error occured while generating your otp.",
         )
 
-    isSent: bool = await send_otp_email(current_user.email, otp.code)
+    isSent: bool = send_otp_email(current_user.email, otp.code)
     if not isSent:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -133,8 +139,15 @@ async def request_otp(
 async def verify_otp(
     request: OtpVerifyRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
+    current_user = await AuthService.get_user_by_email(db, request.email)
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if request.email != current_user.email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

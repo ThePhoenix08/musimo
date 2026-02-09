@@ -69,7 +69,7 @@ class OtpService:
         otp_code = await OtpService._generate_otp()
         expires_at = datetime.now(UTC) + timedelta(minutes=CONSTANTS.OTP_EXPIRE_MINUTES)
 
-        await db.execute(SET_UNUSED_OTPS_FOR_DELETE_MUTATION(email, purpose.value))
+        await db.execute(SET_UNUSED_OTPS_FOR_DELETE_MUTATION(email, purpose))
 
         otp = Otp(
             user_id=user_id,
@@ -90,10 +90,10 @@ class OtpService:
         db: AsyncSession, email: str, code: str, purpose: OtpType
     ) -> bool:
         result = await db.execute(
-            FIND_ALL_USER_PURPOSE_OTPS_QUERY(email, code, purpose.value)
+            FIND_ALL_USER_PURPOSE_OTPS_QUERY(email, code, purpose)
         )
 
-        otp = result.scaler_one_or_none()
+        otp = result.scalar_one_or_none()
 
         if not otp:
             return False

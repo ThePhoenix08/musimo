@@ -145,7 +145,7 @@ class AuthService:
             return None
 
         result = await db.execute(FIND_REFRESH_TOKEN_QUERY(old_refresh_token))
-        stored_token = result.scaler_one_or_none()
+        stored_token = result.scalar_one_or_none()
 
         if not stored_token:
             return None
@@ -273,7 +273,7 @@ class AuthService:
     @staticmethod
     async def set_email_as_verfied(db: AsyncSession, user_id: str) -> bool:
         result = await db.execute(FIND_USER_BY_ID_QUERY(user_id))
-        user: User = result.scaler_one_or_none()
+        user: User = result.scalar_one_or_none()
         if not user:
             return False
 

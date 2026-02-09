@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@musimo.com"
     MAIL_FROM_NAME: str = "Musimo Team"
 
+    # USER PASSWORD
+    PASSWORD_MIN_LENGTH: int = 8
+    PASSWORD_MAX_LENGTH: int = 32
+
     model_config = SettingsConfigDict(
         env_file=str(ENV_PATH), extra="ignore", case_sensitive=True
     )

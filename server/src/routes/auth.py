@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from server.src.database.models.otp import Otp
-from server.src.database.models.user import User
-from server.src.services.email_service import send_otp_email
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.logger_setup import logger
 from src.database.enums import OtpType
+from src.database.models.otp import Otp
+from src.database.models.user import User
 from src.database.session import get_db
 from src.schemas.auth import (
     LoginRequest,
@@ -17,6 +16,7 @@ from src.schemas.otp import OtpRequest, OtpVerifyRequest, OtpVerifyResponse
 from src.schemas.token import RotateAccessTokenResponse
 from src.services.auth_service import STORE_REFRESH_TOKEN_METADATA, AuthService
 from src.services.dependencies import get_current_user, verify_refresh_token
+from src.services.email_service import send_otp_email
 from src.services.otp_service import OtpService
 
 router = APIRouter()

@@ -32,10 +32,10 @@ async def lifespan(app: FastAPI):
     try:
         supabase = create_supabase_client()
         app.state.supabase = supabase
-        print("✅ Supabase connected successfully")
+        logger.info("✅ Supabase connected successfully")
     except Exception as e:
         app.state.supabase = None
-        print(f"❌ Supabase connection failed: {e}")
+        logger.error(f"❌ Supabase connection failed: {e}")
 
     try:
         logger.info("📦 Loading emotion detection model...")

@@ -2,6 +2,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum, Float, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.base import Base
@@ -65,6 +66,12 @@ class AudioFile(
 
 
 class SeparatedAudioFile(AudioFile):
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("audio_files.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
     parent_audio_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("audio_files.id", ondelete="SET NULL"),
         index=True,

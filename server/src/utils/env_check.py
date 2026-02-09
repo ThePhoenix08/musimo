@@ -4,6 +4,8 @@ from typing import Any
 from colorama import Fore, Style
 from colorama import init as colorama_init
 
+from src.core.logger_setup import logger
+
 colorama_init(autoreset=True)
 
 
@@ -27,7 +29,7 @@ def print_env_summary(settings_obj):
     ❌ Red    → Default value used and no env key found
     """
 
-    print("\n🧩 Environment Summary:")
+    logger.info("\n🧩 Environment Summary:")
 
     for field_name, field_info in settings_obj.model_fields.items():
         value = getattr(settings_obj, field_name)
@@ -50,4 +52,6 @@ def print_env_summary(settings_obj):
         field_str = str(field_name)
         val_str = str(display_value)
 
-        print(f"{color}{icon} {field_str:<25} = {val_str:<25} ({src}){Style.RESET_ALL}")
+        logger.info(
+            f"{color}{icon} {field_str:<25} = {val_str:<25} ({src}){Style.RESET_ALL}"
+        )

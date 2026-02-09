@@ -1,3 +1,5 @@
+from src.core.logger_setup import logger
+
 """
 Progress tracking system for ML pipelines with WebSocket support
 """
@@ -92,7 +94,7 @@ class ProgressTracker:
                     }
                 )
             except Exception as e:
-                print(f"Error emitting update: {e}")
+                logger.error(f"Error emitting update: {e}")
 
     async def start_step(self, step_id: str, message: Optional[str] = None):
         """Mark a step as started"""

@@ -5,6 +5,8 @@ import torch
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from src.core.logger_setup import logger
+
 BASE = Path(__file__).resolve()
 EMOTION_MODEL_CHECKPOINT = (
     BASE.parent.parent.parent / "checkpoints/emotion/A2G9_VGG_clean.pt"
@@ -101,8 +103,8 @@ class ConfigManager(BaseSettings):
                     if hasattr(cfg, key):
                         setattr(cfg, key, value)
             except Exception as e:
-                print(f"⚠️ Error loading config.json: {e}")
+                logger.error(f"⚠️ Error loading config.json: {e}")
         else:
-            print(f"⚠️ Config file not found at {json_path}. Using defaults.")
+            logger.error(f"⚠️ Config file not found at {json_path}. Using defaults.")
 
         return cfg

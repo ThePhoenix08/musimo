@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import String
+from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..base import Base
@@ -9,7 +9,6 @@ from ..mixins import TimestampMixin, UUIDMixin
 if TYPE_CHECKING:
     from .otp import Otp
     from .project import Project
-    from .log import Log
 
 
 class User(UUIDMixin, TimestampMixin, Base):
@@ -17,6 +16,8 @@ class User(UUIDMixin, TimestampMixin, Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
+
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
 
     otps: Mapped[list["Otp"]] = relationship(
         "Otp", back_populates="user", cascade="all, delete-orphan"

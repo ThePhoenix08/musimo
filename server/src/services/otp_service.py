@@ -3,7 +3,7 @@ import string
 from datetime import UTC, datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import select, update
+from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.settings import CONSTANTS
@@ -23,7 +23,7 @@ def SET_UNUSED_OTPS_FOR_DELETE_MUTATION(email: str, purpose: str):
     )
 
 
-def FIND_ALL_USER_OTPS_QUERY(email: str, code: str, purpose: str):
+def FIND_ALL_USER_PURPOSE_OTPS_QUERY(email: str, code: str, purpose: str):
     return (
         select(Otp)
         .filter(
@@ -34,6 +34,25 @@ def FIND_ALL_USER_OTPS_QUERY(email: str, code: str, purpose: str):
         )
         .order_by(Otp.expires_at.desc())
     )
+
+
+def FIND_ALL_USER_PENDING_OTPS_QUERY(user_id: str, purpose: str):
+    return (
+        select(Otp)
+        .filter(
+            Otp.user_id == user_id,
+            Otp.purpose == purpose,
+            Otp.is_used == False,  # noqa: E712
+        )
+        .order_by(Otp.expires_at.desc())
+    )
+
+
+def INVALIDATE_ALL_PENDING_OTPS_MUTATION(user_id: str, purpose: str | None = None):
+    CONDITIONS = [Otp.user_id == user_id, Otp.is_used == False]
+    if purpose:
+        CONDITIONS.append(Otp.purpose == purpose)
+    return update(Otp).where(and_(*CONDITIONS)).values(is_used=True)
 
 
 class OtpService:
@@ -70,7 +89,9 @@ class OtpService:
     async def verify_otp(
         db: AsyncSession, email: str, code: str, purpose: OtpType
     ) -> bool:
-        result = await db.execute(FIND_ALL_USER_OTPS_QUERY(email, code, purpose.value))
+        result = await db.execute(
+            FIND_ALL_USER_PURPOSE_OTPS_QUERY(email, code, purpose.value)
+        )
 
         otp = result.scaler_one_or_none()
 
@@ -83,3 +104,18 @@ class OtpService:
         otp.is_used = True
         await db.commit()
         return True
+
+    @staticmethod
+    async def has_pending_otp(db: AsyncSession, user_id: str, purpose: OtpType) -> bool:
+        result = await db.execute(
+            FIND_ALL_USER_PENDING_OTPS_QUERY(user_id, purpose.value)
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def invalidate_otp(
+        db: AsyncSession, user_id: str, purpose: OtpType | None = None
+    ):
+        await db.execute(INVALIDATE_ALL_PENDING_OTPS_MUTATION(user_id, purpose))
+        await db.commit()
+        return

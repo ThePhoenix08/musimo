@@ -14,6 +14,7 @@ from src.schemas.auth import (
     SignUpRequest,
 )
 from src.schemas.otp import OtpRequest, OtpVerifyRequest, OtpVerifyResponse
+from src.schemas.token import RotateAccessTokenResponse
 from src.services.auth_service import STORE_REFRESH_TOKEN_METADATA, AuthService
 from src.services.dependencies import get_current_user, verify_refresh_token
 from src.services.otp_service import OtpService
@@ -43,26 +44,12 @@ async def register(
             detail="Email or username already exists",
         )
 
-    tokens = {
-        "access_token": AuthService.create_access_token(subject_id=str(user.id)),
-        "refresh_token": AuthService.create_refresh_token(subject_id=str(user.id)),
-    }
-
-    refresh_token_metadata = STORE_REFRESH_TOKEN_METADATA(request, user.id)
-
-    await AuthService.store_refresh_token(
-        db, tokens["refresh_token"], data=refresh_token_metadata
-    )
-
     logger.info(f"New user registered: {user.email}")
 
     return RegisterUserResponse(
         user_id=user.id,
         username=user.username,
         email=user.email,
-        access_token=tokens["access_token"],
-        refresh_token=tokens["refresh_token"],
-        token_type="bearer",
     )
 
 
@@ -77,6 +64,14 @@ async def login(
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Please verify your email first.",
+        )
+
+    await OtpService.invalidate_otp(db, user.id)
 
     access_token = AuthService.create_access_token(subject_id=user.id)
     refresh_token = AuthService.create_refresh_token(subject_id=user.id)
@@ -155,16 +150,18 @@ async def verify_otp(
     return OtpVerifyResponse(verified=True)
 
 
-# @router.post("/refresh", response_model=RefreshAccessTokenRequest)
-# async def refresh_access_token(
-#     user_id: str = Depends(verify_refresh_token),
-#     current_user: User = Depends(get_current_user),
-# ):
-#     access_token = AuthService.create_access_token(subject_id=user_id)
-#     if not access_token:
-#         raise HTTPException()
+@router.post("/refresh", response_model=RotateAccessTokenResponse)
+async def refresh_access_token(
+    user_id: str = Depends(verify_refresh_token),
+):
+    access_token = AuthService.create_access_token(subject_id=user_id)
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error occured while generating access token for user.",
+        )
 
-#     return RefreshAccessTokenResponse(access_token=access_token)
+    return RotateAccessTokenResponse(access_token=access_token)
 
 
 # @router.post("/forgot-password")

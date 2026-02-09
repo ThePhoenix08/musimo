@@ -28,9 +28,6 @@ class RegisterUserResponse(BaseModel):
     user_id: UUID
     username: str
     email: EmailStr
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
 
 
 class LoginRequest(BaseModel):
@@ -42,7 +39,3 @@ class LoginResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
-
-
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str

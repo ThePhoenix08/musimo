@@ -8,7 +8,7 @@ from uuid import uuid4
 import argon2
 import jwt
 from fastapi import Request
-from jose import JWTError
+from jose import ExpiredSignatureError, JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -162,22 +162,35 @@ class AuthService:
 
     @staticmethod
     def decode_token(token: str, type: Literal["access", "refresh"]):
+        """
+        @throws JWTError, ExpiredSignatureError, TypeError
+        """
         try:
-            SECRET = (
+            secret = (
                 CONSTANTS.JWT_ACCESS_TOKEN_SECRET
                 if type == "access"
                 else CONSTANTS.JWT_REFRESH_TOKEN_SECRET
             )
-            payload = jwt.decode(token, SECRET, algorithms=[CONSTANTS.JWT_ALGORITHM])
+
+            decoded = jwt.decode(token, secret, algorithms=[CONSTANTS.JWT_ALGORITHM])
+
+            if decoded.get("type") != type:
+                raise TypeError(
+                    f"Required token of type '{type}', received '{decoded.get('type')}'."
+                )
+
+            if not decoded.get("sub"):
+                raise KeyError("Token missing subject (user_id).")
 
             if type == "access":
-                payload = Access_Token_Payload(**payload)
-            elif type == "refresh":
-                payload = Refresh_Token_Payload(**payload)
+                return Access_Token_Payload(**decoded)
+            return Refresh_Token_Payload(**decoded)
 
-            return payload
+        except ExpiredSignatureError:
+            raise ExpiredSignatureError(f"{type.capitalize()} token has expired.")
+
         except JWTError:
-            return None
+            raise JWTError(f"{type.capitalize()} token is invalid.")
 
     @staticmethod
     async def create_user(
@@ -229,7 +242,6 @@ class AuthService:
 
         if not AuthService.verify_password(password, user.password_hash):
             return None
-
         return user
 
     @staticmethod

@@ -2,7 +2,7 @@
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import Literal, Optional
 from uuid import uuid4
 
 import jwt
@@ -65,13 +65,13 @@ class AuthService:
     def get_expiry_timestamp(
         expiry_constant_secs: int, given_expires_delta: Optional[timedelta] = None
     ):
-        now = datetime.datetime.now()
+        now = datetime.now()
         expires_delta = given_expires_delta or timedelta(seconds=expiry_constant_secs)
         return (now + expires_delta).timestamp()
 
     @staticmethod
     def get_current_timestamp():
-        return datetime.datetime.now().timestamp()
+        return datetime.now().timestamp()
 
     @staticmethod
     def create_access_token(subject_id: int, expires_delta: Optional[timedelta] = None):
@@ -80,13 +80,13 @@ class AuthService:
         )
 
         payload = Access_Token_Payload(
-            sub=subject_id,
+            sub=str(subject_id),
             iat=int(AuthService.get_current_timestamp()),
             exp=int(EXPIRY),
         )
 
         encoded = jwt.encode(
-            payload,
+            dict(payload),
             CONSTANTS.JWT_ACCESS_TOKEN_SECRET,
             algorithm=CONSTANTS.JWT_ALGORITHM,
         )
@@ -102,14 +102,14 @@ class AuthService:
         )
 
         payload = Refresh_Token_Payload(
-            sub=subject_id,
+            sub=str(subject_id),
             iat=int(AuthService.get_current_timestamp()),
             exp=int(EXPIRY),
             jti=secrets.token_urlsafe(16),
         )
 
         encoded = jwt.encode(
-            payload,
+            dict(payload),
             CONSTANTS.JWT_REFRESH_TOKEN_SECRET,
             algorithm=CONSTANTS.JWT_ALGORITHM,
         )
@@ -238,14 +238,14 @@ class AuthService:
 
     @staticmethod
     async def authenticate_user(
-        db: AsyncSession, email: str, password: str
+        db: AsyncSession, email: str, password: str, ph: PasswordHasher
     ) -> Optional[User]:
         user = await AuthService.get_user_by_email(db, email)
 
         if not user:
             return None
 
-        if not AuthService.verify_password(password, user.password_hash):
+        if not AuthService.verify_password(ph, password, user.password_hash):
             return None
         return user
 

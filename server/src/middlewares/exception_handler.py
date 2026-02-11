@@ -2,14 +2,21 @@ import json
 import sys
 import traceback
 
-from fastapi import Request, status
+from fastapi import Request, Response, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.schemas import ApiError, ApiResponse
+from src.schemas.api.response import ApiErrorResponse
 
 from ..core.logger_setup import logger
+
+"""
+THROWABLE ERRORS:
+RequestValidationError
+HTTPException
+ConnectionError
+RuntimeError
+"""
 
 
 def format_trace(exc: Exception) -> str:
@@ -25,59 +32,73 @@ def format_trace(exc: Exception) -> str:
 
 
 def register_exception_handlers(app):
+    # Validation errors (422 / 400)
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ):
         errors = exc.errors()
-
         try:
             safe_errors = json.loads(json.dumps(errors, default=str))
         except Exception:
             safe_errors = [str(e) for e in errors]
 
-        top_error = safe_errors[0] if safe_errors else {}
-        field = ".".join(str(x) for x in top_error.get("loc", []))
-        msg = top_error.get("msg", "Validation error")
+        first = safe_errors[0] if safe_errors else {}
+        field = ".".join(str(x) for x in first.get("loc", []))
+        msg = first.get("msg", "Validation error")
 
         logger.warning(
-            f"Validation error on {request.url}: field='{field}' message='{msg}' details={safe_errors}"
+            f"Validation error on {request.url}: field='{field}' msg='{msg}' details={safe_errors}"
         )
 
-        return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content=ApiResponse(
-                success=False,
-                error=ApiError(
-                    code="VALIDATION_ERROR",
-                    message=f"{field}: {msg}" if field else msg,
-                    details=safe_errors,
-                ),
-            ).model_dump(),
+        return ApiErrorResponse(
+            code="VALIDATION_ERROR",
+            message=f"{field}: {msg}" if field else msg,
+            details=safe_errors,
+            http_status=status.HTTP_400_BAD_REQUEST,
         )
 
+    # Common HTTP errors (401, 403, 404, 409, etc.)
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-        logger.warning(
-            f"HTTPException {exc.status_code} on {request.url}: {exc.detail}"
-        )
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=ApiResponse(
-                success=False,
-                error=ApiError(code=str(exc.status_code), message=exc.detail),
-            ).model_dump(),
+        logger.warning(f"HTTP {exc.status_code} on {request.url}: {exc.detail}")
+        return ApiErrorResponse(
+            code=f"HTTP_{exc.status_code}",
+            message=str(exc.detail or "HTTP error"),
+            http_status=exc.status_code,
         )
 
+    # Internal server errors (programming bugs)
+    @app.exception_handler(RuntimeError)
+    async def runtime_exception_handler(request: Request, exc: RuntimeError):
+        logger.exception(f"Runtime error on {request.url}: {exc}")
+        return ApiErrorResponse(
+            code="INTERNAL_SERVER_ERROR",
+            message=str(exc),
+            details=format_trace(exc),
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    # Service-level errors (e.g., DB down, model load failure)
+    @app.exception_handler(ConnectionError)
+    async def service_unavailable_handler(request: Request, exc: ConnectionError):
+        logger.error(f"Service unavailable: {exc}")
+        return ApiErrorResponse(
+            code="SERVICE_UNAVAILABLE",
+            message="A dependent service is unavailable (DB or ML model failure).",
+            details=str(exc),
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    # Fallback: any unhandled exception → 500
     @app.exception_handler(Exception)
-    async def general_exception_handler(request: Request, exc: Exception):
+    async def unhandled_exception_handler(request: Request, exc: Exception):
         logger.exception(f"Unhandled exception on {request.url}: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=ApiResponse(
-                success=False,
-                error=ApiError(code="INTERNAL_SERVER_ERROR", message=str(exc)),
-            ).model_dump(),
+        return ApiErrorResponse(
+            code="UNHANDLED_EXCEPTION",
+            message="An unexpected error occurred.",
+            details=format_trace(exc),
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 

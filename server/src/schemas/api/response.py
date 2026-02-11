@@ -1,39 +1,128 @@
 from datetime import UTC, datetime
-from typing import Generic, Optional, TypeVar
+from typing import Any, Optional, TypedDict
 
-from pydantic import BaseModel, Field
+from fastapi import Response, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
+from src.core.settings import CONSTANTS
 from src.schemas.api.error import ApiError
 
-T = TypeVar("T")
+
+class ApiEnvelope(BaseModel):
+    success: bool
+    message: str
+    data: Optional[Any] = None
+    error: Optional[ApiError] = None
+    meta: Optional[dict] = None
+    timestamp: str
 
 
-class ApiResponse(BaseModel, Generic[T]):
-    response_id: Optional[str] = Field(
-        default=None,
-        description="Unique identifier for the response, useful for tracing and debugging.",
-    )
-    timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp(),
-        description="Timestamp of the response, useful for logging and debugging.",
-    )
-    success: bool = Field(..., description="Indicates if the request was successful.")
-    data: Optional[T] = Field(None, description="Response data payload.")
-    error: Optional[ApiError] = Field(
-        None, description="Error information if request failed."
-    )
-    meta: Optional[dict] = Field(
-        None, description="Optional metadata (e.g., pagination, count, etc.)."
+class PaginationMeta(TypedDict):
+    page: int
+    total: int
+    limit: int
+
+
+def _base_payload(
+    success: bool,
+    message: str,
+    data: dict | None = None,
+    error: ApiError | None = None,
+    meta: dict | None = None,
+) -> dict:
+    return {
+        "success": success,
+        "message": message,
+        "data": data or {},
+        "error": error.model_dump() if error else None,
+        "meta": meta or {},
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+
+
+def ApiResponse(
+    message: str,
+    data: dict | None = None,
+    *,
+    custom_headers: dict | None = None,
+    error: ApiError | None = None,
+    meta: dict | None = None,
+    status_code: int = 200,
+) -> JSONResponse:
+    payload = _base_payload(
+        success=(200 <= status_code < 300),
+        message=message,
+        data=data,
+        error=error,
+        meta=meta,
     )
 
-    class Config:
-        arbitrary_types_allowed = True
-        json_schema_extra = {
-            "example": {
-                "success": True,
-                "data": {"id": "uuid", "name": "Example"},
-                "error": None,
-                "meta": {"page": 1, "total": 42},
-                "timestamp": "2026-01-25T12:34:56Z",
-            }
-        }
+    safe_payload = jsonable_encoder(payload)
+
+    return JSONResponse(
+        content=safe_payload, status_code=status_code, headers=custom_headers
+    )
+
+
+def ApiAuthResponse(
+    message: str,
+    access_token: str | None,
+    refresh_token: str | None,
+    data: dict | None = None,
+    *,
+    meta: dict | None = None,
+    status_code: int = 200,
+) -> JSONResponse:
+    data = data if data else {}
+    custom_headers = {}
+
+    payload = _base_payload(
+        success=200 <= status_code < 300,
+        message=message,
+        data=data,
+        error=None,
+        meta=meta,
+    )
+
+    if access_token:
+        custom_headers["Authorization"] = f"Bearer {access_token}"
+
+    safe_payload = jsonable_encoder(payload)
+
+    response = JSONResponse(
+        content=safe_payload,
+        status_code=status_code,
+        headers=custom_headers,
+    )
+
+    if refresh_token:
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=CONSTANTS.REFRESH_TOKEN_EXPIRE_SECONDS,
+            path="/",
+        )
+
+    return response
+
+
+def ApiErrorResponse(
+    *,
+    code: str,
+    message: str,
+    details: Optional[Any] = None,
+    http_status: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
+) -> JSONResponse:
+    api_error = ApiError(code=code, message=message, details=details)
+    return ApiResponse(
+        message=message,
+        data=None,
+        error=api_error,
+        meta=None,
+        status_code=http_status,
+    )

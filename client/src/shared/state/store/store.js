@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "@/features/auth/state/slices/auth.slice";
 
 import {
   persistStore,
@@ -19,7 +20,7 @@ const persistConfig = {
   whiteList: ["auth"],
 };
 
-const persistAuthReducer = persistReducer(persistConfig);
+const persistAuthReducer = persistReducer(persistConfig, authReducer);
 
 const store = configureStore({
   reducer: {

@@ -24,12 +24,21 @@ export function RegisterForm({ className, ...props }) {
           <Input id="name" type="text" placeholder="John Doe" required />
         </Field>
         <Field>
+          <FieldLabel htmlFor="username">User Name</FieldLabel>
+          <Input id="username" type="text" placeholder="John12" required />
+        </Field>
+        <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input id="email" type="email" placeholder="m@example.com" required />
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
-          <Input id="password" type="password" placeholder="**********" required />
+          <Input
+            id="password"
+            type="password"
+            placeholder="**********"
+            required
+          />
         </Field>
         <Field>
           <Button type="submit">Create Account</Button>

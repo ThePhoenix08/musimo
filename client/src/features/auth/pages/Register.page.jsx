@@ -4,7 +4,7 @@ import EnhancedRegisterRightSection from "@/features/auth/components/EnhancedReg
 
 export default function SignupPage() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2 w-screen overflow-hidden dark:bg-black/70">
+    <div className="grid min-h-svh lg:grid-cols-2 w-screen overflow-hidden overflow-y-scroll dark:bg-black/70">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="w-full">
           <div className="box">

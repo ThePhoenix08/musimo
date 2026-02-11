@@ -1,4 +1,7 @@
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -8,12 +11,15 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+
 import { User, AtSign, Mail, Lock } from "lucide-react";
-import { useState } from "react";
+
+import { useRegisterMutation } from "@/features/auth/state/redux-api/auth.api";
 
 export function RegisterForm({ className, ...props }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [register, { isError, error }] = useRegisterMutation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,14 +35,7 @@ export function RegisterForm({ className, ...props }) {
     };
 
     try {
-      // Replace this with your actual API endpoint
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await register(data).unwrap();
 
       const result = await response.json();
 

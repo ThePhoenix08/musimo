@@ -46,3 +46,11 @@ export const UserAuthenticationApi = createApi({
     }),
   }),
 });
+
+export const {
+  useRegisterMutation,
+  useLoginMutation,
+  useRequestOtpMutation,
+  useVerifyOtpMutation,
+  useLogoutMutation,
+} = UserAuthenticationApi;

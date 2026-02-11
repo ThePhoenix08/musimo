@@ -15,24 +15,26 @@ import AvailableTests from "@/features/debug/availableTests.jsx";
 function App() {
   return (
     <div className="w-screen h-screen flex flex-col bg-background">
-      <Routes>
-        {/* PUBLIC ROUTES */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/debug" element={<DebugPage />}>
-          <Route index element={<AvailableTests />} />
-          <Route path="emotion" element={<EmotionPredTest />} />
-          <Route path="emotion-websocket" element={<EmotionAnalyzer />} />
-        </Route>
+      <Router>
+        <Routes>
+          {/* PUBLIC ROUTES */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/debug" element={<DebugPage />}>
+            <Route index element={<AvailableTests />} />
+            <Route path="emotion" element={<EmotionPredTest />} />
+            <Route path="emotion-websocket" element={<EmotionAnalyzer />} />
+          </Route>
 
-        {/* AUTHENTICATED */}
-        <Route element={<AuthLayout />}>
-          <Route path="/app" element={<AppLayout />}></Route>
-        </Route>
+          {/* AUTHENTICATED */}
+          <Route element={<AuthLayout />}>
+            <Route path="/app" element={<AppLayout />}></Route>
+          </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Router>
     </div>
   );
 }

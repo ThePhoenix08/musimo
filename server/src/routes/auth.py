@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
+from server.src.database.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.app_registry import AppRegistry
@@ -14,7 +15,7 @@ from src.schemas.auth import (
 )
 from src.schemas.otp import OtpRequest, OtpVerifyRequest
 from src.services.auth_service import STORE_REFRESH_TOKEN_METADATA, AuthService
-from src.services.dependencies import verify_refresh_token
+from src.services.dependencies import get_current_user, verify_refresh_token
 from src.services.email_service import send_otp_email
 from src.services.otp_service import OtpService
 from src.utils.auth_utils import construct_return_user
@@ -28,7 +29,6 @@ router = APIRouter()
     response_model=ApiEnvelope,
 )
 async def register(
-    response: Response,
     name: str = Form(...),
     username: str = Form(...),
     email: str = Form(...),
@@ -59,15 +59,14 @@ async def register(
     msg: str = f"New user registered: {user.email}"
     logger.info(msg)
 
-    data = UserResponse(construct_return_user(user)).model_dump()
+    data = UserResponse(user=construct_return_user(user)).model_dump()
 
-    return ApiResponse(msg, response, data)
+    return ApiResponse(msg, data)
 
 
 @router.post("/login", response_model=ApiEnvelope)
 async def login(
     request: Request,
-    response: Response,
     email: str = Form(...),
     password: str = Form(...),
     db: AsyncSession = Depends(get_db),
@@ -98,15 +97,14 @@ async def login(
 
     msg: str = f"User logged in: {user.email} | IP={request.client.host}"
     logger.info(msg)
-    data = UserResponse(construct_return_user(user)).model_dump()
+    data = UserResponse(user=construct_return_user(user)).model_dump()
 
-    return ApiAuthResponse(msg, response, access_token, refresh_token, data)
+    return ApiAuthResponse(msg, access_token, refresh_token, data)
 
 
 @router.post("/otp/request-otp", response_model=ApiEnvelope)
 async def request_otp(
     request: OtpRequest,
-    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     current_user = await AuthService.get_user_by_email(db, request.email)
@@ -141,14 +139,13 @@ async def request_otp(
 
     msg: str = f"OTP sent to {request.email} successfully."
     logger.info(msg)
-    return ApiResponse(msg, response)
+    return ApiResponse(msg)
 
 
 @router.post("/otp/verify", response_model=ApiEnvelope)
 async def verify_otp(
     payload: OtpVerifyRequest,
     request: Request,
-    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     current_user = await AuthService.get_user_by_email(db, payload.email)
@@ -190,11 +187,10 @@ async def verify_otp(
 
     logger.info(f"User logged in: {current_user.email} | IP={request.client.host}")
 
-    data = UserResponse(construct_return_user(current_user)).model_dump()
+    data: dict = UserResponse(user=construct_return_user(current_user)).model_dump()
 
     return ApiAuthResponse(
         f"OTP verified and user logged in: {current_user.email}",
-        response,
         access_token,
         refresh_token,
         data,
@@ -203,7 +199,6 @@ async def verify_otp(
 
 @router.post("/refresh", response_model=ApiEnvelope)
 async def refresh_access_token(
-    response: Response,
     user_id: str = Depends(verify_refresh_token),
 ):
     access_token = AuthService.create_access_token(subject_id=user_id)
@@ -213,7 +208,14 @@ async def refresh_access_token(
             detail="Error occured while generating access token for user.",
         )
 
-    return ApiAuthResponse("New Access token generated.", response, access_token)
+    return ApiAuthResponse("New Access token generated.", access_token)
+
+
+# @router.post("/logout", response_model=ApiEnvelope)
+# async def logout(user: User = Depends(get_current_user)):
+
+
+#     return ApiResponse(msg)
 
 
 # @router.post("/forgot-password")

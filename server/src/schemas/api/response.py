@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from typing import Any, Optional, TypedDict
 
 from fastapi import Response, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -43,9 +44,9 @@ def _base_payload(
 
 def ApiResponse(
     message: str,
-    response: Response,
     data: dict | None = None,
     *,
+    custom_headers: dict | None = None,
     error: ApiError | None = None,
     meta: dict | None = None,
     status_code: int = 200,
@@ -58,14 +59,15 @@ def ApiResponse(
         meta=meta,
     )
 
+    safe_payload = jsonable_encoder(payload)
+
     return JSONResponse(
-        content=payload, status_code=status_code, headers=response.headers
+        content=safe_payload, status_code=status_code, headers=custom_headers
     )
 
 
 def ApiAuthResponse(
     message: str,
-    response: Response,
     access_token: str | None,
     refresh_token: str | None,
     data: dict | None = None,
@@ -74,9 +76,26 @@ def ApiAuthResponse(
     status_code: int = 200,
 ) -> JSONResponse:
     data = data if data else {}
+    custom_headers = {}
+
+    payload = _base_payload(
+        success=200 <= status_code < 300,
+        message=message,
+        data=data,
+        error=None,
+        meta=meta,
+    )
 
     if access_token:
-        response.headers["Authorization"] = f"Bearer {access_token}"
+        custom_headers["Authorization"] = f"Bearer {access_token}"
+
+    safe_payload = jsonable_encoder(payload)
+
+    response = JSONResponse(
+        content=safe_payload,
+        status_code=status_code,
+        headers=custom_headers,
+    )
 
     if refresh_token:
         response.set_cookie(
@@ -89,21 +108,10 @@ def ApiAuthResponse(
             path="/",
         )
 
-    payload = _base_payload(
-        success=200 <= status_code < 300,
-        message=message,
-        data=data,
-        error=None,
-        meta=meta,
-    )
-
-    return JSONResponse(
-        content=payload, status_code=status_code, headers=response.headers
-    )
+    return response
 
 
 def ApiErrorResponse(
-    response: Response,
     *,
     code: str,
     message: str,
@@ -113,7 +121,6 @@ def ApiErrorResponse(
     api_error = ApiError(code=code, message=message, details=details)
     return ApiResponse(
         message=message,
-        response=response,
         data=None,
         error=api_error,
         meta=None,

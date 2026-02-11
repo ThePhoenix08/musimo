@@ -74,7 +74,7 @@ if CONSTANTS.ENV == "dev":
 
 
 @app.get("/", tags=["System"])
-async def root(response: Response):
+async def root():
     data = {
         "app_name": CONSTANTS.APP_NAME,
         "version": CONSTANTS.APP_VERSION,
@@ -91,13 +91,12 @@ async def root(response: Response):
     }
     return ApiResponse(
         message=f"Welcome to {CONSTANTS.APP_NAME} 🎵",
-        response=response,
         data=data,
     )
 
 
 @app.get("/health", tags=["System"])
-async def health_check(response: Response):
+async def health_check():
     supabase = AppRegistry.get_state("supabase")
     db_status = "connected" if supabase else "disconnected"
     health = await ModelService.health_check()
@@ -108,7 +107,6 @@ async def health_check(response: Response):
     )
     return ApiResponse(
         message=("All models loaded" if all_healthy else "Some models unavailable"),
-        response=response,
         data={
             "status": "healthy" if supabase else "degraded",
             "emotion_detection": health["emotion_detection"],

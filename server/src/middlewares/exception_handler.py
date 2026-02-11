@@ -51,9 +51,7 @@ def register_exception_handlers(app):
             f"Validation error on {request.url}: field='{field}' msg='{msg}' details={safe_errors}"
         )
 
-        response = Response()
         return ApiErrorResponse(
-            response=response,
             code="VALIDATION_ERROR",
             message=f"{field}: {msg}" if field else msg,
             details=safe_errors,
@@ -64,9 +62,7 @@ def register_exception_handlers(app):
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         logger.warning(f"HTTP {exc.status_code} on {request.url}: {exc.detail}")
-        response = Response()
         return ApiErrorResponse(
-            response=response,
             code=f"HTTP_{exc.status_code}",
             message=str(exc.detail or "HTTP error"),
             http_status=exc.status_code,
@@ -76,9 +72,7 @@ def register_exception_handlers(app):
     @app.exception_handler(RuntimeError)
     async def runtime_exception_handler(request: Request, exc: RuntimeError):
         logger.exception(f"Runtime error on {request.url}: {exc}")
-        response = Response()
         return ApiErrorResponse(
-            response=response,
             code="INTERNAL_SERVER_ERROR",
             message=str(exc),
             details=format_trace(exc),
@@ -89,9 +83,7 @@ def register_exception_handlers(app):
     @app.exception_handler(ConnectionError)
     async def service_unavailable_handler(request: Request, exc: ConnectionError):
         logger.error(f"Service unavailable: {exc}")
-        response = Response()
         return ApiErrorResponse(
-            response=response,
             code="SERVICE_UNAVAILABLE",
             message="A dependent service is unavailable (DB or ML model failure).",
             details=str(exc),
@@ -102,9 +94,7 @@ def register_exception_handlers(app):
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
         logger.exception(f"Unhandled exception on {request.url}: {exc}")
-        response = Response()
         return ApiErrorResponse(
-            response=response,
             code="UNHANDLED_EXCEPTION",
             message="An unexpected error occurred.",
             details=format_trace(exc),

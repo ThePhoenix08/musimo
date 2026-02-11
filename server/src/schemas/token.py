@@ -16,7 +16,3 @@ class Refresh_Token_Payload(BaseModel):
     exp: int
     type: Literal["refresh"] = "refresh"
     jti: str
-
-
-class RotateAccessTokenResponse(BaseModel):
-    access_token: str

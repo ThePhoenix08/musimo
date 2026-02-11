@@ -1,24 +1,23 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.app_registry import AppRegistry
 from src.core.logger_setup import logger
 from src.database.enums import OtpType
 from src.database.models.otp import Otp
-from src.database.models.user import User
 from src.database.session import get_db
+from src.schemas.api.response import ApiAuthResponse, ApiEnvelope, ApiResponse
 from src.schemas.auth import (
     LoginRequest,
-    LoginResponse,
-    RegisterUserResponse,
     SignUpRequest,
+    UserResponse,
 )
-from src.schemas.otp import OtpRequest, OtpVerifyRequest, OtpVerifyResponse
-from src.schemas.token import RotateAccessTokenResponse
+from src.schemas.otp import OtpRequest, OtpVerifyRequest
 from src.services.auth_service import STORE_REFRESH_TOKEN_METADATA, AuthService
-from src.services.dependencies import get_current_user, verify_refresh_token
+from src.services.dependencies import verify_refresh_token
 from src.services.email_service import send_otp_email
 from src.services.otp_service import OtpService
+from src.utils.auth_utils import construct_return_user
 
 router = APIRouter()
 
@@ -26,9 +25,10 @@ router = APIRouter()
 @router.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
-    response_model=RegisterUserResponse,
+    response_model=ApiEnvelope,
 )
 async def register(
+    response: Response,
     name: str = Form(...),
     username: str = Form(...),
     email: str = Form(...),
@@ -56,20 +56,25 @@ async def register(
             detail="Email or username already exists",
         )
 
-    logger.info(f"New user registered: {user.email}")
+    msg: str = f"New user registered: {user.email}"
+    logger.info(msg)
 
-    return RegisterUserResponse(
-        user_id=user.id,
-        username=user.username,
-        email=user.email,
-    )
+    data = UserResponse(construct_return_user(user)).model_dump()
+
+    return ApiResponse(msg, response, data)
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=ApiEnvelope)
 async def login(
-    request: Request, payload: LoginRequest, db: AsyncSession = Depends(get_db)
+    request: Request,
+    response: Response,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
 ):
-    user = await AuthService.authenticate_user(db, payload.email, payload.password)
+    payload = LoginRequest(email=email, password=password)
+    ph = AppRegistry.get_state("ph")
+    user = await AuthService.authenticate_user(db, payload.email, payload.password, ph)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,14 +96,17 @@ async def login(
     refresh_token_metadata = STORE_REFRESH_TOKEN_METADATA(request, user.id)
     await AuthService.store_refresh_token(db, access_token, data=refresh_token_metadata)
 
-    logger.info(f"User logged in: {user.email} | IP={request.client.host}")
+    msg: str = f"User logged in: {user.email} | IP={request.client.host}"
+    logger.info(msg)
+    data = UserResponse(construct_return_user(user)).model_dump()
 
-    return LoginResponse(access_token, refresh_token, token_type="bearer")
+    return ApiAuthResponse(msg, response, access_token, refresh_token, data)
 
 
-@router.post("/otp/request-otp")
+@router.post("/otp/request-otp", response_model=ApiEnvelope)
 async def request_otp(
     request: OtpRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     current_user = await AuthService.get_user_by_email(db, request.email)
@@ -131,16 +139,19 @@ async def request_otp(
             detail="An error occured while sending otp mail. An email service failure.",
         )
 
-    logger.info(f"OTP sent to {request.email} successfully.")
-    return {"message": "OTP sent successfully."}
+    msg: str = f"OTP sent to {request.email} successfully."
+    logger.info(msg)
+    return ApiResponse(msg, response)
 
 
-@router.post("/otp/verify", response_model=OtpVerifyResponse)
+@router.post("/otp/verify", response_model=ApiEnvelope)
 async def verify_otp(
-    request: OtpVerifyRequest,
+    payload: OtpVerifyRequest,
+    request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    current_user = await AuthService.get_user_by_email(db, request.email)
+    current_user = await AuthService.get_user_by_email(db, payload.email)
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -148,21 +159,15 @@ async def verify_otp(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if request.email != current_user.email:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Requested email address doesnt match internal user.",
-        )
-
     verified = await OtpService.verify_otp(
-        db, request.email, request.code, request.purpose
+        db, payload.email, payload.code, payload.purpose
     )
     if not verified:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired OTP"
         )
 
-    if request.purpose == OtpType.EMAIL_VERIFICATION:
+    if payload.purpose == OtpType.EMAIL_VERIFICATION:
         success: bool = await AuthService.set_email_as_verfied(
             db, user_id=current_user.id
         )
@@ -172,12 +177,33 @@ async def verify_otp(
                 detail="Error occured while marking user as verified.",
             )
 
-    logger.info(f"OTP verified for {request.email}")
-    return OtpVerifyResponse(verified=True)
+    logger.info(f"OTP verified for {payload.email}")
+
+    # LOGIN
+    await OtpService.invalidate_otp(db, current_user.id)
+
+    access_token = AuthService.create_access_token(subject_id=current_user.id)
+    refresh_token = AuthService.create_refresh_token(subject_id=current_user.id)
+
+    refresh_token_metadata = STORE_REFRESH_TOKEN_METADATA(request, current_user.id)
+    await AuthService.store_refresh_token(db, access_token, data=refresh_token_metadata)
+
+    logger.info(f"User logged in: {current_user.email} | IP={request.client.host}")
+
+    data = UserResponse(construct_return_user(current_user)).model_dump()
+
+    return ApiAuthResponse(
+        f"OTP verified and user logged in: {current_user.email}",
+        response,
+        access_token,
+        refresh_token,
+        data,
+    )
 
 
-@router.post("/refresh", response_model=RotateAccessTokenResponse)
+@router.post("/refresh", response_model=ApiEnvelope)
 async def refresh_access_token(
+    response: Response,
     user_id: str = Depends(verify_refresh_token),
 ):
     access_token = AuthService.create_access_token(subject_id=user_id)
@@ -187,7 +213,7 @@ async def refresh_access_token(
             detail="Error occured while generating access token for user.",
         )
 
-    return RotateAccessTokenResponse(access_token=access_token)
+    return ApiAuthResponse("New Access token generated.", response, access_token)
 
 
 # @router.post("/forgot-password")

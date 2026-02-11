@@ -1,6 +1,7 @@
 # ruff: noqa: I001, E402
 import warnings
 
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 import os
@@ -25,7 +26,7 @@ import sys
 from datetime import UTC, datetime
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -35,7 +36,7 @@ from src.core.lifespan import lifespan
 from src.middlewares.exception_handler import register_exception_handlers
 from src.models.model_service import ModelService
 from src.routes import debug, register_routes, ws_router
-from src.schemas import ApiResponse
+from src.schemas.api.response import ApiResponse
 
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
@@ -73,14 +74,13 @@ if CONSTANTS.ENV == "dev":
 
 
 @app.get("/", tags=["System"])
-async def root():
+async def root(response: Response):
     data = {
         "app_name": CONSTANTS.APP_NAME,
         "version": CONSTANTS.APP_VERSION,
         "environment": CONSTANTS.ENV,
         "debug": CONSTANTS.DEBUG,
         "status": "active",
-        "message": f"Welcome to {CONSTANTS.APP_NAME} 🎵",
         "timestamp": datetime.now(UTC).isoformat() + "Z",
         "endpoints": {
             "websocket_emotion": "/ws/analyze-emotion",
@@ -89,11 +89,15 @@ async def root():
             "rest_health": "/health",
         },
     }
-    return ApiResponse(success=True, data=data)
+    return ApiResponse(
+        message=f"Welcome to {CONSTANTS.APP_NAME} 🎵",
+        response=response,
+        data=data,
+    )
 
 
 @app.get("/health", tags=["System"])
-async def health_check():
+async def health_check(response: Response):
     supabase = AppRegistry.get_state("supabase")
     db_status = "connected" if supabase else "disconnected"
     health = await ModelService.health_check()
@@ -103,7 +107,8 @@ async def health_check():
         and health["instrument_detection"]["available"]
     )
     return ApiResponse(
-        success=True,
+        message=("All models loaded" if all_healthy else "Some models unavailable"),
+        response=response,
         data={
             "status": "healthy" if supabase else "degraded",
             "emotion_detection": health["emotion_detection"],
@@ -111,9 +116,6 @@ async def health_check():
             "supabase": db_status,
             "timestamp": datetime.now(UTC).isoformat() + "Z",
             "models": health,
-            "message": (
-                "All models loaded" if all_healthy else "Some models unavailable"
-            ),
         },
     )
 

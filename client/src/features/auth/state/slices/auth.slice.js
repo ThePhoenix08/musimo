@@ -10,6 +10,8 @@ const initialState = {
   accessToken: null,
   tokenExpiryEstimate: null,
   preferThemeMode: "system",
+  authStep: "otp",
+  verificationEmail: null,
 };
 
 const authSlice = createSlice({
@@ -21,6 +23,12 @@ const authSlice = createSlice({
       state.user = user;
       state.isAuthenticated = true;
       state.error = null;
+    },
+    setAuthStep: (state, { payload }) => {
+      state.authStep = payload;
+    },
+    setVerificationEmail: (state, { payload }) => {
+      state.auth.verificationEmail = payload;
     },
     updateTokens: (state, action) => {
       const { accessToken } = action.payload;
@@ -37,10 +45,10 @@ const authSlice = createSlice({
     setError: (state, { payload }) => {
       state.error = payload;
     },
-    clearError: (state) => {
+    setClearError: (state) => {
       state.error = null;
     },
-    updateUser: (state, { payload }) => {
+    setUpdateUser: (state, { payload }) => {
       if (state.user) {
         state.user = { ...state.user, ...payload };
       }
@@ -58,9 +66,11 @@ export const {
   setLoading,
   setRefreshing,
   setError,
-  clearError,
-  updateUser,
+  setClearError,
+  setUpdateUser,
   setPreferences,
+  setAuthStep,
+  setVerificationEmail,
 } = authSlice.actions;
 
 export default authSlice.reducer;
@@ -72,6 +82,8 @@ export const selectAuthLoading = (state) => state.auth.isLoading;
 export const selectAuthError = (state) => state.auth.error;
 export const selectIsRefreshing = (state) => state.auth.isRefreshing;
 export const selectPreferences = (state) => state.auth.prefersThemeMode;
+export const selectAuthStep = (state) => state.auth.authStep;
+export const selectVerificationEmail = (state) => state.auth.verificationEmail;
 
 export const selectAccessToken = (state) => state.auth.accessToken;
 export const selectTokenExpiryEstimate = (state) =>

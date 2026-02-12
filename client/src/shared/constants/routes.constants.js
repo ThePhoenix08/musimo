@@ -7,7 +7,7 @@ export const ROUTES = {
 
   // protectedRoutes
   // App routes
-  DASHBOARD: "/app",
+  DASHBOARD: "/app/user/dashboard",
 
   // Debug routes
   DEBUG: "/app/debug",

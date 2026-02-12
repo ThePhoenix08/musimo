@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { ToastContainer } from "react-toastify";
 
 import LandingPage from "@/features/landing/landing.page.jsx";
 import AuthLayout from "./shared/layouts/AuthLayout.wrapper";
@@ -34,6 +35,14 @@ function App() {
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={4000}
+          hideProgressBar={true}
+          newestOnTop={true}
+          closeButton={true}
+          className="toast-container-dark"
+        />
       </Router>
     </div>
   );

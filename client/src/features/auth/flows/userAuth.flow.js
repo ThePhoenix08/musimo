@@ -6,12 +6,15 @@ import {
   setAuthStep,
   setVerificationEmail,
   setCredentials,
+  clearCredentials,
+  setUpdateTokens,
 } from "../state/slices/auth.slice";
 
 import {
   useRegisterMutation,
   useLoginMutation,
   useRequestOtpMutation,
+  useLogoutMutation,
 } from "../state/redux-api/auth.api";
 
 function useUserAuthFlow() {
@@ -21,24 +24,15 @@ function useUserAuthFlow() {
   const [login] = useLoginMutation();
   const [register] = useRegisterMutation();
   const [requestOtp] = useRequestOtpMutation();
+  const [logout] = useLogoutMutation();
 
   const flow = async (type, formData) => {
     try {
-      let apiCall;
-
-      if (type === "login") {
-        apiCall = login;
-      } else if (type === "register") {
-        apiCall = register;
-      } else {
-        throw new Error(`No type ${type} flow available for role user.`);
-      }
-
-      const result = await apiCall(formData).unwrap();
-
       if (type === "register") {
+        const result = await register(formData).unwrap();
+
         dispatch(setVerificationEmail(formData.email));
-        
+
         await requestOtp({
           email: formData.email,
           purpose: "email_verification",
@@ -49,11 +43,26 @@ function useUserAuthFlow() {
       }
 
       if (type === "login") {
+        const result = await login(formData).unwrap();
+
         dispatch(setCredentials(result.data));
+        dispatch(setUpdateTokens(result.data))
+
+        navigate(ROUTES.DASHBOARD);
+        return result;
       }
 
-      navigate(ROUTES.DASHBOARD);
-      return result;
+      if (type === "logout") {
+        await logout().unwrap();
+
+        dispatch(clearCredentials());
+        dispatch(setAuthStep("login"));
+
+        navigate(ROUTES.LANDING_PAGE);
+        return;
+      }
+
+      throw new Error(`No type ${type} flow available for role user.`);
     } catch (error) {
       console.error(`[AUTH ${type?.toUpperCase()} ERROR]:`, error);
       throw error;

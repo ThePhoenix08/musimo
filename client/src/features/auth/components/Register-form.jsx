@@ -38,7 +38,7 @@ export function RegisterForm({ className, ...props }) {
 
       toast.success("OTP Sent Successfully 🎉", {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 1000,
         theme: "dark",
       }); 
     } catch (error) {
@@ -52,7 +52,7 @@ export function RegisterForm({ className, ...props }) {
       }
       toast.error("Registration Failed", {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 1000,
         theme: "dark",
       });
     } finally {

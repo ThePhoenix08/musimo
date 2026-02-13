@@ -12,6 +12,7 @@ import DebugPage from "@/features/debug/debug.page.jsx";
 import EmotionPredTest from "@/features/debug/tests/emotion/emotionPred.test.jsx";
 import EmotionAnalyzer from "@/features/debug/tests/emotion/ws_emotionPred.test.jsx";
 import AvailableTests from "@/features/debug/availableTests.jsx";
+import ProfilePage from "@/features/profile/pages/profile.page";
 
 function App() {
   return (
@@ -30,7 +31,9 @@ function App() {
 
           {/* AUTHENTICATED */}
           <Route element={<AuthLayout />}>
-            <Route path="/app" element={<AppLayout />}></Route>
+            <Route path="/app" element={<AppLayout />}>
+              <Route path="user/profile" element={<ProfilePage />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />

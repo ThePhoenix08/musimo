@@ -10,7 +10,7 @@ const initialState = {
   accessToken: null,
   tokenExpiryEstimate: null,
   preferThemeMode: "system",
-  authStep: "otp",
+  authStep: "register",
   verificationEmail: null,
 };
 
@@ -30,7 +30,7 @@ const authSlice = createSlice({
     setVerificationEmail: (state, { payload }) => {
       state.auth.verificationEmail = payload;
     },
-    updateTokens: (state, action) => {
+    setUpdateTokens: (state, action) => {
       const { accessToken } = action.payload;
       state.accessToken = accessToken;
       state.tokenExpiryEstimate = Date.now() + ENVS.ACCESS_TOKEN_EXPIRY;
@@ -61,7 +61,7 @@ const authSlice = createSlice({
 
 export const {
   setCredentials,
-  updateTokens,
+  setUpdateTokens,
   clearCredentials,
   setLoading,
   setRefreshing,

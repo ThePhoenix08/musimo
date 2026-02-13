@@ -16,7 +16,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useSelector } from "react-redux";
-import { RefreshCwIcon, ShieldCheck } from "lucide-react";
+import { RefreshCwIcon, ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { ROUTES } from "@/shared/constants/routes.constants";
 import { useDispatch } from "react-redux";
@@ -52,14 +52,14 @@ export function InputOTPForm() {
 
       toast.success("OTP Sent Successfully 🎉", {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 1000,
         theme: "dark",
       });
     } catch (error) {
       console.error(`Failed to resend OTP: ${error?.data?.message}`);
       toast.error("Failed to resend OTP", {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 1000,
         theme: "dark",
       });
     }
@@ -83,7 +83,7 @@ export function InputOTPForm() {
 
       toast.error("OTP Verification Failed", {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 1000,
         theme: "dark",
       });
     }
@@ -139,8 +139,14 @@ export function InputOTPForm() {
       </CardContent>
       <CardFooter>
         <Field>
-          <Button type="submit" onClick={handleVerifyOTP} className="w-full">
-            Verify
+          <Button
+            type="button"
+            onClick={handleVerifyOTP}
+            disabled={verifyOtpLoading || otp.length !== 6}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            {verifyOtpLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {verifyOtpLoading ? "Processing..." : "Verify"}
           </Button>
         </Field>
       </CardFooter>

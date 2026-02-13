@@ -1,7 +1,12 @@
 import React from "react";
+import { Outlet } from "react-router";
 
 function AppLayout() {
-  return <div>AppLayout.wrapper</div>;
+  return (
+    <div>
+      <Outlet />
+    </div>
+  );
 }
 
 export default AppLayout;

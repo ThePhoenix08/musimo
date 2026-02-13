@@ -3,3 +3,6 @@ node_modules
 venv
 docs/*
 .vscode/*
+
+server/input/
+server/output/

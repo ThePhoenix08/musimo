@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
-from server.src.database.models.user import User
+from src.database.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.security import get_password_hasher

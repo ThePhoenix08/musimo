@@ -1,4 +1,15 @@
 # ruff: noqa: I001, E402
+
+
+import asyncio
+import sys
+
+# MUST be set before anything else touches the event loop
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+
+import asyncio
 import warnings
 
 
@@ -22,7 +33,6 @@ from src.core.error_hooks import setup_global_error_hooks
 
 setup_global_error_hooks()
 
-import sys
 from datetime import UTC, datetime
 
 import uvicorn
@@ -37,6 +47,7 @@ from src.middlewares.exception_handler import register_exception_handlers
 from src.models.model_service import ModelService
 from src.routes import debug, register_routes, ws_router
 from src.schemas.api.response import ApiResponse
+
 
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"

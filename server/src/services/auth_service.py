@@ -58,6 +58,7 @@ class AuthService:
     def verify_password(ph: PasswordHasher, password: str, hashed: str) -> bool:
         try:
             ph.verify(hashed, password)
+            return True
         except Exception:
             return False
 
@@ -140,7 +141,7 @@ class AuthService:
         if not payload or payload.get("type") != "refresh":
             return None
 
-        user_id = payload.get("sub")
+        user_id = payload.sub
         if not user_id:
             return None
 

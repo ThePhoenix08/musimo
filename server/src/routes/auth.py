@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
-from server.src.database.models.user import User
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.app_registry import AppRegistry
 from src.core.logger_setup import logger
 from src.database.enums import OtpType
 from src.database.models.otp import Otp
+from src.database.models.user import User
 from src.database.session import get_db
 from src.schemas.api.response import ApiAuthResponse, ApiEnvelope, ApiResponse
 from src.schemas.auth import (
@@ -40,19 +42,16 @@ async def register(
         name=name, username=username, email=email, password=password
     )
 
-    ph = AppRegistry.get_state("ph")
-
     user = await AuthService.create_user(
         name=user_data.name,
         username=user_data.username,
         email=user_data.email,
         password=user_data.password,
         db=db,
-        ph=ph,
     )
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Email or username already exists",
         )
 
@@ -72,8 +71,7 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ):
     payload = LoginRequest(email=email, password=password)
-    ph = AppRegistry.get_state("ph")
-    user = await AuthService.authenticate_user(db, payload.email, payload.password, ph)
+    user = await AuthService.authenticate_user(db, payload.email, payload.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -110,15 +108,9 @@ async def request_otp(
     current_user = await AuthService.get_user_by_email(db, request.email)
     if not current_user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User with given email does not exist.",
             headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if request.email != current_user.email:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Requested email address doesnt match internal user.",
         )
 
     otp: Otp = await OtpService.create_and_store_otp(
@@ -161,7 +153,7 @@ async def verify_otp(
     )
     if not verified:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired OTP"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP"
         )
 
     if payload.purpose == OtpType.EMAIL_VERIFICATION:
@@ -199,6 +191,7 @@ async def verify_otp(
 
 @router.post("/refresh", response_model=ApiEnvelope)
 async def refresh_access_token(
+    request: Request,
     user_id: str = Depends(verify_refresh_token),
 ):
     access_token = AuthService.create_access_token(subject_id=user_id)
@@ -208,14 +201,31 @@ async def refresh_access_token(
             detail="Error occured while generating access token for user.",
         )
 
-    return ApiAuthResponse("New Access token generated.", access_token)
+    return ApiAuthResponse("New Access token generated.", access_token, None)
 
 
-# @router.post("/logout", response_model=ApiEnvelope)
-# async def logout(user: User = Depends(get_current_user)):
+@router.post("/logout", response_model=ApiEnvelope)
+async def logout(
+    request: Request,
+    user: User = Depends(get_current_user),
+    user_id: str = Depends(verify_refresh_token),
+    db=Depends(get_db),
+):
+    user_agent: Optional[str] = request.headers.get("User-Agent") or None
+    ip_address: Optional[str] = request.client.host or None
 
+    ok: bool = await AuthService.revoke_refresh_token(
+        db, user_id, user_agent, ip_address
+    )
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Refresh token not found for user.",
+        )
 
-#     return ApiResponse(msg)
+    msg: str = f"User logged out successfully: {user.id}"
+    logger.info(msg)
+    return ApiResponse(msg)
 
 
 # @router.post("/forgot-password")

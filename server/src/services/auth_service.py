@@ -7,17 +7,27 @@ from uuid import uuid4
 
 import jwt
 from argon2 import PasswordHasher
-from fastapi import Request
-from jose import ExpiredSignatureError, JWTError
-from sqlalchemy import select
+from argon2 import exceptions as argon2_exceptions
+from fastapi import HTTPException, Request, status
+from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.logger_setup import logger
 from src.core.settings import CONSTANTS
 from src.database.models import RefreshToken
 from src.database.models.user import User
 from src.schemas.token import (
     Access_Token_Payload,
     Refresh_Token_Payload,
+)
+from src.utils.db_util import db_query
+
+ph = PasswordHasher(
+    time_cost=3,  # number of iterations
+    memory_cost=64 * 1024,  # 64 MB
+    parallelism=4,  # number of threads
+    hash_len=32,  # hash output length in bytes
+    salt_len=16,  # salt length in bytes
 )
 
 
@@ -30,7 +40,7 @@ class STORE_REFRESH_TOKEN_METADATA:
     def __init__(self, request: Request, user_id: str):
         self.user_id = user_id
         self.ip_address = request.client.host if request.client else None
-        self.user_agent = request.headers.get("User-Agent")
+        self.user_agent = dict(request.headers)["user-agent"]
 
 
 def FIND_ALL_USERS_BY_EMAIL_OR_USERNAME_QUERY(email: str, username: str):
@@ -49,15 +59,41 @@ def FIND_REFRESH_TOKEN_QUERY(refresh_token: str):
     return select(RefreshToken).where(RefreshToken.token == refresh_token)
 
 
+def REVOKE_USER_REFRESH_TOKENS_MUTATION(
+    user_id: str, user_agent: str | None = None, ip_address: str | None = None
+):
+    conditions = [RefreshToken.user_id == user_id, RefreshToken.revoked == False]
+    if user_agent:
+        conditions.append(RefreshToken.user_agent == user_agent)
+    if ip_address:
+        conditions.append(RefreshToken.ip_address == ip_address)
+
+    return (
+        update(RefreshToken)
+        .where(and_(*conditions))
+        .values(revoked=True)
+        .execution_options(synchronize_session=False)
+    )
+
+
 class AuthService:
     @staticmethod
-    def hash_password(ph: PasswordHasher, password: str) -> str:
+    def hash_password(password: str) -> str:
         return ph.hash(password)
 
     @staticmethod
-    def verify_password(ph: PasswordHasher, password: str, hashed: str) -> bool:
+    def verify_password(password: str, hash: str) -> bool:
         try:
-            ph.verify(hashed, password)
+            return ph.verify(hash, password)
+        except argon2_exceptions.VerifyMismatchError:
+            return False
+        except Exception:
+            return False
+
+    @staticmethod
+    def needs_rehash(hashed_password: str) -> bool:
+        try:
+            return ph.check_needs_rehash(hashed_password)
         except Exception:
             return False
 
@@ -122,6 +158,7 @@ class AuthService:
     ) -> RefreshToken:
         refresh_token = RefreshToken(
             ip_address=data.ip_address,
+            user_agent=data.user_agent,
             user_id=data.user_id,
             token=token_str,
             revoked=False,
@@ -133,32 +170,37 @@ class AuthService:
         return refresh_token
 
     @staticmethod
-    async def rotate_access_token(
-        db: AsyncSession, old_refresh_token: str
-    ) -> Optional[dict]:
-        payload = AuthService.decode_token(old_refresh_token)
-        if not payload or payload.get("type") != "refresh":
-            return None
+    async def verify_refresh_token(db: AsyncSession, refresh_token_str: str) -> str:
+        try:
+            payload = AuthService.decode_token(
+                refresh_token_str, "refresh"
+            ).model_dump()
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"JWT Error {str(e)}",
+            )
 
-        user_id = payload.get("sub")
-        if not user_id:
-            return None
+        user_id: str = payload.get("sub")
+        user = await AuthService.get_user_by_id(db, user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User does not exist with user id: {user_id}",
+            )
 
-        result = await db.execute(FIND_REFRESH_TOKEN_QUERY(old_refresh_token))
-        stored_token = result.scalar_one_or_none()
+        stored_refresh_token = await db_query(
+            db,
+            FIND_REFRESH_TOKEN_QUERY(refresh_token_str),
+            f"Error fetching stored refresh token to compare for user: {user_id}",
+        )
+        if not stored_refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User does not exist with user id: {user_id}",
+            )
 
-        if not stored_token:
-            return None
-
-        if stored_token.expires_at < datetime.now(UTC):
-            stored_token.revoked = True
-            await db.commit()
-            return None
-
-        new_access_token = AuthService.create_access_token(subject_id=user_id)
-        await db.commit()
-
-        return new_access_token
+        return user_id
 
     @staticmethod
     def decode_token(token: str, type: Literal["access", "refresh"]):
@@ -185,17 +227,12 @@ class AuthService:
             if type == "access":
                 return Access_Token_Payload(**decoded)
             return Refresh_Token_Payload(**decoded)
-
-        except ExpiredSignatureError:
-            raise ExpiredSignatureError(f"{type.capitalize()} token has expired.")
-
-        except JWTError:
-            raise JWTError(f"{type.capitalize()} token is invalid.")
+        except jwt.PyJWTError as e:
+            raise Exception(f"({type} token): {str(e)}")
 
     @staticmethod
     async def create_user(
         db: AsyncSession,
-        ph: PasswordHasher,
         name: str,
         username: str,
         email: str,
@@ -205,8 +242,9 @@ class AuthService:
         Create a new user in the database and return the user and JWT tokens.
         Returns None if email or username already exists.
         """
-        result = await db.execute(
-            FIND_ALL_USERS_BY_EMAIL_OR_USERNAME_QUERY(email, username)
+        query = FIND_ALL_USERS_BY_EMAIL_OR_USERNAME_QUERY(email, username)
+        result = await db_query(
+            db, query, f"Error checking if user (email: {email}) already exists."
         )
         existing_user = result.scalar_one_or_none()
         if existing_user:
@@ -217,7 +255,7 @@ class AuthService:
             name=name,
             username=username,
             email=email,
-            password_hash=AuthService.hash_password(ph, password),
+            password_hash=AuthService.hash_password(password),
         )
 
         db.add(user)
@@ -228,51 +266,59 @@ class AuthService:
 
     @staticmethod
     async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
-        result = await db.execute(FIND_USER_BY_EMAIL_QUERY(email))
+        query = FIND_USER_BY_EMAIL_QUERY(email)
+        result = await db_query(db, query, f"Error fetching user by email: {email}.")
         return result.scalar_one_or_none()
 
     @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
-        result = await db.execute(FIND_USER_BY_ID_QUERY(user_id))
+        query = FIND_USER_BY_ID_QUERY(user_id)
+        result = await db_query(db, query, f"Error fetching user by id: {user_id}.")
         return result.scalar_one_or_none()
 
     @staticmethod
     async def authenticate_user(
-        db: AsyncSession, email: str, password: str, ph: PasswordHasher
+        db: AsyncSession, email: str, password: str
     ) -> Optional[User]:
         user = await AuthService.get_user_by_email(db, email)
 
         if not user:
             return None
 
-        if not AuthService.verify_password(ph, password, user.password_hash):
+        if not AuthService.verify_password(password, user.password_hash):
+            logger.warning("password verification failed.")
             return None
+
+        if AuthService.needs_rehash(user.password_hash):
+            user.password_hash = AuthService.hash_password(password)
+            await db.commit()
+
         return user
 
     @staticmethod
-    async def invalidate_refresh_token(db: AsyncSession, refresh_token: str) -> bool:
-        result = await db.execute(FIND_REFRESH_TOKEN_QUERY(refresh_token))
-        record = result.scalar_one_or_none()
-        if not record or not record.revoked:
-            return False
-        record.revoked = True
+    async def revoke_refresh_token(
+        db: AsyncSession,
+        user_id: str,
+        user_agent: str | None = None,
+        ip_address: str | None = None,
+    ) -> bool:
+        mutation = REVOKE_USER_REFRESH_TOKENS_MUTATION(user_id, user_agent, ip_address)
+        result = await db_query(
+            db, mutation, f"Error revoking user ({user_id}) refresh token."
+        )
         await db.commit()
-        return True
 
-    @staticmethod
-    async def logout_user(db: AsyncSession, refresh_token: str) -> bool:
-        result = await db.execute(FIND_REFRESH_TOKEN_QUERY(refresh_token))
-        token = result.scalar_one_or_none()
-        if not token:
-            return False
-
-        token.revoked = True
-        await db.commit()
-        return True
+        revoked_count = result.rowcount or 0
+        logger.info(
+            f"Revoked {revoked_count} refresh tokens for user={user_id} "
+            f"(user_agent={user_agent or '*'}, ip={ip_address or '*'})"
+        )
+        return True if revoked_count > 0 else False
 
     @staticmethod
     async def set_email_as_verfied(db: AsyncSession, user_id: str) -> bool:
-        result = await db.execute(FIND_USER_BY_ID_QUERY(user_id))
+        query = FIND_USER_BY_ID_QUERY(user_id)
+        result = await db_query(db, query, f"Error fetching user by id: {user_id}.")
         user: User = result.scalar_one_or_none()
         if not user:
             return False

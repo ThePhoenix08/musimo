@@ -3,12 +3,14 @@ import string
 from datetime import UTC, datetime, timedelta
 from typing import Optional
 
+from fastapi import HTTPException, status
 from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.settings import CONSTANTS
 from src.database.enums import OtpType
 from src.database.models import Otp
+from src.utils.db_util import db_query
 
 
 def SET_UNUSED_OTPS_FOR_DELETE_MUTATION(email: str, purpose: str):
@@ -69,8 +71,10 @@ class OtpService:
         otp_code = await OtpService._generate_otp()
         expires_at = datetime.now(UTC) + timedelta(minutes=CONSTANTS.OTP_EXPIRE_MINUTES)
 
-        await db.execute(SET_UNUSED_OTPS_FOR_DELETE_MUTATION(email, purpose))
-
+        mutation = SET_UNUSED_OTPS_FOR_DELETE_MUTATION(email, purpose)
+        await db_query(
+            db, mutation, f"Error setting unused OTPs for deletion for email: {email}."
+        )
         otp = Otp(
             user_id=user_id,
             email=email,
@@ -89,17 +93,21 @@ class OtpService:
     async def verify_otp(
         db: AsyncSession, email: str, code: str, purpose: OtpType
     ) -> bool:
-        result = await db.execute(
-            FIND_ALL_USER_PURPOSE_OTPS_QUERY(email, code, purpose)
-        )
+        """
+        @raises HTTPException: [HTTP_401_UNAUTHORIZED, HTTP_410_GONE]
+        """
+        query = FIND_ALL_USER_PURPOSE_OTPS_QUERY(email, code, purpose)
+        result = await db_query(db, query, f"Error verifying OTP for email: {email}.")
 
         otp = result.scalar_one_or_none()
 
         if not otp:
-            return False
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid OTP"
+            )
 
         if otp.expires_at < datetime.now(UTC):
-            return False
+            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Expired OTP")
 
         otp.is_used = True
         await db.commit()
@@ -107,8 +115,9 @@ class OtpService:
 
     @staticmethod
     async def has_pending_otp(db: AsyncSession, user_id: str, purpose: OtpType) -> bool:
-        result = await db.execute(
-            FIND_ALL_USER_PENDING_OTPS_QUERY(user_id, purpose.value)
+        query = FIND_ALL_USER_PENDING_OTPS_QUERY(user_id, purpose.value)
+        result = await db_query(
+            db, query, f"Error fetching pending OTPs of user: {user_id}"
         )
         return result.scalar_one_or_none() is not None
 
@@ -116,6 +125,9 @@ class OtpService:
     async def invalidate_otp(
         db: AsyncSession, user_id: str, purpose: OtpType | None = None
     ):
-        await db.execute(INVALIDATE_ALL_PENDING_OTPS_MUTATION(user_id, purpose))
+        mutation = INVALIDATE_ALL_PENDING_OTPS_MUTATION(user_id, purpose)
+        await db_query(
+            db, mutation, f"Error invalidating pending OTPs of user: {user_id}"
+        )
         await db.commit()
         return

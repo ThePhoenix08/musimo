@@ -47,9 +47,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Failed to load emotion model: {e}")
         # Don't fail startup, but log the error
 
-    ph = PasswordHasher()
-    app.state.ph = ph
-
     yield  # Hand control to FastAPI (app runs here)
 
     # app.state.supabase = None

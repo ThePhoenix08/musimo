@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Any, Optional, TypedDict
 
-from fastapi import Response, status
+from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -101,9 +101,9 @@ def ApiAuthResponse(
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-            httponly=True,
-            secure=True,
-            samesite="strict",
+            httponly=False,
+            secure=False,
+            samesite="lax",
             max_age=CONSTANTS.REFRESH_TOKEN_EXPIRE_SECONDS,
             path="/",
         )

@@ -2,8 +2,9 @@ import json
 import sys
 import traceback
 
-from fastapi import Request, Response, status
+from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.schemas.api.response import ApiErrorResponse
@@ -32,6 +33,30 @@ def format_trace(exc: Exception) -> str:
 
 
 def register_exception_handlers(app):
+    # Handle Pydantic validation errors (model-level)
+    @app.exception_handler(ValidationError)
+    async def pydantic_validation_handler(request: Request, exc: ValidationError):
+        errors = exc.errors()
+        try:
+            safe_errors = json.loads(json.dumps(errors, default=str))
+        except Exception:
+            safe_errors = [str(e) for e in errors]
+
+        first = safe_errors[0] if safe_errors else {}
+        field = ".".join(str(x) for x in first.get("loc", []))
+        msg = first.get("msg", "Validation error")
+
+        logger.warning(
+            f"Pydantic validation error on {request.url}: field='{field}' msg='{msg}' details={safe_errors}"
+        )
+
+        return ApiErrorResponse(
+            code="MODEL_VALIDATION_ERROR",
+            message=f"{field}: {msg}" if field else msg,
+            details=safe_errors,
+            http_status=status.HTTP_400_BAD_REQUEST,
+        )
+
     # Validation errors (422 / 400)
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(

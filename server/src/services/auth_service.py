@@ -181,7 +181,7 @@ class AuthService:
                 detail=f"JWT Error {str(e)}",
             )
 
-        user_id: str = payload.sub
+        user_id: str = payload.get("sub")
         user = await AuthService.get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(

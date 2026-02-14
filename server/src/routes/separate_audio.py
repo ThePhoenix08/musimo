@@ -1,43 +1,57 @@
-import os
 import asyncio
+import hashlib
+import logging
+import os
+import shutil
+import subprocess
 import traceback
 import uuid
-import hashlib
-import shutil
-from pathlib import Path
-from typing import Dict, Optional, List
-import subprocess
-import logging
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
 
-from fastapi import APIRouter, FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks, Depends
-from fastapi.responses import JSONResponse, FileResponse
+import aiofiles
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import create_engine, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-import aiofiles
-
-from supabase import create_client, Client
+from supabase import Client, create_client
 from supabase_auth import User
-from src.services.dependencies import get_current_user
+
+from src.core.logger_setup import logger
+from src.core.separation_jobState import jobs_storage, websocket_connections
+from src.database.enums import (
+    AudioFileStatus,
+    AudioFormat,
+    AudioSourceType,
+    JobStatus,
+    SeparatedSourceLabel,
+)
+from src.database.models import AudioFile, SeparatedAudioFile
 from src.database.models.project import Project
 from src.database.session import get_db
-from src.models.audio_separation.file_utils import INPUT_FOLDER, OUTPUT_FOLDER, calculate_checksum, get_audio_metadata
+from src.models.audio_separation.file_utils import (
+    INPUT_FOLDER,
+    OUTPUT_FOLDER,
+    calculate_checksum,
+    get_audio_metadata,
+)
 from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
 from src.schemas.audioSeparation import AudioUploadResponse
-from src.database.models import AudioFile, SeparatedAudioFile
-from src.database.enums import AudioFileStatus, AudioFormat, AudioSourceType, JobStatus, SeparatedSourceLabel
-from src.core.separation_jobState import jobs_storage
-from src.core.separation_jobState import jobs_storage, websocket_connections
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+from src.services.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -49,7 +63,8 @@ def convert_to_wav(input_path: Path) -> Path:
         [
             "ffmpeg",
             "-y",
-            "-i", str(input_path),
+            "-i",
+            str(input_path),
             str(output_path),
         ],
         stdout=subprocess.DEVNULL,
@@ -67,11 +82,13 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
 
     try:
         if job_id in jobs_storage:
-            await websocket.send_json({
-                "job_id": job_id,
-                "progress": jobs_storage[job_id]["progress"],
-                "message": jobs_storage[job_id]["message"],
-            })
+            await websocket.send_json(
+                {
+                    "job_id": job_id,
+                    "progress": jobs_storage[job_id]["progress"],
+                    "message": jobs_storage[job_id]["message"],
+                }
+            )
 
         while True:
             try:
@@ -219,35 +236,31 @@ async def upload_audio(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @router.get("/api/jobs/{job_id}", response_model=JobStatus)
 async def get_job_status(job_id: str):
     """Get the status of a separation job"""
     if job_id not in jobs_storage:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     job_data = jobs_storage[job_id]
-    
+
     return JobStatus(
-        job_id=job_data['job_id'],
-        audio_id=job_data['audio_id'],
-        status=job_data['status'],
-        progress=job_data['progress'],
-        message=job_data['message'],
-        input_file=job_data.get('input_file'),
-        created_at=job_data['created_at'],
-        completed_at=job_data.get('completed_at'),
-        stems=job_data.get('stems', [])
+        job_id=job_data["job_id"],
+        audio_id=job_data["audio_id"],
+        status=job_data["status"],
+        progress=job_data["progress"],
+        message=job_data["message"],
+        input_file=job_data.get("input_file"),
+        created_at=job_data["created_at"],
+        completed_at=job_data.get("completed_at"),
+        stems=job_data.get("stems", []),
     )
 
 
 @router.get("/api/jobs")
 async def list_jobs():
     """List all separation jobs"""
-    return {
-        "jobs": list(jobs_storage.values()),
-        "total": len(jobs_storage)
-    }
+    return {"jobs": list(jobs_storage.values()), "total": len(jobs_storage)}
 
 
 @router.get("/api/audio/{audio_id}/stems")
@@ -260,10 +273,10 @@ async def get_audio_stems(audio_id: str, db: AsyncSession = Depends(get_db)):
         )
         result = await db.execute(stmt)
         stems = result.scalars().all()
-        
+
         if not stems:
             raise HTTPException(status_code=404, detail="No stems found for this audio")
-        
+
         return {
             "audio_id": audio_id,
             "stems": [
@@ -275,17 +288,15 @@ async def get_audio_stems(audio_id: str, db: AsyncSession = Depends(get_db)):
                     "duration": stem.duration,
                     "sample_rate": stem.sample_rate,
                     "channels": stem.channels,
-                    "status": stem.status.value
+                    "status": stem.status.value,
                 }
                 for stem in stems
-            ]
+            ],
         }
-        
+
     except Exception as e:
         logger.error(f"Error fetching stems: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 
 @router.delete("/api/jobs/{job_id}")
@@ -293,15 +304,15 @@ async def delete_job(job_id: str):
     """Delete a job and clean up associated files"""
     if job_id not in jobs_storage:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     # Clean up local files
     job_output_dir = OUTPUT_FOLDER / job_id
     if job_output_dir.exists():
         shutil.rmtree(job_output_dir)
-    
+
     # Remove from storage
     del jobs_storage[job_id]
-    
+
     return {"message": "Job deleted successfully", "job_id": job_id}
 
 
@@ -313,5 +324,5 @@ async def health_check():
         "service": "Demucs Audio Separator",
         "version": "1.0.0",
         "active_jobs": len(jobs_storage),
-        "websocket_connections": len(websocket_connections)
+        "websocket_connections": len(websocket_connections),
     }

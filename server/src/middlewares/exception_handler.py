@@ -121,7 +121,7 @@ def register_exception_handlers(app):
         logger.exception(f"Unhandled exception on {request.url}: {exc}")
         return ApiErrorResponse(
             code="UNHANDLED_EXCEPTION",
-            message="An unexpected error occurred.",
+            message="Something went wrong.",
             details=format_trace(exc),
             http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

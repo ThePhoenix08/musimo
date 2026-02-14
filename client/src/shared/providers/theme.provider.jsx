@@ -1,51 +1,40 @@
-import { createContext, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { selectThemeMode } from "@/shared/state/slices/theme.slice";
 
-const initialState = {
-  theme: "system",
-  setTheme: () => null,
-};
-
-const ThemeProviderContext = createContext(initialState);
-
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = "vite-ui-theme",
-  ...props
-}) {
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem(storageKey) || defaultTheme,
-  );
+export function ThemeProvider({ children }) {
+  const mode = useSelector(selectThemeMode);
 
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove("light", "dark");
+    const applyTheme = (themeMode) => {
+      root.classList.remove("light", "dark");
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
+      if (themeMode === "system") {
+        const systemDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        root.classList.add(systemDark ? "dark" : "light");
+      } else {
+        root.classList.add(themeMode);
+      }
+    };
 
-      root.classList.add(systemTheme);
-      return;
-    }
+    applyTheme(mode);
 
-    root.classList.add(theme);
-  }, [theme]);
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const listener = (e) => {
+      if (mode === "system") {
+        root.classList.remove("light", "dark");
+        root.classList.add(e.matches ? "dark" : "light");
+      }
+    };
 
-  const value = {
-    theme,
-    setTheme: (theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
-    },
-  };
+    mediaQuery.addEventListener("change", listener);
 
-  return (
-    <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  );
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, [mode]);
+
+  return children;
 }

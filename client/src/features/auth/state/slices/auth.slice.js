@@ -9,7 +9,6 @@ const initialState = {
   error: null,
   accessToken: null,
   tokenExpiryEstimate: null,
-  preferThemeMode: "system",
   authStep: "register",
   verificationEmail: null,
 };
@@ -73,18 +72,17 @@ export const {
   setVerificationEmail,
 } = authSlice.actions;
 
-export default authSlice.reducer;
-
 // selectors
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthLoading = (state) => state.auth.isLoading;
 export const selectAuthError = (state) => state.auth.error;
 export const selectIsRefreshing = (state) => state.auth.isRefreshing;
-export const selectPreferences = (state) => state.auth.prefersThemeMode;
 export const selectAuthStep = (state) => state.auth.authStep;
 export const selectVerificationEmail = (state) => state.auth.verificationEmail;
 
 export const selectAccessToken = (state) => state.auth.accessToken;
 export const selectTokenExpiryEstimate = (state) =>
   state.auth.tokenExpiryEstimate;
+
+export default authSlice.reducer;

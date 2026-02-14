@@ -1,5 +1,6 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import authReducer from "@/features/auth/state/slices/auth.slice";
+import themeReducer from "../slices/theme.slice";
 
 import {
   persistStore,
@@ -14,18 +15,32 @@ import {
 import storage from "redux-persist/lib/storage";
 import { ENVS } from "@/shared/constants/env.constants.js";
 
-const persistConfig = {
-  key: "root",
+const authPersistConfig = {
+  key: "auth",
   storage,
-  whiteList: ["auth"],
+  whitelist: [
+    "user",
+    "accessToken",
+    "authStep",
+    "verificationEmail",
+    "tokenExpiryEstimate",
+    "isAuthenticated",
+  ],
 };
 
-const persistAuthReducer = persistReducer(persistConfig, authReducer);
+const themePersistConfig = {
+  key: "theme",
+  storage,
+  whitelist: ["mode"],
+};
+
+const rootReducer = combineReducers({
+  auth: persistReducer(authPersistConfig, authReducer),
+  theme: persistReducer(themePersistConfig, themeReducer),
+});
 
 const store = configureStore({
-  reducer: {
-    auth: persistAuthReducer,
-  },
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
@@ -33,7 +48,7 @@ const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(),
-  devTools: ENVS.DEV_MODE, // ✅ enables DevTools only in development
+  devTools: ENVS.DEV_MODE,
 });
 
 export const persistor = persistStore(store);

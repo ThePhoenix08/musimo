@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { useDispatch } from "react-redux";
+import useUserAuthFlow from "../flows/userAuth.flow";
+import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,12 +15,10 @@ import { Input } from "@/components/ui/input";
 
 import { User, AtSign, Mail, Lock } from "lucide-react";
 
-import { useRegisterMutation } from "@/features/auth/state/redux-api/auth.api";
-
 export function RegisterForm({ className, ...props }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [register, { isError, error }] = useRegisterMutation();
+  const { flow } = useUserAuthFlow();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,33 +34,26 @@ export function RegisterForm({ className, ...props }) {
     };
 
     try {
-      const response = await register(data).unwrap();
+      await flow("register", data);
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Backend returned validation errors
-        if (result.errors) {
-          // Handle errors object from backend
-          // Expected format: { field: "error message" }
-          // Example: { email: "Email already exists", username: "Username is too short" }
-          setErrors(result.errors);
-        } else if (result.message) {
-          // Handle single error message
-          // You can show a general error or map it to a specific field
-          console.error("Error:", result.message);
-        }
-      } else {
-        // Success - handle registration success
-        console.log("Registration successful", result);
-        // Redirect or show success message
-        // window.location.href = "/dashboard";
-      }
+      toast.success("OTP Sent Successfully 🎉", {
+        position: "top-right",
+        autoClose: 1000,
+        theme: "dark",
+      }); 
     } catch (error) {
-      console.error("Network error:", error);
-      // Handle network errors
-      setErrors({
-        general: "Network error. Please try again.",
+      console.error("Registration error:", error);
+
+      const apiError = error?.data;
+
+      // validation errors
+      if (apiError?.errors && typeof apiError.errors === "object") {
+        setErrors(apiError.errors);
+      }
+      toast.error("Registration Failed", {
+        position: "top-right",
+        autoClose: 1000,
+        theme: "dark",
       });
     } finally {
       setIsSubmitting(false);
@@ -81,13 +73,6 @@ export function RegisterForm({ className, ...props }) {
             Fill in the form below to create your account
           </p>
         </div>
-
-        {/* General error message (if any) */}
-        {errors.general && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md text-sm">
-            {errors.general}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>

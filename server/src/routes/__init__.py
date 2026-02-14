@@ -1,5 +1,4 @@
-from src.models.audio_separation.app.routes.audio import router as audio_router
-
+from . import separate_audio
 from . import auth, predict, transaction, user
 
 
@@ -8,4 +7,4 @@ def register_routes(app):
     app.include_router(user.router, prefix="/user", tags=["User"])
     app.include_router(transaction.router, prefix="/transaction", tags=["Transaction"])
     app.include_router(predict.router, prefix="/model", tags=["Model"])
-    app.include_router(audio_router)
+    app.include_router(separate_audio.router, prefix="/separate-audio", tags=["AudioSeparate"])

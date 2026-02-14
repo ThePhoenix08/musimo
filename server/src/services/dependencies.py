@@ -33,7 +33,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id = payload.get("sub")
+    user_id = payload.sub
     user = await AuthService.get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(

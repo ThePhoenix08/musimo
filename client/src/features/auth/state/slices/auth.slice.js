@@ -10,6 +10,8 @@ const initialState = {
   accessToken: null,
   tokenExpiryEstimate: null,
   preferThemeMode: "system",
+  authStep: "register",
+  verificationEmail: null,
 };
 
 const authSlice = createSlice({
@@ -22,7 +24,13 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.error = null;
     },
-    updateTokens: (state, action) => {
+    setAuthStep: (state, { payload }) => {
+      state.authStep = payload;
+    },
+    setVerificationEmail: (state, { payload }) => {
+      state.auth.verificationEmail = payload;
+    },
+    setUpdateTokens: (state, action) => {
       const { accessToken } = action.payload;
       state.accessToken = accessToken;
       state.tokenExpiryEstimate = Date.now() + ENVS.ACCESS_TOKEN_EXPIRY;
@@ -37,10 +45,10 @@ const authSlice = createSlice({
     setError: (state, { payload }) => {
       state.error = payload;
     },
-    clearError: (state) => {
+    setClearError: (state) => {
       state.error = null;
     },
-    updateUser: (state, { payload }) => {
+    setUpdateUser: (state, { payload }) => {
       if (state.user) {
         state.user = { ...state.user, ...payload };
       }
@@ -53,14 +61,16 @@ const authSlice = createSlice({
 
 export const {
   setCredentials,
-  updateTokens,
+  setUpdateTokens,
   clearCredentials,
   setLoading,
   setRefreshing,
   setError,
-  clearError,
-  updateUser,
+  setClearError,
+  setUpdateUser,
   setPreferences,
+  setAuthStep,
+  setVerificationEmail,
 } = authSlice.actions;
 
 export default authSlice.reducer;
@@ -72,6 +82,8 @@ export const selectAuthLoading = (state) => state.auth.isLoading;
 export const selectAuthError = (state) => state.auth.error;
 export const selectIsRefreshing = (state) => state.auth.isRefreshing;
 export const selectPreferences = (state) => state.auth.prefersThemeMode;
+export const selectAuthStep = (state) => state.auth.authStep;
+export const selectVerificationEmail = (state) => state.auth.verificationEmail;
 
 export const selectAccessToken = (state) => state.auth.accessToken;
 export const selectTokenExpiryEstimate = (state) =>

@@ -39,6 +39,14 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Supabase connection failed: {e}")
 
     try:
+        supabase_service = create_supabase_admin_client()
+        app.state.supabase_service = supabase_service
+        logger.info("✅ Supabase service role client connected successfully")
+    except Exception as e:
+        app.state.supabase_service = None
+        logger.error(f"❌ Supabase service role client connection failed: {e}")
+
+    try:
         logger.info("📦 Loading emotion detection model...")
         # ModelService.initialize_emotion_pipeline()
         logger.info("✅ Emotion detection model loaded successfully")

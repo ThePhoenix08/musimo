@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { ToastContainer } from "react-toastify";
 
 import LandingPage from "@/features/landing/landing.page.jsx";
 import AuthLayout from "./shared/layouts/AuthLayout.wrapper";
@@ -11,6 +12,7 @@ import DebugPage from "@/features/debug/debug.page.jsx";
 import EmotionPredTest from "@/features/debug/tests/emotion/emotionPred.test.jsx";
 import EmotionAnalyzer from "@/features/debug/tests/emotion/ws_emotionPred.test.jsx";
 import AvailableTests from "@/features/debug/availableTests.jsx";
+import ProfilePage from "@/features/profile/pages/profile.page";
 
 function App() {
   return (
@@ -29,11 +31,21 @@ function App() {
 
           {/* AUTHENTICATED */}
           <Route element={<AuthLayout />}>
-            <Route path="/app" element={<AppLayout />}></Route>
+            <Route path="/app" element={<AppLayout />}>
+              <Route path="user/profile" element={<ProfilePage />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={4000}
+          hideProgressBar={true}
+          newestOnTop={true}
+          closeButton={true}
+          className="toast-container-dark"
+        />
       </Router>
     </div>
   );

@@ -156,13 +156,19 @@ class AuthService:
     async def store_refresh_token(
         db: AsyncSession, token_str: str, data: STORE_REFRESH_TOKEN_METADATA
     ) -> RefreshToken:
+        user_id = data.user_id
+        ip = data.ip_address
+        user_agent = data.user_agent
+
         refresh_token = RefreshToken(
-            ip_address=data.ip_address,
-            user_agent=data.user_agent,
-            user_id=data.user_id,
+            ip_address=ip,
+            user_agent=user_agent,
+            user_id=user_id,
             token=token_str,
             revoked=False,
         )
+
+        await AuthService.revoke_refresh_token(db, user_id, user_agent, ip)
 
         db.add(refresh_token)
         await db.commit()
@@ -325,4 +331,18 @@ class AuthService:
 
         user.email_verified = True
         await db.commit()
+        return True
+
+    @staticmethod
+    async def set_password(db: AsyncSession, user_id: str, new_password: str) -> bool:
+        query = FIND_USER_BY_ID_QUERY(user_id)
+        result = await db_query(db, query, f"Error fetching user by id: {user_id}.")
+        user: User = result.scalar_one_or_none()
+        if not user:
+            return False
+
+        password_hash = AuthService.hash_password(new_password)
+        user.password_hash = password_hash
+        await db.commit()
+
         return True

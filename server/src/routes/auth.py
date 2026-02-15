@@ -2,7 +2,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
-from src.database.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.app_registry import AppRegistry
@@ -213,6 +212,12 @@ async def logout(
     user_id: str = Depends(verify_refresh_token),
     db=Depends(get_db),
 ):
+    if user_id != str(user.id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Access and Refresh tokens are of different users.",
+        )
+
     user_agent: Optional[str] = request.headers.get("User-Agent") or None
     ip_address: Optional[str] = request.client.host or None
 
@@ -230,75 +235,27 @@ async def logout(
     return ApiResponse(msg)
 
 
-# @router.post("/forgot-password")
-# async def forgot_password(
-#     request: Request, request_data: ForgotPasswordRequest = Body(...)
-# ):
-#     user = await AuthService.get_user_by_email(request_data.email)
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-#         )
+@router.post("/reset-password", response_model=ApiEnvelope)
+async def setPassword(
+    user: User = Depends(get_current_user),
+    user_id: str = Depends(verify_refresh_token),
+    new_password: str = Form(...),
+    db=Depends(get_db),
+):
+    if user_id != str(user.id):
+        logger.warning(f"Different users: (Refresh: {user_id}) (Access: {user.id})")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Access and Refresh tokens are of different users.",
+        )
 
-#     otp = AuthService.generate_otp()
-#     request.session["password_reset"] = {
-#         "email": request_data.email,
-#         "otp": otp,
-#         "expires_at": (datetime.utcnow() + timedelta(minutes=5)).isoformat(),
-#     }
-#     email_sent = send_otp_email(request_data.email, otp)
-#     if not email_sent:
-#         raise HTTPException(
-#             status_code=500, detail="OTP generated but failed to send email"
-#         )
-#     return {
-#         "message": f"OTP sent successfully to your {request_data.email}",
-#     }
+    password_set_success = await AuthService.set_password(db, user_id, new_password)
+    if not password_set_success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occured in resetting user password.",
+        )
 
-
-# @router.post("/verify-password")
-# async def verify_password_reset(
-#     request: Request, request_data: ResetPasswordRequest = Body(...)
-# ):
-#     session_data = request.session.get("password_reset")
-#     if not session_data:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="No password reset request found",
-#         )
-#     if not session_data or session_data["email"] != request_data.email:
-#         raise HTTPException(status_code=400, detail="Invalid or expired OTP session")
-
-#     if datetime.utcnow() > datetime.fromisoformat(session_data["expires_at"]):
-#         request.session.pop("password_reset", None)
-#         raise HTTPException(status_code=400, detail="OTP has expired")
-
-#     if session_data["otp"] != request_data.otp:
-#         raise HTTPException(status_code=400, detail="Invalid OTP")
-
-#     if request_data.new_password != request_data.confirm_password:
-#         raise HTTPException(status_code=400, detail="Passwords do not match")
-
-#     user = await AuthService.get_user_by_email(request_data.email)
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-#         )
-
-#     new_password_hash = AuthService.hash_password(request_data.new_password)
-
-#     supabase = request.app.state.supabase
-
-#     update_result = (
-#         supabase.table("users")
-#         .update({"password": new_password_hash})
-#         .eq("id", user["id"])
-#         .execute()
-#     )
-
-#     if not update_result.data:
-#         raise HTTPException(status_code=500, detail="Failed to reset password")
-
-#     request.session.pop("password_reset", None)
-
-#     return {"message": "Password reset successfully"}
+    msg: str = f"User password reset successfull: {user.id}"
+    logger.info(msg)
+    return ApiResponse(msg)

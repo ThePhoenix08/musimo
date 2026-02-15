@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_KEY: str
     SUPABASE_SERVICE_KEY: str
-    SUPABASE_BUCKET:str
+    SUPABASE_BUCKET: str
 
     # Database
     DATABASE_HOST: str
@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
     SUPABASE_SERVICE_ROLE_KEY: str
-    
+
     # Email
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

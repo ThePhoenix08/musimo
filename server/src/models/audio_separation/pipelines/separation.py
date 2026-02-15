@@ -33,7 +33,8 @@ def convert_stem_to_wav(src: Path, dst: Path) -> None:
         [
             "ffmpeg",
             "-y",
-            "-i", str(src),
+            "-i",
+            str(src),
             str(dst),
         ],
         stdout=subprocess.DEVNULL,
@@ -42,7 +43,9 @@ def convert_stem_to_wav(src: Path, dst: Path) -> None:
     )
 
 
-def run_demucs(job_output_dir: Path, audio_file_path: Path) -> subprocess.CompletedProcess:
+def run_demucs(
+    job_output_dir: Path, audio_file_path: Path
+) -> subprocess.CompletedProcess:
     """
     Run Demucs in a subprocess isolated from the parent's signal handling.
 
@@ -56,10 +59,14 @@ def run_demucs(job_output_dir: Path, audio_file_path: Path) -> subprocess.Comple
     torchcodec package. Stems are converted back to WAV via ffmpeg below.
     """
     cmd = [
-        sys.executable, "-m", "demucs",
-        "-n", "htdemucs",
+        sys.executable,
+        "-m",
+        "demucs",
+        "-n",
+        "htdemucs",
         "--mp3",
-        "--out", str(job_output_dir),
+        "--out",
+        str(job_output_dir),
         str(audio_file_path),
     ]
 
@@ -181,13 +188,15 @@ async def separate_audio_pipeline(
 
                 db.add(separated_audio)
 
-                separated_files_info.append({
-                    "stem_id": str(separated_audio.id),
-                    "label": stem,
-                    "file_name": separated_audio.file_name,
-                    "storage_path": public_url,
-                    "duration": stem_metadata["duration"],
-                })
+                separated_files_info.append(
+                    {
+                        "stem_id": str(separated_audio.id),
+                        "label": stem,
+                        "file_name": separated_audio.file_name,
+                        "storage_path": public_url,
+                        "duration": stem_metadata["duration"],
+                    }
+                )
 
             await db.commit()
 

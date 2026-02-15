@@ -39,9 +39,12 @@ def get_audio_duration(audio_path: Path) -> float:
     try:
         cmd = [
             "ffprobe",
-            "-v", "error",
-            "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
             str(audio_path),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -56,9 +59,12 @@ def get_audio_metadata(audio_path: Path) -> Dict:
     try:
         cmd = [
             "ffprobe",
-            "-v", "error",
-            "-show_entries", "format=duration,format_name:stream=sample_rate,channels",
-            "-of", "json",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration,format_name:stream=sample_rate,channels",
+            "-of",
+            "json",
             str(audio_path),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -109,7 +115,7 @@ async def upload_to_supabase_bucket(file_path: Path, storage_path: str) -> str:
                 file=f,
                 file_options={
                     "content-type": "audio/wav",
-                    "upsert": "true",   # must be a string — httpx rejects bool header values
+                    "upsert": "true",  # must be a string — httpx rejects bool header values
                 },
             )
 

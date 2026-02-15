@@ -49,7 +49,6 @@ from src.routes import debug, register_routes, ws_router
 from src.schemas.api.response import ApiResponse
 
 
-
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 sys.dont_write_bytecode = True
 

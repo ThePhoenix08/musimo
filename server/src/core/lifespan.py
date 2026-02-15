@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 
-from argon2 import PasswordHasher
 from fastapi import FastAPI
 from supabase import Client, create_client
 

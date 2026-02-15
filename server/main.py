@@ -36,7 +36,7 @@ setup_global_error_hooks()
 from datetime import UTC, datetime
 
 import uvicorn
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 

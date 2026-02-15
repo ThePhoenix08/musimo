@@ -1,34 +1,23 @@
-import asyncio
-import hashlib
-import logging
-import os
 import shutil
 import subprocess
 import traceback
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import aiofiles
 from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
-    FastAPI,
     File,
     HTTPException,
     UploadFile,
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel
-from sqlalchemy import create_engine, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import Session, sessionmaker
-from supabase import Client, create_client
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from supabase_auth import User
 
 from src.core.logger_setup import logger
@@ -36,9 +25,7 @@ from src.core.separation_jobState import jobs_storage, websocket_connections
 from src.database.enums import (
     AudioFileStatus,
     AudioFormat,
-    AudioSourceType,
     JobStatus,
-    SeparatedSourceLabel,
 )
 from src.database.models import AudioFile, SeparatedAudioFile
 from src.database.models.project import Project

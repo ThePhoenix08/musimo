@@ -1,7 +1,8 @@
-# // security and authentication service
+# ruff: noqa: E712
+# security and authentication service
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Literal, Optional
 from uuid import uuid4
 

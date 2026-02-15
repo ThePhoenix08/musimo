@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, List
 
 from sqlalchemy import JSON, Enum, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from torch import Tensor
 
 from src.database.base import Base
 from src.database.enums import AnalysisType
@@ -13,7 +12,7 @@ from src.database.mixins import (
     TimestampMixin,
     UUIDMixin,
 )
-from src.database.models.audio_file import AudioFile, SeparatedAudioFile
+from src.database.models.audio_file import SeparatedAudioFile
 from src.models.emotion_recognition.pipeline.postprocessor import (
     CombinedPrediction,
     DynamicPrediction,

@@ -1,5 +1,4 @@
-from . import separate_audio
-from . import auth, predict, transaction, user
+from . import auth, predict, separate_audio, transaction, user
 
 
 def register_routes(app):

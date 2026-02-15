@@ -1,4 +1,3 @@
-import os
 import hashlib
 import json
 import logging
@@ -6,8 +5,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict
 
-from src.core.settings import Settings
 from src.core.app_registry import AppRegistry
+from src.core.settings import Settings
 
 logger = logging.getLogger(__name__)
 

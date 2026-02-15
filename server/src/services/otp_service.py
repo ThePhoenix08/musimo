@@ -1,3 +1,5 @@
+# ruff: noqa: E712
+
 import secrets
 import string
 from datetime import UTC, datetime, timedelta

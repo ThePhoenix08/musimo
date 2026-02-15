@@ -1,17 +1,19 @@
-import os
 import asyncio
-import traceback
-import uuid
+import logging
 import shutil
 import subprocess
-import logging
 import sys
+import traceback
+import uuid
 from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy import select
 
-from src.routes.separate_audio import OUTPUT_FOLDER
+from src.core.separation_jobState import jobs_storage
+from src.database.enums import AudioFileStatus, AudioFormat, SeparatedSourceLabel
+from src.database.models import AudioFile, SeparatedAudioFile
+from src.database.session import AsyncSessionLocal
 from src.models.audio_separation.file_utils import (
     calculate_checksum,
     get_audio_duration,
@@ -19,10 +21,7 @@ from src.models.audio_separation.file_utils import (
     upload_to_supabase_bucket,
 )
 from src.models.audio_separation.progress import send_progress_update
-from src.database.models import AudioFile, SeparatedAudioFile
-from src.database.enums import AudioFileStatus, AudioFormat, SeparatedSourceLabel
-from src.core.separation_jobState import jobs_storage
-from src.database.session import AsyncSessionLocal
+from src.routes.separate_audio import OUTPUT_FOLDER
 
 logger = logging.getLogger(__name__)
 

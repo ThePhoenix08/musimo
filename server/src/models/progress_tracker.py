@@ -1,14 +1,15 @@
+import time
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any, Callable, Optional
+
 from src.core.logger_setup import logger
 
 """
 Progress tracking system for ML pipelines with WebSocket support
 """
 
-import time
-from dataclasses import asdict, dataclass
-from datetime import datetime
-from enum import Enum
-from typing import Any, Callable, Optional
 
 
 class StepStatus(Enum):

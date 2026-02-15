@@ -1,10 +1,8 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
-from fastapi.exceptions import RequestValidationError
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.app_registry import AppRegistry
 from src.core.logger_setup import logger
 from src.database.enums import OtpType
 from src.database.models.otp import Otp

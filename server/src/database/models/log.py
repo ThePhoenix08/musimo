@@ -1,11 +1,10 @@
-import enum
 import uuid
 
-from src.database.base import Base
 from sqlalchemy import JSON, Enum, Index, Text
 from sqlalchemy.orm import Mapped, mapped_column
-from src.database.enums import EntityType, LogLevel
 
+from src.database.base import Base
+from src.database.enums import EntityType, LogLevel
 from src.database.mixins import (
     TimestampMixin,
     UserReferenceMixin,

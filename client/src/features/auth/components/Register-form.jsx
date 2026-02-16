@@ -40,7 +40,7 @@ export function RegisterForm({ className, ...props }) {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",
-      }); 
+      });
     } catch (error) {
       console.error("Registration error:", error);
 

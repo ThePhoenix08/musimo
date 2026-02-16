@@ -13,7 +13,6 @@ from src.database.enums import (
     SeparatedSourceLabel,
 )
 from src.database.mixins import (
-    ProjectReferenceMixin,
     TimestampMixin,
     UUIDMixin,
 )
@@ -22,11 +21,12 @@ if TYPE_CHECKING:
     from src.database.models import (
         AnalysisRecord,
         AudioFeature,
+        Project,
         SeparationAnalysisRecord,
     )
 
 
-class AudioFile(UUIDMixin, TimestampMixin, ProjectReferenceMixin, Base):
+class AudioFile(UUIDMixin, TimestampMixin, Base):
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     file_name: Mapped[str] = mapped_column(String(256), nullable=False)
     duration: Mapped[float | None] = mapped_column(Float)
@@ -39,18 +39,23 @@ class AudioFile(UUIDMixin, TimestampMixin, ProjectReferenceMixin, Base):
     status: Mapped[AudioFileStatus] = mapped_column(
         Enum(AudioFileStatus), default=AudioFileStatus.UPLOADED
     )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE")
+    )
 
     # Discriminator
     source_type: Mapped[AudioSourceType] = mapped_column(
         Enum(AudioSourceType), default=AudioSourceType.ORIGINAL, nullable=False
     )
 
-    __mapper_args__ = {
-        "polymorphic_on": source_type,
-        "polymorphic_identity": AudioSourceType.ORIGINAL,
-    }
-
     # Relationships
+    project: Mapped["Project"] = relationship(
+        "Project",
+        back_populates="main_audio",
+        foreign_keys="[Project.main_audio_id]",
+        lazy="selectin",
+        uselist=False,
+    )
     analysis_records: Mapped[list["AnalysisRecord"]] = relationship(
         "AnalysisRecord",
         back_populates="audio_file",
@@ -61,9 +66,9 @@ class AudioFile(UUIDMixin, TimestampMixin, ProjectReferenceMixin, Base):
     separated_sources: Mapped[list["SeparatedAudioFile"]] = relationship(
         "SeparatedAudioFile",
         back_populates="parent_audio",
-        lazy="selectin",
         cascade="all, delete-orphan",
-        foreign_keys="SeparatedAudioFile.parent_audio_id",  # ✅ explicit join path
+        lazy="selectin",
+        foreign_keys="SeparatedAudioFile.parent_audio_id",
     )
 
     audio_features: Mapped[list["AudioFeature"]] = relationship(
@@ -72,6 +77,11 @@ class AudioFile(UUIDMixin, TimestampMixin, ProjectReferenceMixin, Base):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+
+    __mapper_args__ = {
+        "polymorphic_on": source_type,
+        "polymorphic_identity": AudioSourceType.ORIGINAL,
+    }
 
 
 class SeparatedAudioFile(AudioFile):
@@ -96,7 +106,7 @@ class SeparatedAudioFile(AudioFile):
         remote_side=[AudioFile.id],
         back_populates="separated_sources",
         lazy="selectin",
-        foreign_keys=[parent_audio_id],  # ✅ same explicit FK
+        foreign_keys=[parent_audio_id],
     )
 
     separation_analysis_id: Mapped[uuid.UUID | None] = mapped_column(

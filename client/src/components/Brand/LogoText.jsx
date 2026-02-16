@@ -4,7 +4,7 @@ function LogoText() {
   return (
     <div className="relative z-10 flex items-center gap-2 focus:outline-none">
       <div className="w-10 shrink-0">
-        <img src="" alt="logo" className="w-full" />
+        {/* <img src="" alt="logo" className="w-full" /> */}
       </div>
 
       <div className="flex flex-col leading-tight gap">

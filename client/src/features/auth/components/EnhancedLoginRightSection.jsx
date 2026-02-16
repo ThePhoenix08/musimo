@@ -1,6 +1,12 @@
 "use client";
 
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+
+import RIGHT_SECTION_BG_IMG from "@/assets/Images/login-background.jpg?w=400;800;1200;1600&format=webp&imagetools&as=picture&metadata";
+import SmartImage from "@/components/misc/SmartImage";
+
+
 
 function EnhancedLoginRightSection() {
   const containerVariants = {
@@ -28,16 +34,21 @@ function EnhancedLoginRightSection() {
 
   return (
     <motion.div
-      className="relative hidden lg:flex flex-col items-center justify-center overflow-hidden p-12"
-      style={{
-        backgroundImage: "url(/assets/Images/login-background.jpg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      className="relative hidden lg:flex flex-col items-center justify-center overflow-hidden p-12 bg-black"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1, ease: "easeOut" }}
     >
+      {/* Background */}
+      <SmartImage
+        className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-700"
+        image={RIGHT_SECTION_BG_IMG}
+        alt="Login background"
+        fit="cover"
+        showPlaceholder={true}
+      />
+
+
       {/* Small dark overlay for subtle readability */}
       <motion.div
         className="absolute inset-0 bg-black/60"
@@ -99,7 +110,7 @@ function EnhancedLoginRightSection() {
           >
             Unlock Your Music's
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-cyan-400 to-pink-400">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-cyan-400 to-pink-400">
               True Potential
             </span>
           </motion.h2>

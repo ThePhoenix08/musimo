@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List, Literal
+import socket
 
 from dotenv import load_dotenv
 from pydantic import Field, ValidationError, computed_field
@@ -7,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .logger_setup import logger
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # goes from src/core → server/
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  # src/core → server/
 ENV_PATH = BASE_DIR / ".env"
 
 load_dotenv(ENV_PATH)
@@ -26,7 +27,8 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_KEY: str
     SUPABASE_SERVICE_KEY: str
-    SUPABASE_BUCKET: str
+    SUPABASE_AUDIO_STEM_BUCKET: str
+    SUPABASE_AUDIO_SOURCE_BUCKET: str
 
     # Database
     DATABASE_HOST: str
@@ -38,12 +40,20 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def ASYNC_DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        try:
+            # Try IPv4 first
+            ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
+            
+        except socket.gaierror:
+            # Fallback: use host as-is (asyncpg may resolve)
+            ipv4_host = self.DATABASE_HOST
+        return f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{ipv4_host}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     @computed_field
     @property
     def SYNC_DATABASE_URL(self) -> str:
-        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
+        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{ipv4_host}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # JWT
     JWT_ALGORITHM: str = "HS256"
@@ -59,7 +69,6 @@ class Settings(BaseSettings):
     # I/O
     MAX_FILE_SIZE: int = 10485760  # 10MB
     UPLOAD_DIR: str = "uploads"
-    # ALLOWED_AUDIO_EXTENSIONS: List[str] = [".mp3", ".wav", ".flac", ".ogg", ".m4a"]
     ALLOWED_AUDIO_EXTENSIONS: str = ".mp3,.wav,.flac,.ogg,.m4a"
 
     # OTP
@@ -95,7 +104,6 @@ try:
     logger.info(
         f"✅ Loaded settings for ENV='{CONSTANTS.ENV}' (DEBUG={CONSTANTS.DEBUG})"
     )
-    # print_env_summary(CONSTANTS)
 except ValidationError as e:
     logger.error("\n🔥 Settings validation failed:\n", e)
     raise e

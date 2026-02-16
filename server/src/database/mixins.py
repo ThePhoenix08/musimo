@@ -72,7 +72,9 @@ class ProjectReferenceMixin:
     @declared_attr
     def project_id(cls) -> Mapped[uuid.UUID]:
         return mapped_column(
-            ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
+            ForeignKey("projects.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
         )
 
     @declared_attr

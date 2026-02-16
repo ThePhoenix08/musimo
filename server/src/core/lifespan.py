@@ -3,20 +3,19 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from supabase import Client, create_client
 
+from src.core.supabase import supabase_storage_client  # ← the singleton your service uses
 from src.core.logger_setup import logger
-
-# from src.models.model_service import ModelService
-from .app_registry import AppRegistry
-from .settings import CONSTANTS
+from src.core.app_registry import AppRegistry
+from src.core.settings import CONSTANTS
 
 
 def create_supabase_client() -> Client:
-    """Create a new Supabase client using default API key."""
+    """Create a raw Supabase client using default API key (used for app.state)."""
     return create_client(CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_KEY)
 
 
 def create_supabase_admin_client() -> Client:
-    """Create a new Supabase client using service key."""
+    """Create a raw Supabase client using service key (used for app.state)."""
     return create_client(CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_SERVICE_KEY)
 
 
@@ -27,8 +26,10 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events.
     """
     logger.info("🎵 Musimo API Starting...")
-    AppRegistry.register(app)  # ✅ register globally
+    AppRegistry.register(app)
 
+    # ── Raw Supabase clients (app.state) ──────────────────────────────────────
+    # These are the existing sync clients used by other parts of the app.
     try:
         supabase = create_supabase_client()
         app.state.supabase = supabase
@@ -45,16 +46,28 @@ async def lifespan(app: FastAPI):
         app.state.supabase_service = None
         logger.error(f"❌ Supabase service role client connection failed: {e}")
 
+    # ── Async storage client (used by AudioFileService) ───────────────────────
+    # This is the SupabaseStorageClient singleton injected via get_storage().
+    # Without this connect() call the singleton's ._client stays None and
+    # every upload attempt raises "SupabaseStorageClient not initialised".
+    try:
+        await supabase_storage_client.connect()
+        app.state.storage = supabase_storage_client  # keeps app.state in sync too
+        logger.info("✅ Supabase async storage client connected successfully")
+    except Exception as e:
+        app.state.storage = None
+        logger.error(f"❌ Supabase async storage client connection failed: {e}")
+
+    # ── ML models ─────────────────────────────────────────────────────────────
     try:
         logger.info("📦 Loading emotion detection model...")
         # ModelService.initialize_emotion_pipeline()
         logger.info("✅ Emotion detection model loaded successfully")
-
     except Exception as e:
         logger.error(f"❌ Failed to load emotion model: {e}")
-        # Don't fail startup, but log the error
 
-    yield  # Hand control to FastAPI (app runs here)
+    yield  # ← app runs here
 
-    # app.state.supabase = None
-    logger.info("🎵 Musimo API Shutting down...")
+    # ── Shutdown ──────────────────────────────────────────────────────────────
+    await supabase_storage_client.disconnect()
+    logger.info("🎵 Musimo API shut down cleanly.")

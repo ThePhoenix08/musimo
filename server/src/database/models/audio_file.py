@@ -39,6 +39,9 @@ class AudioFile(UUIDMixin, TimestampMixin, Base):
     status: Mapped[AudioFileStatus] = mapped_column(
         Enum(AudioFileStatus), default=AudioFileStatus.UPLOADED
     )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE")
+    )
 
     # Discriminator
     source_type: Mapped[AudioSourceType] = mapped_column(

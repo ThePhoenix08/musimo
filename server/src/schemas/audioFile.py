@@ -13,7 +13,7 @@ class AudioFileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    project_id: uuid.UUID
+    project_id: Optional[uuid.UUID] = None
     file_name: str
     file_path: str
     duration: Optional[float]
@@ -32,7 +32,7 @@ class AudioFileUploadResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    project_id: uuid.UUID
+    project_id: Optional[uuid.UUID] = None
     file_name: str
     file_path: str
     status: AudioFileStatus
@@ -52,7 +52,7 @@ class AudioFileListResponse(BaseModel):
 
 class AudioFileCreateDTO(BaseModel):
     """Internal DTO used by the service layer to persist a new AudioFile record."""
-    project_id: uuid.UUID
+    project_id: Optional[uuid.UUID] = None
     file_path: str          # supabase storage path
     file_name: str
     checksum: str

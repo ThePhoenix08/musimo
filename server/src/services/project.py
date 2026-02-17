@@ -46,3 +46,55 @@ class ProjectService:
         await self._session.commit()
 
         return ProjectResponse.model_validate(project)
+    
+
+    async def get_project(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> ProjectResponse:
+        project = await self._get_or_404(project_id, user_id)
+        return ProjectResponse.model_validate(project)
+
+    async def list_projects(
+        self,
+        user_id: uuid.UUID,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> ProjectListResponse:
+        items, total = await self._repo.get_all_by_user(
+            user_id=user_id, page=page, page_size=page_size
+        )
+        return ProjectListResponse(
+            items=[ProjectResponse.model_validate(p) for p in items],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+
+    async def update_project(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+        payload: ProjectUpdateRequest,
+    ) -> ProjectResponse:
+        project = await self._get_or_404(project_id, user_id)
+        updated = await self._repo.update(
+            project=project,
+            name=payload.name,
+            description=payload.description,
+        )
+
+        await self._session.commit()
+        return ProjectResponse.model_validate(updated)
+
+    async def delete_project(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> None:
+        project = await self._get_or_404(project_id, user_id)
+        await self._repo.delete(project)
+        await self._session.commit()
+        
+        return print("Project deleted: ", project_id)

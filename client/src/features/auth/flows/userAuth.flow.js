@@ -31,10 +31,11 @@ function useUserAuthFlow() {
       if (type === "register") {
         const result = await register(formData).unwrap();
 
-        dispatch(setVerificationEmail(formData.email));
+        const email = formData.get("email");
+        dispatch(setVerificationEmail(email));
 
         await requestOtp({
-          email: formData.email,
+          email: email,
           purpose: "email_verification",
         });
 

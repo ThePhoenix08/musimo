@@ -26,15 +26,15 @@ export function RegisterForm({ className, ...props }) {
     setErrors({});
 
     const formData = new FormData(e.target);
-    const data = {
-      name: formData.get("name"),
-      username: formData.get("username"),
-      email: formData.get("email"),
-      password: formData.get("password"),
-    };
+
+    const apiFormData = new FormData();
+    apiFormData.append("name", formData.get("name"));
+    apiFormData.append("username", formData.get("username"));
+    apiFormData.append("email", formData.get("email"));
+    apiFormData.append("password", formData.get("password"));
 
     try {
-      await flow("register", data);
+      await flow("register", apiFormData);
 
       toast.success("OTP Sent Successfully 🎉", {
         position: "top-right",
@@ -44,7 +44,7 @@ export function RegisterForm({ className, ...props }) {
     } catch (error) {
       console.error("Registration error:", error);
 
-      const apiError = error?.data;
+      const apiError = error?.data.message;
 
       // validation errors
       if (apiError?.errors && typeof apiError.errors === "object") {

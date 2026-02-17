@@ -7,14 +7,16 @@ export const BASE_URL = "http://127.0.0.1:8000/";
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
   credentials: "include",
-  prepareHeaders: (headers, { getState }) => {
+  prepareHeaders: (headers, { getState, endpoint, body }) => {
     const token = selectAccessToken(getState());
 
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
-    headers.set("Content-Type", "application/json");
+    if (!(body instanceof FormData)) {
+      headers.set("Content-Type", "application/json");
+    }
     return headers;
   },
 });

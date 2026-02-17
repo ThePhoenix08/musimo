@@ -1,4 +1,7 @@
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
+
+import { UserAuthenticationApi } from "@/features/auth/state/redux-api/auth.api";
+
 import authReducer from "@/features/auth/state/slices/auth.slice";
 import themeReducer from "../slices/theme.slice";
 
@@ -34,20 +37,20 @@ const themePersistConfig = {
   whitelist: ["mode"],
 };
 
-const rootReducer = combineReducers({
-  auth: persistReducer(authPersistConfig, authReducer),
-  theme: persistReducer(themePersistConfig, themeReducer),
-});
-
 const store = configureStore({
-  reducer: rootReducer,
+  reducer: {
+    auth: persistReducer(authPersistConfig, authReducer),
+    theme: persistReducer(themePersistConfig, themeReducer),
+    [UserAuthenticationApi.reducerPath]: UserAuthenticationApi.reducer,
+  },
+
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         // Required for redux-persist + RTK Query to work together
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(),
+    }).concat(UserAuthenticationApi.middleware),
   devTools: ENVS.DEV_MODE,
 });
 

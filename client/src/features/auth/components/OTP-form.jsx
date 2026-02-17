@@ -30,6 +30,7 @@ import {
   selectVerificationEmail,
   setCredentials,
   setAuthStep,
+  setUpdateTokens,
 } from "@/features/auth/state/slices/auth.slice";
 
 export function InputOTPForm() {
@@ -73,11 +74,26 @@ export function InputOTPForm() {
         code: otp,
       }).unwrap();
 
-      dispatch(setCredentials(result.data));
+      const { access_token } = result;
+      const { user } = result.data;
+
+      dispatch(setCredentials({ user }));
+
+      dispatch(
+        setUpdateTokens({
+          accessToken: access_token,
+        }),
+      );
 
       dispatch(setAuthStep("register"));
 
-      navigate(ROUTES.DASHBOARD);
+      navigate(ROUTES.PROFILE);
+
+      toast.success("User Verified Successfully 🎉", {
+        position: "top-right",
+        autoClose: 1000,
+        theme: "dark",
+      });
     } catch (error) {
       console.error("OTP Verification Failed:", error);
 

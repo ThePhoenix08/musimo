@@ -1,3 +1,4 @@
+import logging
 from __future__ import annotations
 
 import hashlib
@@ -20,7 +21,6 @@ from src.database.enums import AudioFileStatus, AudioFormat, AudioSourceType
 from src.repo.audioFileRepo import AudioFileRepository
 from src.repo.projectRepo import ProjectRepository
 
-# Maximum allowed upload size: 200 MB
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 
 SUPPORTED_MIME_TYPES: dict[str, AudioFormat] = {
@@ -32,8 +32,6 @@ SUPPORTED_MIME_TYPES: dict[str, AudioFormat] = {
     "audio/x-flac": AudioFormat.FLAC,
     "audio/ogg": AudioFormat.OGG,
     "audio/aac": AudioFormat.AAC,
-    # "audio/mp4": AudioFormat.M4A,
-    # "audio/x-m4a": AudioFormat.M4A,
 }
 
 
@@ -42,16 +40,12 @@ def _compute_checksum(data: bytes) -> str:
 
 
 def _detect_format(file: UploadFile) -> AudioFormat:
-    """Resolve AudioFormat from Content-Type or filename extension."""
     content_type = (file.content_type or "").lower()
     if content_type in SUPPORTED_MIME_TYPES:
         return SUPPORTED_MIME_TYPES[content_type]
-
-    # Fallback: guess from filename
     mime, _ = mimetypes.guess_type(file.filename or "")
     if mime and mime in SUPPORTED_MIME_TYPES:
         return SUPPORTED_MIME_TYPES[mime]
-
     raise HTTPException(
         status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
         detail=(
@@ -62,13 +56,10 @@ def _detect_format(file: UploadFile) -> AudioFormat:
 
 
 def _build_storage_path(project_id: uuid.UUID, file_id: uuid.UUID, filename: str) -> str:
-    """
-    Storage path pattern: {project_id}/{file_id}/{original_filename}
-
-    Keeps files namespaced per project and uniquely keyed per upload.
-    """
-    suffix = filename.rsplit(".", 1)[-1] if "." in filename else "bin"
     return f"{project_id}/{file_id}/{filename}"
+
+
+logger = logging.getLogger(__name__)
 
 
 class AudioFileService:
@@ -77,7 +68,7 @@ class AudioFileService:
         session: AsyncSession,
         storage: SupabaseStorageClient,
     ) -> None:
-        self._session = session               # ← add this
+        self._session = session
         self._audio_repo = AudioFileRepository(session)
         self._project_repo = ProjectRepository(session)
         self._storage = storage
@@ -87,10 +78,6 @@ class AudioFileService:
     async def _assert_project_access(
         self, project_id: uuid.UUID, user_id: uuid.UUID
     ) -> None:
-        
-        print("project_id:", project_id)
-        print("user_id:", user_id)
-
         exists = await self._project_repo.exists(project_id, user_id)
         if not exists:
             raise HTTPException(
@@ -111,7 +98,7 @@ class AudioFileService:
             )
         return audio_file
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # ── Upload ────────────────────────────────────────────────────────────────
 
     async def upload_audio_file(
         self,
@@ -119,13 +106,8 @@ class AudioFileService:
         user_id: uuid.UUID,
         file: UploadFile,
     ) -> AudioFileUploadResponse:
-        """
-        Validate → deduplicate → upload to Supabase → persist DB record.
-        """
-        # 1. Project ownership check
         await self._assert_project_access(project_id, user_id)
 
-        # 2. Read file bytes & enforce size limit
         raw_bytes = await file.read()
         if len(raw_bytes) > MAX_UPLOAD_BYTES:
             raise HTTPException(
@@ -133,13 +115,9 @@ class AudioFileService:
                 detail=f"File exceeds maximum allowed size of {MAX_UPLOAD_BYTES // (1024*1024)} MB.",
             )
 
-        # 3. Detect format (raises 415 if unsupported)
         audio_format = _detect_format(file)
-
-        # 4. Compute checksum — used for deduplication
         checksum = _compute_checksum(raw_bytes)
 
-        # 5. Deduplication check
         existing = await self._audio_repo.get_by_checksum(checksum)
         if existing is not None:
             raise HTTPException(
@@ -147,11 +125,11 @@ class AudioFileService:
                 detail=f"A file with the same content already exists (id={existing.id}).",
             )
 
-        # 6. Build a stable file_id before upload so path is deterministic
         file_id = uuid.uuid4()
-        storage_path = _build_storage_path(project_id, file_id, file.filename or f"{file_id}.bin")
+        storage_path = _build_storage_path(
+            project_id, file_id, file.filename or f"{file_id}.bin"
+        )
 
-        # 7. Upload to Supabase storage
         content_type = file.content_type or "application/octet-stream"
         try:
             await self._storage.upload_file(
@@ -166,7 +144,6 @@ class AudioFileService:
                 detail=f"Storage upload failed: {exc}",
             ) from exc
 
-        # 8. Persist DB record
         dto = AudioFileCreateDTO(
             project_id=project_id,
             file_path=storage_path,
@@ -176,10 +153,75 @@ class AudioFileService:
             status=AudioFileStatus.UPLOADED,
             source_type=AudioSourceType.ORIGINAL,
         )
-        # Override the auto-generated UUID so it matches the storage path
         audio_file = await self._audio_repo.create(dto)
-        print("audio file", audio_file)
-        
         await self._project_repo.set_main_audio(project_id, audio_file.id)
-        await self._session.commit()  
+
         return AudioFileUploadResponse.model_validate(audio_file)
+
+    # ── GET /projects/{project_id}/audio-files ────────────────────────────────
+
+    async def list_project_audio_files(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+        source_type: Optional[AudioSourceType] = None,
+        status_filter: Optional[AudioFileStatus] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> AudioFileListResponse:
+        await self._assert_project_access(project_id, user_id)
+        items, total = await self._audio_repo.get_all_by_project(
+            project_id=project_id,
+            source_type=source_type,
+            status=status_filter,
+            page=page,
+            page_size=page_size,
+        )
+        return AudioFileListResponse(
+            items=[AudioFileResponse.model_validate(f) for f in items],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+
+    # ── GET /projects/{project_id}/audio-files/{audio_id} ────────────────────
+
+    async def get_audio_file(
+        self,
+        audio_file_id: uuid.UUID,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> AudioFileResponse:
+        await self._assert_project_access(project_id, user_id)
+        audio_file = await self._get_audio_file_or_404(audio_file_id, project_id)
+        return AudioFileResponse.model_validate(audio_file)
+
+    # ── DELETE /projects/{project_id}/audio-files/{audio_id} ─────────────────
+
+    async def delete_audio_file(
+        self,
+        audio_file_id: uuid.UUID,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> None:
+        await self._assert_project_access(project_id, user_id)
+        audio_file = await self._get_audio_file_or_404(audio_file_id, project_id)
+
+        try:
+            await self._storage.delete_file(
+                bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
+                path=audio_file.file_path,
+            )
+        except FileNotFoundError:
+            # File already gone from storage — still delete the DB record
+            logger.warning(
+                "File not found in storage during delete (already removed?): %s",
+                audio_file.file_path,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Storage deletion failed: {exc}",
+            ) from exc
+
+        await self._audio_repo.delete(audio_file)

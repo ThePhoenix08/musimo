@@ -108,4 +108,3 @@ class ProjectRepository:
 
     async def delete(self, project: Project) -> None:
         await self._session.delete(project)
-        await self._session.flush()

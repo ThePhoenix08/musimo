@@ -74,8 +74,20 @@ class SupabaseStorageClient:
         return response["signedURL"]
 
     async def delete_file(self, bucket: str, path: str) -> None:
-        """Delete a file from Supabase Storage."""
-        await self._storage().from_(bucket).remove([path])
+        """
+        Delete a file from Supabase Storage.
+
+        Supabase .remove() returns [] when the path does not exist — it does NOT
+        raise. We treat an empty response as FileNotFoundError so the caller can
+        decide whether to swallow it or surface it.
+        """
+        response = await self._storage().from_(bucket).remove([path])
+        logger.debug("Storage delete response bucket=%s path=%s → %s", bucket, path, response)
+
+        if not response:
+            raise FileNotFoundError(
+                f"File not found in storage (bucket={bucket}, path={path})"
+            )
         logger.debug("Deleted %s from bucket=%s", path, bucket)
 
 

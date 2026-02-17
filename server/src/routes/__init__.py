@@ -1,6 +1,4 @@
-from sys import prefix
-from src.routes import audio_file
-from src.routes import project
+from src.routes import audio_file, project
 from . import auth, predict, separate_audio, transaction, user
 
 
@@ -12,6 +10,5 @@ def register_routes(app):
     app.include_router(
         separate_audio.router, prefix="/separate-audio", tags=["AudioSeparate"]
     )
-    app.include_router(project.router, prefix="/project", tags=["Project"])
-    app.include_router(audio_file.router)
-
+    app.include_router(project.router)      # prefix="/projects" already set on router
+    app.include_router(audio_file.router)   # prefix="/projects/{project_id}/audio-files" already set on router

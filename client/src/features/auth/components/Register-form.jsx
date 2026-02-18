@@ -44,17 +44,18 @@ export function RegisterForm({ className, ...props }) {
     } catch (error) {
       console.error("Registration error:", error);
 
+      toast.error("Registration Failed 😕", {
+        position: "top-right",
+        autoClose: 1000,
+        theme: "dark",
+      });
+
       const apiError = error?.data.message;
 
       // validation errors
       if (apiError?.errors && typeof apiError.errors === "object") {
         setErrors(apiError.errors);
       }
-      toast.error("Registration Failed ⚠", {
-        position: "top-right",
-        autoClose: 1000,
-        theme: "dark",
-      });
     } finally {
       setIsSubmitting(false);
     }

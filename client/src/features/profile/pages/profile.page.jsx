@@ -17,7 +17,7 @@ function ProfilePage() {
       });
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Logout Failed ⚠", {
+      toast.error("Logout Failed 😕", {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",

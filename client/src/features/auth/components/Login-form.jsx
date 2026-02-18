@@ -40,17 +40,18 @@ export function LoginForm({ className, ...props }) {
     } catch (error) {
       console.error("Login error:", error);
 
+      toast.error("Login Failed 😕", {
+        position: "top-right",
+        autoClose: 1000,
+        theme: "dark",
+      });
+
       const apiError = error?.data.message;
 
       // validation errors
       if (apiError?.errors && typeof apiError.errors === "object") {
         setErrors(apiError.errors);
       }
-      toast.error("Login Failed ⚠", {
-        position: "top-right",
-        autoClose: 1000,
-        theme: "dark",
-      });
     } finally {
       setIsSubmitting(false);
     }

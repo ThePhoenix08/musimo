@@ -58,7 +58,7 @@ export function InputOTPForm() {
       });
     } catch (error) {
       console.error(`Failed to resend OTP: ${error?.data?.message}`);
-      toast.error("Failed to resend OTP ⚠", {
+      toast.error("Failed to resend OTP 😕", {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",
@@ -97,7 +97,7 @@ export function InputOTPForm() {
     } catch (error) {
       console.error("OTP Verification Failed:", error);
 
-      toast.error("OTP Verification Failed ⚠", {
+      toast.error("OTP Verification Failed 😕", {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",

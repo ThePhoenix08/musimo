@@ -46,10 +46,17 @@ function useUserAuthFlow() {
       if (type === "login") {
         const result = await login(formData).unwrap();
 
-        dispatch(setCredentials(result.data));
-        dispatch(setUpdateTokens(result.data));
+        const { access_token } = result;
+        const { user } = result.data;
 
-        navigate(ROUTES.DASHBOARD);
+        dispatch(setCredentials({ user }));
+        dispatch(
+          setUpdateTokens({
+            accessToken: access_token,
+          }),
+        );
+
+        navigate(ROUTES.PROFILE);
         return result;
       }
 

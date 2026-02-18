@@ -50,7 +50,7 @@ export function RegisterForm({ className, ...props }) {
       if (apiError?.errors && typeof apiError.errors === "object") {
         setErrors(apiError.errors);
       }
-      toast.error("Registration Failed", {
+      toast.error("Registration Failed ⚠", {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",

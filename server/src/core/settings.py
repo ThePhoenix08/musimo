@@ -1,6 +1,6 @@
+import socket
 from pathlib import Path
 from typing import List, Literal
-import socket
 
 from dotenv import load_dotenv
 from pydantic import Field, ValidationError, computed_field
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         try:
             # Try IPv4 first
             ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
-            
+
         except socket.gaierror:
             # Fallback: use host as-is (asyncpg may resolve)
             ipv4_host = self.DATABASE_HOST
@@ -105,5 +105,7 @@ try:
         f"✅ Loaded settings for ENV='{CONSTANTS.ENV}' (DEBUG={CONSTANTS.DEBUG})"
     )
 except ValidationError as e:
-    logger.error("\n🔥 Settings validation failed:\n", e)
-    raise e
+    logger.critical("❌ Failed to load settings:")
+    for err in e.errors():
+        logger.critical(f"  {'.'.join(map(str, err['loc']))}: {err['msg']}")
+    raise SystemExit(1)

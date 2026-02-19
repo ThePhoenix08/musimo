@@ -101,9 +101,9 @@ def ApiAuthResponse(
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-            httponly=False,
-            secure=False,
-            samesite="lax",
+            httponly=True,
+            secure=True,
+            samesite="none",
             max_age=CONSTANTS.REFRESH_TOKEN_EXPIRE_SECONDS,
             path="/",
         )

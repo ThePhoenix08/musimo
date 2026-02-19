@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import useUserAuthFlow from "../flows/userAuth.flow";
 
+import { loginSchema } from "../validators/AuthApi.validator";
+
 export function LoginForm({ className, ...props }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,9 +27,16 @@ export function LoginForm({ className, ...props }) {
 
     const formData = new FormData(e.target);
 
+    const parsedFormData = {
+      email: formData.get("email"),
+      password: formData.get("password"),
+    };
+
+    const zodResult = loginSchema.safeParse(parsedFormData);
+
     const apiFormData = new FormData();
-    apiFormData.append("email", formData.get("email"));
-    apiFormData.append("password", formData.get("password"));
+    apiFormData.append("email", zodResult.email);
+    apiFormData.append("password", zodResult.password);
 
     try {
       await flow("login", apiFormData);

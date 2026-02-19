@@ -33,6 +33,11 @@ import {
   setUpdateTokens,
 } from "@/features/auth/state/slices/auth.slice";
 
+import {
+  requestOtpSchema,
+  verifyOtpSchema,
+} from "../validators/AuthApi.validator";
+
 export function InputOTPForm() {
   const [otp, setOtp] = useState("");
   const dispatch = useDispatch();
@@ -46,9 +51,16 @@ export function InputOTPForm() {
 
   const handleResendOTP = async () => {
     try {
-      await requestOtp({
+      const parsedFormData = {
         email: verificationEmail,
         purpose: "email_verification",
+      };
+
+      const zodResult = requestOtpSchema.safeParse(parsedFormData);
+
+      await requestOtp({
+        email: zodResult.email,
+        purpose: zodResult.purpose,
       }).unwrap();
 
       toast.success("OTP Sent Successfully 🎉", {
@@ -68,10 +80,18 @@ export function InputOTPForm() {
 
   const handleVerifyOTP = async () => {
     try {
-      const result = await verifyOtp({
+      const parsedFormData = {
         email: verificationEmail,
         purpose: "email_verification",
         code: otp,
+      };
+
+      const zodResult = verifyOtpSchema.safeParse(parsedFormData);
+
+      const result = await verifyOtp({
+        email: zodResult.email,
+        purpose: zodResult.purpose,
+        code: zodResult.otp,
       }).unwrap();
 
       const { access_token } = result;

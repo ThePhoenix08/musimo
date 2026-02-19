@@ -17,6 +17,8 @@ import {
   useLogoutMutation,
 } from "../state/redux-api/auth.api";
 
+import { requestOtpSchema } from "../validators/AuthApi.validator";
+
 function useUserAuthFlow() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -34,9 +36,16 @@ function useUserAuthFlow() {
         const email = formData.get("email");
         dispatch(setVerificationEmail(email));
 
-        await requestOtp({
-          email: email,
+        const parsedFormData = {
+          email: formData.get("email"),
           purpose: "email_verification",
+        };
+
+        const zodResult = requestOtpSchema.safeParse(parsedFormData);
+
+        await requestOtp({
+          email: zodResult.email,
+          purpose: zodResult.purpose,
         });
 
         dispatch(setAuthStep("otp"));
@@ -64,7 +73,7 @@ function useUserAuthFlow() {
         await logout().unwrap();
 
         dispatch(clearCredentials());
-        dispatch(setAuthStep("login"));
+        dispatch(setAuthStep("register"));
 
         navigate(ROUTES.LANDING_PAGE);
         return;

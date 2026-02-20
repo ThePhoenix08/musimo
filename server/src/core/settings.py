@@ -40,20 +40,15 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def ASYNC_DATABASE_URL(self) -> str:
-        try:
-            # Try IPv4 first
-            ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
-
-        except socket.gaierror:
-            # Fallback: use host as-is (asyncpg may resolve)
-            ipv4_host = self.DATABASE_HOST
-        return f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{ipv4_host}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        return (
+            f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        )
 
     @computed_field
     @property
     def SYNC_DATABASE_URL(self) -> str:
-        ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
-        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{ipv4_host}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # JWT
     JWT_ALGORITHM: str = "HS256"

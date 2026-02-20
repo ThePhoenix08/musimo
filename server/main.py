@@ -4,6 +4,7 @@
 import asyncio
 import sys
 
+
 # MUST be set before anything else touches the event loop
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -40,6 +41,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from src.database.session import test_db_connection
 from src.core.app_registry import AppRegistry
 from src.core.settings import CONSTANTS
 from src.core.lifespan import lifespan
@@ -109,11 +111,12 @@ async def root():
 @app.get("/health", tags=["System"])
 async def health_check():
     supabase = AppRegistry.get_state("supabase")
-    db_status = "connected" if supabase else "disconnected"
-    health = await ModelService.health_check()
+    db_health: dict = await test_db_connection()
+    health: dict = await ModelService.health_check()
 
-    all_healthy = (
-        health["emotion_detection"]["status"] == "healthy"
+    all_healthy: bool = (
+        db_health["ok"]
+        and health["emotion_detection"]["status"] == "healthy"
         and health["instrument_detection"]["available"]
     )
     return ApiResponse(
@@ -122,7 +125,9 @@ async def health_check():
             "status": "healthy" if supabase else "degraded",
             "emotion_detection": health["emotion_detection"],
             "instrument_detection": health["instrument_detection"],
-            "supabase": db_status,
+            "database": "connected" if db_health["ok"] else "disconnected",
+            "db_latency_ms": db_health["latency_ms"],
+            "supabase": "connected" if supabase else "disconnected",
             "timestamp": datetime.now(UTC).isoformat() + "Z",
             "models": health,
         },

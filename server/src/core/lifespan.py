@@ -3,10 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from supabase import Client, create_client
 
-from src.core.supabase import supabase_storage_client  # ← the singleton your service uses
-from src.core.logger_setup import logger
 from src.core.app_registry import AppRegistry
+from src.core.logger_setup import logger
 from src.core.settings import CONSTANTS
+from src.core.supabase import (
+    supabase_storage_client,  # ← the singleton your service uses
+)
+from src.database.session import test_db_connection
 
 
 def create_supabase_client() -> Client:
@@ -57,6 +60,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         app.state.storage = None
         logger.error(f"❌ Supabase async storage client connection failed: {e}")
+
+    # ── Test DB connection ─────────────────────────────────────────────────────
+    db_health: dict = await test_db_connection()
+    if db_health["ok"]:
+        logger.info("🗄️ Database connection established successfully at startup.")
+    else:
+        logger.warning("⚠️ Database unreachable during startup.")
 
     # ── ML models ─────────────────────────────────────────────────────────────
     try:

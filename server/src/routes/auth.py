@@ -57,7 +57,9 @@ async def register(
     msg: str = f"New user registered: {user.email}"
     logger.info(msg)
 
-    data = UserResponse(user=construct_return_user(user)).model_dump()
+    user_dict: dict = user.to_dict()
+    logger.debug(f"User: {user_dict}")
+    data = UserResponse(user=construct_return_user(user_dict)).model_dump()
 
     return ApiResponse(msg, data)
 
@@ -94,7 +96,9 @@ async def login(
 
     msg: str = f"User logged in: {user.email} | IP={request.client.host}"
     logger.info(msg)
-    data = UserResponse(user=construct_return_user(user)).model_dump()
+
+    user_dict: dict = user.to_dict()
+    data = UserResponse(user=construct_return_user(user_dict)).model_dump()
 
     return ApiAuthResponse(msg, access_token, refresh_token, data)
 
@@ -178,7 +182,8 @@ async def verify_otp(
 
     logger.info(f"User logged in: {current_user.email} | IP={request.client.host}")
 
-    data: dict = UserResponse(user=construct_return_user(current_user)).model_dump()
+    user_dict: dict = current_user.to_dict()
+    data: dict = UserResponse(user=construct_return_user(user_dict)).model_dump()
 
     return ApiAuthResponse(
         f"OTP verified and user logged in: {current_user.email}",

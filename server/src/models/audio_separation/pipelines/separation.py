@@ -5,7 +5,7 @@ import subprocess
 import sys
 import traceback
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import select
@@ -208,7 +208,7 @@ async def separate_audio_pipeline(
 
             if job_id in jobs_storage:
                 jobs_storage[job_id]["stems"] = separated_files_info
-                jobs_storage[job_id]["completed_at"] = datetime.utcnow().isoformat()
+                jobs_storage[job_id]["completed_at"] = datetime.now(UTC).isoformat()
 
             await send_progress_update(job_id, 100, "Audio separation complete!")
             logger.info(f"Job {job_id} completed successfully")

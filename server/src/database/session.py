@@ -3,14 +3,14 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from src.core.settings import CONSTANTS
 
+from src.core.settings import CONSTANTS
 
 # Create async engine
 engine = create_async_engine(
     CONSTANTS.ASYNC_DATABASE_URL,
     echo=CONSTANTS.DEBUG,
-    pool_pre_ping=True,   # prevents stale Supabase connections
+    pool_pre_ping=True,  # prevents stale Supabase connections
     future=True,
 )
 

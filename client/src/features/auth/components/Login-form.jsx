@@ -35,8 +35,8 @@ export function LoginForm({ className, ...props }) {
     const zodResult = loginSchema.safeParse(parsedFormData);
 
     const apiFormData = new FormData();
-    apiFormData.append("email", zodResult.email);
-    apiFormData.append("password", zodResult.password);
+    apiFormData.append("email", zodResult.data?.email);
+    apiFormData.append("password", zodResult.data?.password);
 
     try {
       await flow("login", apiFormData);

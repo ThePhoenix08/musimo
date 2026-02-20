@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     DATABASE_NAME: str = "postgres"
     DATABASE_USER: str = "postgres"
     DATABASE_PASSWORD: str
+    DATABASE_POOLER_HOST: str
 
     @computed_field
     @property
@@ -49,6 +50,11 @@ class Settings(BaseSettings):
     @property
     def SYNC_DATABASE_URL(self) -> str:
         return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+
+    @computed_field
+    @property
+    def ASYNC_POOLER_DATABASE_URL(self) -> str:
+        return f"postgresql+asyncpg://postgres:{self.DATABASE_PASSWORD}@{self.DATABASE_POOLER_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # JWT
     JWT_ALGORITHM: str = "HS256"

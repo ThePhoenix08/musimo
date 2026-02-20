@@ -12,7 +12,8 @@ engine = create_async_engine(
     CONSTANTS.ASYNC_DATABASE_URL,
     echo=CONSTANTS.DEBUG,
     pool_pre_ping=True,  # helps recover stale Supabase connections
-    future=True,
+    # future=True,
+    poolclass=None
 )
 
 

@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):
     if db_health["ok"]:
         logger.info("🗄️ Database connection established successfully at startup.")
     else:
-        logger.warning("⚠️ Database unreachable during startup.")
+        logger.critical("⚠️ Database unreachable during startup.")
 
     # ── ML models ─────────────────────────────────────────────────────────────
     try:

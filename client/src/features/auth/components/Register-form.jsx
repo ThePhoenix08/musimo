@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 
 import { User, AtSign, Mail, Lock } from "lucide-react";
 
+import { registerSchema } from "../validators/AuthApi.validator";
+
 export function RegisterForm({ className, ...props }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,11 +29,20 @@ export function RegisterForm({ className, ...props }) {
 
     const formData = new FormData(e.target);
 
+    const parsedFormData = {
+      name: formData.get("name"),
+      username: formData.get("username"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+    };
+
+    const zodResult = registerSchema.safeParse(parsedFormData);
+
     const apiFormData = new FormData();
-    apiFormData.append("name", formData.get("name"));
-    apiFormData.append("username", formData.get("username"));
-    apiFormData.append("email", formData.get("email"));
-    apiFormData.append("password", formData.get("password"));
+    apiFormData.append("name", zodResult.name);
+    apiFormData.append("username", zodResult.username);
+    apiFormData.append("email", zodResult.email);
+    apiFormData.append("password", zodResult.password);
 
     try {
       await flow("register", apiFormData);

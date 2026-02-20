@@ -10,10 +10,11 @@ from src.core.settings import CONSTANTS
 # ✅ Create async engine
 engine = create_async_engine(
     CONSTANTS.ASYNC_DATABASE_URL,
+    # CONSTANTS.ASYNC_POOLER_DATABASE_URL,
     echo=CONSTANTS.DEBUG,
     pool_pre_ping=True,  # helps recover stale Supabase connections
     # future=True,
-    poolclass=None
+    poolclass=None,
 )
 
 

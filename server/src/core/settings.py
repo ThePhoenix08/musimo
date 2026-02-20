@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     DATABASE_USER: str = "postgres"
     DATABASE_PASSWORD: str
     DATABASE_POOLER_HOST: str
+    DATABASE_POOLER_USER: str
 
     @computed_field
     @property
@@ -54,7 +55,7 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def ASYNC_POOLER_DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://postgres:{self.DATABASE_PASSWORD}@{self.DATABASE_POOLER_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        return f"postgresql+asyncpg://{self.DATABASE_POOLER_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_POOLER_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # JWT
     JWT_ALGORITHM: str = "HS256"

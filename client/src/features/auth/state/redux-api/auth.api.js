@@ -20,6 +20,17 @@ export const UserAuthenticationApi = createApi({
         method: "POST",
         body: user,
       }),
+      transformResponse: (response, meta) => {
+        // extracting tokens from the response headers
+        const accessToken = meta.response.headers
+          .get("authorization")
+          ?.replace("Bearer ", "");
+
+        return {
+          ...response,
+          access_token: accessToken,
+        };
+      },
     }),
 
     requestOtp: builder.mutation({
@@ -36,6 +47,17 @@ export const UserAuthenticationApi = createApi({
         method: "POST",
         body: data,
       }),
+      transformResponse: (response, meta) => {
+        // extracting tokens from the response headers
+        const accessToken = meta.response.headers
+          .get("authorization")
+          ?.replace("Bearer ", "");
+
+        return {
+          ...response,
+          access_token: accessToken,
+        };
+      },
     }),
 
     logout: builder.mutation({

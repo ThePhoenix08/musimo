@@ -1,6 +1,6 @@
+import socket
 from pathlib import Path
 from typing import List, Literal
-import socket
 
 from dotenv import load_dotenv
 from pydantic import Field, ValidationError, computed_field
@@ -36,27 +36,26 @@ class Settings(BaseSettings):
     DATABASE_NAME: str = "postgres"
     DATABASE_USER: str = "postgres"
     DATABASE_PASSWORD: str
+    DATABASE_POOLER_HOST: str
+    DATABASE_POOLER_USER: str
 
     @computed_field
     @property
     def ASYNC_DATABASE_URL(self) -> str:
-        try:
-            # Try IPv4 first
-            ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
-            
-        except socket.gaierror:
-            # Fallback: use host as-is (asyncpg may resolve)
-            ipv4_host = self.DATABASE_HOST
-        return f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{ipv4_host}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        return (
+            f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        )
 
     @computed_field
     @property
     def SYNC_DATABASE_URL(self) -> str:
-        try:
-            ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
-        except socket.gaierror:
-            ipv4_host = self.DATABASE_HOST  # fallback: pass host as-is
-        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{ipv4_host}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+
+    @computed_field
+    @property
+    def ASYNC_POOLER_DATABASE_URL(self) -> str:
+        return f"postgresql+asyncpg://{self.DATABASE_POOLER_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_POOLER_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # JWT
     JWT_ALGORITHM: str = "HS256"
@@ -108,5 +107,7 @@ try:
         f"✅ Loaded settings for ENV='{CONSTANTS.ENV}' (DEBUG={CONSTANTS.DEBUG})"
     )
 except ValidationError as e:
-    logger.error("\n🔥 Settings validation failed:\n", e)
-    raise e
+    logger.critical("❌ Failed to load settings:")
+    for err in e.errors():
+        logger.critical(f"  {'.'.join(map(str, err['loc']))}: {err['msg']}")
+    raise SystemExit(1)

@@ -3,28 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from supabase import Client, create_client
 
-from src.core.audio_file_sweeper import sweep_expired_audio_files
-from src.database.session import get_db
-from src.core.supabase import supabase_storage_client  
-from src.core.logger_setup import logger
 from src.core.app_registry import AppRegistry
+from src.core.logger_setup import logger
 from src.core.settings import CONSTANTS
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
-
-
-scheduler = AsyncIOScheduler()
-
-scheduler.add_job(
-    sweep_expired_audio_files,
-    trigger="interval",
-    hours=6,                    # runs every 6 hours
-    kwargs={
-        "session": get_db(),    # inject however your app does it
-        "storage": supabase_storage_client,
-    },
+from src.core.supabase import (
+    supabase_storage_client,  # ← the singleton your service uses
 )
-scheduler.start()
+from src.database.session import test_db_connection
+
 
 def create_supabase_client() -> Client:
     """Create a raw Supabase client using default API key (used for app.state)."""
@@ -70,6 +56,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         app.state.storage = None
         logger.error(f"❌ Supabase async storage client connection failed: {e}")
+
+    # ── Test DB connection ─────────────────────────────────────────────────────
+    db_health: dict = await test_db_connection()
+    if db_health["ok"]:
+        logger.info("🗄️ Database connection established successfully at startup.")
+    else:
+        logger.critical("⚠️ Database unreachable during startup.")
 
     # ── ML models ─────────────────────────────────────────────────────────────
     try:

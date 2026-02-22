@@ -17,6 +17,8 @@ import {
   useLogoutMutation,
 } from "../state/redux-api/auth.api";
 
+import { requestOtpSchema } from "../validators/AuthApi.validator";
+
 function useUserAuthFlow() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -31,12 +33,26 @@ function useUserAuthFlow() {
       if (type === "register") {
         const result = await register(formData).unwrap();
 
-        dispatch(setVerificationEmail(formData.email));
+        const email = formData.get("email");
+        dispatch(setVerificationEmail(email));
+
+        const parsedFormData = {
+          email: formData.get("email"),
+          purpose: "email_verification",
+        };
+
+        const zodResult = requestOtpSchema.safeParse(parsedFormData);
+
+        if (!zodResult.success) {
+          const zodError = zodResult.error.flatten().fieldErrors;
+          console.error(`[REQUEST OTP ERROR]:`, zodError);
+          return;
+        }
 
         await requestOtp({
-          email: formData.email,
-          purpose: "email_verification",
-        });
+          email: zodResult.data?.email,
+          purpose: zodResult.data?.purpose,
+        }).unwrap();
 
         dispatch(setAuthStep("otp"));
         return result;
@@ -45,10 +61,18 @@ function useUserAuthFlow() {
       if (type === "login") {
         const result = await login(formData).unwrap();
 
-        dispatch(setCredentials(result.data));
-        dispatch(setUpdateTokens(result.data));
+        const { access_token } = result;
+        const { user } = result.data;
 
-        navigate(ROUTES.DASHBOARD);
+        dispatch(setCredentials({ user }));
+        dispatch(
+          setUpdateTokens({
+            accessToken: access_token,
+          }),
+        );
+
+        navigate(ROUTES.PROFILE);
+
         return result;
       }
 
@@ -56,7 +80,7 @@ function useUserAuthFlow() {
         await logout().unwrap();
 
         dispatch(clearCredentials());
-        dispatch(setAuthStep("login"));
+        dispatch(setAuthStep("register"));
 
         navigate(ROUTES.LANDING_PAGE);
         return;

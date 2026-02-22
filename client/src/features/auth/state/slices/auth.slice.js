@@ -27,7 +27,7 @@ const authSlice = createSlice({
       state.authStep = payload;
     },
     setVerificationEmail: (state, { payload }) => {
-      state.auth.verificationEmail = payload;
+      state.verificationEmail = payload;
     },
     setUpdateTokens: (state, action) => {
       const { accessToken } = action.payload;

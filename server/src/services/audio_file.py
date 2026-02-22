@@ -2,6 +2,7 @@ import logging
 
 import io
 import hashlib
+import logging
 import mimetypes
 import uuid
 from typing import Optional
@@ -11,17 +12,17 @@ from mutagen import File as MutagenFile
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.settings import CONSTANTS
+from src.core.supabase import SupabaseStorageClient
+from src.database.enums import AudioFileStatus, AudioFormat, AudioSourceType
+from src.repo.audioFileRepo import AudioFileRepository
+from src.repo.projectRepo import ProjectRepository
 from src.schemas.audioFile import (
     AudioFileCreateDTO,
     AudioFileListResponse,
     AudioFileResponse,
     AudioFileUploadResponse,
 )
-from src.core.settings import CONSTANTS
-from src.core.supabase import SupabaseStorageClient
-from src.database.enums import AudioFileStatus, AudioFormat, AudioSourceType
-from src.repo.audioFileRepo import AudioFileRepository
-from src.repo.projectRepo import ProjectRepository
 
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 FILE_DELETION_TTL_DAYS = 3
@@ -59,7 +60,9 @@ def _detect_format(file: UploadFile) -> AudioFormat:
     )
 
 
-def _build_storage_path(project_id: uuid.UUID, file_id: uuid.UUID, filename: str) -> str:
+def _build_storage_path(
+    project_id: uuid.UUID, file_id: uuid.UUID, filename: str
+) -> str:
     return f"{project_id}/{file_id}/{filename}"
 
 

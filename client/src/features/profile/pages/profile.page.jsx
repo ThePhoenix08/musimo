@@ -1,14 +1,20 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import useUserAuthFlow from "@/features/auth/flows/userAuth.flow";
+import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 
+import { setAuthStep } from "../../auth/state/slices/auth.slice";
+
 function ProfilePage() {
+  const dispatch = useDispatch();
   const { flow } = useUserAuthFlow();
 
   const handleLogout = async () => {
     try {
       await flow("logout");
+
+      dispatch(setAuthStep("register"));
 
       toast.success("Logout Successfully", {
         position: "top-right",

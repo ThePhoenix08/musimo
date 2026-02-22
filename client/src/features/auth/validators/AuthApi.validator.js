@@ -9,12 +9,12 @@ export const registerSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, "Full name is required.")
+    .min(2, "Full name must have atleast two characters.")
     .regex(/^[a-zA-Z ]+$/, "Full name can only contain letters and spaces."),
   username: z
     .string()
     .trim()
-    .min(1, "Username is required.")
+    .min(3, "Username must have atleast three characters.")
     .regex(
       /^[a-zA-Z0-9_]+$/,
       "Username can only contain letters, numbers, and underscores.",

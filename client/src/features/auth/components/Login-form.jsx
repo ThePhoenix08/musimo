@@ -16,6 +16,7 @@ import { loginSchema } from "../validators/AuthApi.validator";
 
 export function LoginForm({ className, ...props }) {
   const [errors, setErrors] = useState({});
+  const [generalError, setGeneralError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { flow } = useUserAuthFlow();
@@ -24,6 +25,7 @@ export function LoginForm({ className, ...props }) {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
+    setGeneralError(null);
 
     const formData = new FormData(e.target);
 
@@ -34,6 +36,14 @@ export function LoginForm({ className, ...props }) {
 
     const zodResult = loginSchema.safeParse(parsedFormData);
 
+    if (!zodResult.success) {
+      isSubmitting(false);
+      const zodError = zodResult.error.flatten().fieldErrors;
+      setErrors(zodError);
+      console.error(`[LOGIN VALIDATION ERROR]:`, zodError);
+      return;
+    }
+
     const apiFormData = new FormData();
     apiFormData.append("email", zodResult.data?.email);
     apiFormData.append("password", zodResult.data?.password);
@@ -43,24 +53,24 @@ export function LoginForm({ className, ...props }) {
 
       toast.success("User LoggedIn Successfully 🎉", {
         position: "top-right",
-        autoClose: 1000,
+        autoClose: 3000,
         theme: "dark",
       });
     } catch (error) {
       console.error("Login error:", error);
+
+      const backendMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Something went wroung";
+
+      setGeneralError(backendMessage);
 
       toast.error("Login Failed 😕", {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",
       });
-
-      const apiError = error?.data.message;
-
-      // validation errors
-      if (apiError?.errors && typeof apiError.errors === "object") {
-        setErrors(apiError.errors);
-      }
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +89,11 @@ export function LoginForm({ className, ...props }) {
             Enter your email below to login to your account
           </p>
         </div>
+        {generalError && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-md text-sm">
+            {generalError} 😟
+          </div>
+        )}
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
@@ -89,9 +104,9 @@ export function LoginForm({ className, ...props }) {
             required
           />
           {errors.email && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.email}</span>
+              <span>{errors.email[0]}</span>
             </p>
           )}
         </Field>
@@ -107,9 +122,9 @@ export function LoginForm({ className, ...props }) {
           </div>
           <Input id="password" type="password" name="password" required />
           {errors.password && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.password}</span>
+              <span>{errors.password[0]}</span>
             </p>
           )}
         </Field>

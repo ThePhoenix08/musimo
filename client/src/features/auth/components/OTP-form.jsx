@@ -29,7 +29,6 @@ import {
 import {
   selectVerificationEmail,
   setCredentials,
-  setAuthStep,
   setUpdateTokens,
 } from "@/features/auth/state/slices/auth.slice";
 
@@ -42,6 +41,7 @@ export function InputOTPForm() {
   const [otp, setOtp] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [generalError, setGeneralError] = useState(null);
 
   const verificationEmail = useSelector(selectVerificationEmail);
 
@@ -51,6 +51,8 @@ export function InputOTPForm() {
 
   const handleResendOTP = async () => {
     try {
+      setGeneralError(null);
+
       const parsedFormData = {
         email: verificationEmail,
         purpose: "email_verification",
@@ -58,9 +60,15 @@ export function InputOTPForm() {
 
       const zodResult = requestOtpSchema.safeParse(parsedFormData);
 
+      if (!zodResult.success) {
+        const zodError = zodResult.error.flatten().fieldErrors;
+        console.error(`[RESEND OTP ERROR]:`, zodError);
+        return;
+      }
+
       await requestOtp({
-        email: zodResult.email,
-        purpose: zodResult.purpose,
+        email: zodResult.data?.email,
+        purpose: zodResult.data?.purpose,
       }).unwrap();
 
       toast.success("OTP Sent Successfully 🎉", {
@@ -70,6 +78,14 @@ export function InputOTPForm() {
       });
     } catch (error) {
       console.error(`Failed to resend OTP: ${error?.data?.message}`);
+
+      const backendMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Something went wroung";
+
+      setGeneralError(backendMessage);
+
       toast.error("Failed to resend OTP 😕", {
         position: "top-right",
         autoClose: 1000,
@@ -80,6 +96,8 @@ export function InputOTPForm() {
 
   const handleVerifyOTP = async () => {
     try {
+      setGeneralError(null);
+
       const parsedFormData = {
         email: verificationEmail,
         purpose: "email_verification",
@@ -88,10 +106,16 @@ export function InputOTPForm() {
 
       const zodResult = verifyOtpSchema.safeParse(parsedFormData);
 
+      if (!zodResult.success) {
+        const zodError = zodResult.error.flatten().fieldErrors;
+        console.error(`[VERIFY OTP ERROR]:`, zodError);
+        return;
+      }
+
       const result = await verifyOtp({
-        email: zodResult.email,
-        purpose: zodResult.purpose,
-        code: zodResult.otp,
+        email: zodResult.data?.email,
+        purpose: zodResult.data?.purpose,
+        code: zodResult.data?.code,
       }).unwrap();
 
       const { access_token } = result;
@@ -105,8 +129,6 @@ export function InputOTPForm() {
         }),
       );
 
-      dispatch(setAuthStep("register"));
-
       navigate(ROUTES.PROFILE);
 
       toast.success("User Verified Successfully 🎉", {
@@ -116,6 +138,13 @@ export function InputOTPForm() {
       });
     } catch (error) {
       console.error("OTP Verification Failed:", error);
+
+      const backendMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Something went wroung";
+
+      setGeneralError(backendMessage);
 
       toast.error("OTP Verification Failed 😕", {
         position: "top-right",
@@ -135,6 +164,11 @@ export function InputOTPForm() {
           Enter the verification code we sent to your email address:{" "}
           <span className="font-medium">{verificationEmail}</span>.
         </CardDescription>
+        {generalError && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-md text-sm">
+            {generalError} 😟
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Field>

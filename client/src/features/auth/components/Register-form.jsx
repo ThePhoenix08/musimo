@@ -20,12 +20,14 @@ import { registerSchema } from "../validators/AuthApi.validator";
 export function RegisterForm({ className, ...props }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generalError, setGeneralError] = useState(null);
   const { flow } = useUserAuthFlow();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
+    setGeneralError(null);
 
     const formData = new FormData(e.target);
 
@@ -38,11 +40,19 @@ export function RegisterForm({ className, ...props }) {
 
     const zodResult = registerSchema.safeParse(parsedFormData);
 
+    if (!zodResult.success) {
+      setIsSubmitting(false);
+      const zodError = zodResult.error.flatten().fieldErrors;
+      setErrors(zodError);
+      console.error(`[REGISTRATION VALIDATION ERROR]:`, zodError);
+      return;
+    }
+
     const apiFormData = new FormData();
-    apiFormData.append("name", zodResult.name);
-    apiFormData.append("username", zodResult.username);
-    apiFormData.append("email", zodResult.email);
-    apiFormData.append("password", zodResult.password);
+    apiFormData.append("name", zodResult.data?.name);
+    apiFormData.append("username", zodResult.data?.username);
+    apiFormData.append("email", zodResult.data?.email);
+    apiFormData.append("password", zodResult.data?.password);
 
     try {
       await flow("register", apiFormData);
@@ -54,6 +64,13 @@ export function RegisterForm({ className, ...props }) {
       });
     } catch (error) {
       console.error("Registration error:", error);
+
+      const backendMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Something went wroung";
+
+      setGeneralError(backendMessage);
 
       toast.error("Registration Failed 😕", {
         position: "top-right",
@@ -86,6 +103,12 @@ export function RegisterForm({ className, ...props }) {
           </p>
         </div>
 
+        {generalError && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-md text-sm">
+            {generalError} 😟
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>
             <FieldLabel htmlFor="name" className="flex items-center gap-2">
@@ -105,9 +128,9 @@ export function RegisterForm({ className, ...props }) {
               )}
             />
             {errors.name && (
-              <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+              <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
                 <span className="inline-block mt-0.5">⚠</span>
-                <span>{errors.name}</span>
+                <span>{errors.name[0]}</span>
               </p>
             )}
           </Field>
@@ -130,9 +153,9 @@ export function RegisterForm({ className, ...props }) {
               )}
             />
             {errors.username && (
-              <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+              <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
                 <span className="inline-block mt-0.5">⚠</span>
-                <span>{errors.username}</span>
+                <span>{errors.username[0]}</span>
               </p>
             )}
           </Field>
@@ -156,9 +179,9 @@ export function RegisterForm({ className, ...props }) {
             )}
           />
           {errors.email && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.email}</span>
+              <span>{errors.email[0]}</span>
             </p>
           )}
         </Field>
@@ -181,9 +204,9 @@ export function RegisterForm({ className, ...props }) {
             )}
           />
           {errors.password && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.password}</span>
+              <span>{errors.password[0]}</span>
             </p>
           )}
         </Field>

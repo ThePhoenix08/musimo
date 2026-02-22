@@ -43,10 +43,16 @@ function useUserAuthFlow() {
 
         const zodResult = requestOtpSchema.safeParse(parsedFormData);
 
+        if (!zodResult.success) {
+          const zodError = zodResult.error.flatten().fieldErrors;
+          console.error(`[REQUEST OTP ERROR]:`, zodError);
+          return;
+        }
+
         await requestOtp({
-          email: zodResult.email,
-          purpose: zodResult.purpose,
-        });
+          email: zodResult.data?.email,
+          purpose: zodResult.data?.purpose,
+        }).unwrap();
 
         dispatch(setAuthStep("otp"));
         return result;
@@ -66,6 +72,7 @@ function useUserAuthFlow() {
         );
 
         navigate(ROUTES.PROFILE);
+
         return result;
       }
 

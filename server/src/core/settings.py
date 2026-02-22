@@ -52,7 +52,10 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def SYNC_DATABASE_URL(self) -> str:
-        ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
+        try:
+            ipv4_host = socket.gethostbyname(self.DATABASE_HOST)
+        except socket.gaierror:
+            ipv4_host = self.DATABASE_HOST  # fallback: pass host as-is
         return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{ipv4_host}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # JWT

@@ -1,10 +1,12 @@
 import logging
-from __future__ import annotations
 
+import io
 import hashlib
 import mimetypes
 import uuid
 from typing import Optional
+from datetime import datetime, timedelta, timezone
+from mutagen import File as MutagenFile
 
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +24,8 @@ from src.repo.audioFileRepo import AudioFileRepository
 from src.repo.projectRepo import ProjectRepository
 
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024
+FILE_DELETION_TTL_DAYS = 3
+
 
 SUPPORTED_MIME_TYPES: dict[str, AudioFormat] = {
     "audio/mpeg": AudioFormat.MP3,
@@ -74,6 +78,20 @@ class AudioFileService:
         self._storage = storage
 
     # ── Helpers ───────────────────────────────────────────────────────────────
+
+    
+    @staticmethod
+    def _extract_audio_metadata(raw_bytes: bytes, filename: str) -> tuple[float | None, int | None, int]:
+        
+        audio = MutagenFile(io.BytesIO(raw_bytes))
+        if audio is None:
+            return None, None, 1
+        duration = audio.info.length if hasattr(audio.info, "length") else None
+        sample_rate = audio.info.sample_rate if hasattr(audio.info, "sample_rate") else None
+        channels = audio.info.channels if hasattr(audio.info, "channels") else 1
+        return duration, sample_rate, channels
+    
+
 
     async def _assert_project_access(
         self, project_id: uuid.UUID, user_id: uuid.UUID
@@ -144,6 +162,8 @@ class AudioFileService:
                 detail=f"Storage upload failed: {exc}",
             ) from exc
 
+        duration, sample_rate, channels = AudioFileService._extract_audio_metadata(raw_bytes, file.filename or "")
+
         dto = AudioFileCreateDTO(
             project_id=project_id,
             file_path=storage_path,
@@ -152,6 +172,10 @@ class AudioFileService:
             format=audio_format,
             status=AudioFileStatus.UPLOADED,
             source_type=AudioSourceType.ORIGINAL,
+            scheduled_deletion_at=datetime.now(timezone.utc) + timedelta(days=FILE_DELETION_TTL_DAYS),
+            duration=duration,
+            sample_rate=sample_rate,
+            channels=channels,
         )
         audio_file = await self._audio_repo.create(dto)
         await self._project_repo.set_main_audio(project_id, audio_file.id)
@@ -207,21 +231,6 @@ class AudioFileService:
         await self._assert_project_access(project_id, user_id)
         audio_file = await self._get_audio_file_or_404(audio_file_id, project_id)
 
-        try:
-            await self._storage.delete_file(
-                bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
-                path=audio_file.file_path,
-            )
-        except FileNotFoundError:
-            # File already gone from storage — still delete the DB record
-            logger.warning(
-                "File not found in storage during delete (already removed?): %s",
-                audio_file.file_path,
-            )
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Storage deletion failed: {exc}",
-            ) from exc
-
-        await self._audio_repo.delete(audio_file)
+        scheduled_at = datetime.now(timezone.utc) + timedelta(days=FILE_DELETION_TTL_DAYS)
+        await self._audio_repo.mark_scheduled_for_deletion(audio_file, scheduled_at)
+        await self._session.commit()  # ← was missing; this is why nothing persisted

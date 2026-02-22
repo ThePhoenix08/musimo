@@ -62,3 +62,4 @@ class AudioFileCreateDTO(BaseModel):
     sample_rate: Optional[int] = None
     status: AudioFileStatus = AudioFileStatus.UPLOADED
     source_type: AudioSourceType = AudioSourceType.ORIGINAL
+    scheduled_deletion_at: datetime | None = None

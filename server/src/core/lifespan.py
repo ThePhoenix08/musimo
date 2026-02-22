@@ -31,8 +31,7 @@ async def lifespan(app: FastAPI):
     logger.info("🎵 Musimo API Starting...")
     AppRegistry.register(app)
 
-    # ── Raw Supabase clients (app.state) ──────────────────────────────────────
-    # These are the existing sync clients used by other parts of the app.
+   
     try:
         supabase = create_supabase_client()
         app.state.supabase = supabase
@@ -49,10 +48,7 @@ async def lifespan(app: FastAPI):
         app.state.supabase_service = None
         logger.error(f"❌ Supabase service role client connection failed: {e}")
 
-    # ── Async storage client (used by AudioFileService) ───────────────────────
-    # This is the SupabaseStorageClient singleton injected via get_storage().
-    # Without this connect() call the singleton's ._client stays None and
-    # every upload attempt raises "SupabaseStorageClient not initialised".
+   
     try:
         await supabase_storage_client.connect()
         app.state.storage = supabase_storage_client  # keeps app.state in sync too

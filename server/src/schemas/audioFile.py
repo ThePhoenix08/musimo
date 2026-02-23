@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from src.database.enums import AudioFileStatus, AudioFormat, AudioSourceType
 
+#  Response Schemas
 
-#  Response Schemas 
 
 class AudioFileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -29,6 +29,7 @@ class AudioFileResponse(BaseModel):
 
 class AudioFileUploadResponse(BaseModel):
     """Returned immediately after upload — metadata may still be processing."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -48,12 +49,14 @@ class AudioFileListResponse(BaseModel):
     page_size: int
 
 
-#  Internal / Service DTOs 
+#  Internal / Service DTOs
+
 
 class AudioFileCreateDTO(BaseModel):
     """Internal DTO used by the service layer to persist a new AudioFile record."""
+
     project_id: Optional[uuid.UUID] = None
-    file_path: str          # supabase storage path
+    file_path: str  # supabase storage path
     file_name: str
     checksum: str
     channels: int = Field(default=1)

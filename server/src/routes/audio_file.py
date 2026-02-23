@@ -1,4 +1,3 @@
-
 import uuid
 from typing import Optional
 
@@ -84,7 +83,7 @@ async def get_audio_file(
     service = AudioFileService(session=db, storage=storage)
     return await service.get_audio_file(
         audio_file_id=audio_id,
-        project_id=project_id,      # ← now passed through
+        project_id=project_id,  # ← now passed through
         user_id=user.id,
     )
 
@@ -104,6 +103,6 @@ async def delete_audio_file(
     service = AudioFileService(session=db, storage=storage)
     await service.delete_audio_file(
         audio_file_id=audio_id,
-        project_id=project_id,      # ← now passed through
+        project_id=project_id,  # ← now passed through
         user_id=user.id,
     )

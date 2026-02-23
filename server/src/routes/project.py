@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.session import get_db
-from src.services.dependencies import get_current_user
-from src.services.project import ProjectService
 from src.schemas.project import (
     ProjectCreateRequest,
     ProjectListResponse,
     ProjectResponse,
     ProjectUpdateRequest,
 )
+from src.services.dependencies import get_current_user
+from src.services.project import ProjectService
 
 router = APIRouter(prefix="/projects", tags=["Projects"])  # ← plural, no trailing param
 

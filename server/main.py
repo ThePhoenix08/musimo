@@ -4,7 +4,6 @@
 import asyncio
 import sys
 
-
 # MUST be set before anything else touches the event loop
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -12,7 +11,6 @@ if sys.platform == "win32":
 
 import asyncio
 import warnings
-
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -49,7 +47,6 @@ from src.middlewares.exception_handler import register_exception_handlers
 from src.models.model_service import ModelService
 from src.routes import debug, register_routes, ws_router
 from src.schemas.api.response import ApiResponse
-
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 sys.dont_write_bytecode = True

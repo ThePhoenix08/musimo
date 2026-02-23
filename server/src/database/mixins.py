@@ -14,7 +14,6 @@ from sqlalchemy.orm import (
 
 if TYPE_CHECKING:
     from .models.audio_file import AudioFile
-    from .models.project import Project
     from .models.user import User
 
 

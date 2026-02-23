@@ -11,7 +11,6 @@ Progress tracking system for ML pipelines with WebSocket support
 """
 
 
-
 class StepStatus(Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"

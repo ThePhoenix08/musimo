@@ -68,26 +68,6 @@ class UserReferenceMixin:
 
 
 @declarative_mixin
-class ProjectReferenceMixin:
-    @declared_attr
-    def project_id(cls) -> Mapped[uuid.UUID]:
-        return mapped_column(
-            ForeignKey("projects.id", ondelete="CASCADE"),
-            nullable=False,
-            index=True,
-        )
-
-    @declared_attr
-    def project(cls) -> Mapped["Project"]:
-        return relationship(
-            "Project",
-            back_populates=cls.__tablename__,
-            foreign_keys=[cls.project_id],
-            lazy="selectin",
-        )
-
-
-@declarative_mixin
 class AudioFileReferenceMixin:
     @declared_attr
     def audio_file_id(cls) -> Mapped[uuid.UUID]:

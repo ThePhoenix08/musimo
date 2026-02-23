@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import useUserAuthFlow from "../flows/userAuth.flow";
-import { Link } from "react-router"
+import { Link } from "react-router";
 
 import { loginSchema } from "../validators/AuthApi.validator";
 

@@ -28,11 +28,19 @@ const EmotionAnalyzer = lazy(
   () => import("@/features/debug/tests/emotion/ws_emotionPred.test.jsx"),
 );
 
-const LibraryPage = lazy(() => import("@/features/library/library.page.jsx"))
-const SettingsPage = lazy(() => import("@/features/profile/pages/settings.page.jsx"))
-const InterfacePage = lazy(() => import("@/features/interface/interface.page.jsx"))
-const DashboardPage = lazy(() => import("@/features/dashboard/Dashboard.page.jsx"))
-const NotificationsPage = lazy(() => import("@/features/profile/pages/Notifications.page"))
+const LibraryPage = lazy(() => import("@/features/library/library.page.jsx"));
+const SettingsPage = lazy(
+  () => import("@/features/profile/pages/settings.page.jsx"),
+);
+const InterfacePage = lazy(
+  () => import("@/features/interface/interface.page.jsx"),
+);
+const DashboardPage = lazy(
+  () => import("@/features/dashboard/Dashboard.page.jsx"),
+);
+const NotificationsPage = lazy(
+  () => import("@/features/profile/pages/Notifications.page"),
+);
 
 function App() {
   return (
@@ -55,9 +63,12 @@ function App() {
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="user/profile" element={<ProfilePage />} />
                 <Route path="user/settings" element={<SettingsPage />} />
-                <Route path="user/notifications" element={<NotificationsPage />} />
-                <Route path="projects" element={<LibraryPage />}/>
-                <Route path="projects/:id" element={<InterfacePage />}/>
+                <Route
+                  path="user/notifications"
+                  element={<NotificationsPage />}
+                />
+                <Route path="projects" element={<LibraryPage />} />
+                <Route path="projects/:id" element={<InterfacePage />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFoundPage />} />

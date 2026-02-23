@@ -6,16 +6,18 @@ import LibraryMenuBar from "@/features/library/components/LibraryMenuBar";
 function LibraryPage() {
   // const [{ view }, setSearchParams] = useSearchParams();
 
-  
-  return <div className="library-page">
-    <TopBar/>
-    <div className="main-area flex">
-      <div className="main-content-area">
-        <LibraryMenuBar/>
-        <div className="projects-area"></div>
+  return (
+    <div className="library-page">
+      <TopBar />
+      <div className="main-area flex">
+        <div className="main-content-area">
+          <LibraryMenuBar />
+          <div className="projects-area"></div>
+        </div>
+        <FilterSidebar />
       </div>
-      <FilterSidebar/>
-    </div>s
-  </div>;
+      s
+    </div>
+  );
 }
 export default LibraryPage;

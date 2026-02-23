@@ -4,8 +4,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Link } from "react-router"
-
+import { Link } from "react-router";
 
 export function NavSidebarHeader() {
   return (

@@ -1,11 +1,7 @@
 import { cn } from "@/lib/utils";
 import React, { useState } from "react";
 
-function SmartImage({
-  image,
-  alt,
-  className = "",
-}) {
+function SmartImage({ image, alt, className = "" }) {
   const [loaded, setLoaded] = useState(false);
   if (!image) return null;
 

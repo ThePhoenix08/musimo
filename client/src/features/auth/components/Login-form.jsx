@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import {
@@ -12,10 +14,13 @@ import {
 import { Input } from "@/components/ui/input";
 import useUserAuthFlow from "../flows/userAuth.flow";
 import { Link } from "react-router";
+import { setAuthStep } from "../../auth/state/slices/auth.slice";
 
 import { loginSchema } from "../validators/AuthApi.validator";
 
 export function LoginForm({ className, ...props }) {
+  const dispatch = useDispatch();
+
   const [errors, setErrors] = useState({});
   const [generalError, setGeneralError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,12 +119,12 @@ export function LoginForm({ className, ...props }) {
         <Field>
           <div className="flex items-center">
             <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a
-              href="#"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
+            <button
+              onClick={() => dispatch(setAuthStep("forgotPassword"))}
+              className="ml-auto text-sm underline-offset-4 hover:underline text-primary"
             >
               Forgot your password?
-            </a>
+            </button>
           </div>
           <Input id="password" type="password" name="password" required />
           {errors.password && (

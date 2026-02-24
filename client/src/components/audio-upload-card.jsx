@@ -12,6 +12,7 @@ import {
   FileAudio,
   Info,
 } from "lucide-react";
+import { Button as MovingBorderWrapper } from "./ui/moving-border";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -58,11 +59,22 @@ const RealWaveform = ({
   currentTime,
   duration,
   onSeek,
-  width = 280,
-  height = 40,
   bars = 60,
 }) => {
   const barData = useRef([]);
+  const containerRef = useRef(null);
+  const [size, setSize] = useState({ width: null, height: null });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Build bar heights from audio buffer (once)
   if (audioBuffer && barData.current.length === 0) {
@@ -81,13 +93,13 @@ const RealWaveform = ({
   }
 
   const progress = duration > 0 ? currentTime / duration : 0;
-  const barWidth = (width / bars) * 0.5;
-  const spacing = (width / bars) * 0.5;
+  const barWidth = (size.width / bars) * 0.5;
+  const spacing = (size.width / bars) * 0.5;
   const totalW = (barWidth + spacing) * bars - spacing;
-  const startX = (width - totalW) / 2;
-  const centerY = height / 2;
+  const startX = (size.width - totalW) / 2;
+  const centerY = size.height / 2;
   const rx = barWidth * 0.6;
-  const minH = height * 0.08;
+  const minH = size.height * 0.08;
 
   const handleClick = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -96,40 +108,42 @@ const RealWaveform = ({
   };
 
   return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      className="cursor-pointer"
-      onClick={handleClick}
-    >
-      {(barData.current.length > 0
-        ? barData.current
-        : Array.from({ length: bars }, () => Math.random() * 0.7 + 0.1)
-      ).map((amp, i) => {
-        const x = startX + i * (barWidth + spacing);
-        const bh = Math.max(amp * height * 0.85, minH);
-        const topY = centerY - bh / 2;
-        const played = i / bars < progress;
-        const active = Math.abs(i / bars - progress) < 1 / bars;
-        return (
-          <rect
-            key={i}
-            x={x}
-            y={topY}
-            width={barWidth}
-            height={bh}
-            rx={rx}
-            ry={rx}
-            className={cn(
-              "transition-colors duration-75",
-              played || active ? "fill-primary" : "fill-muted-foreground/40",
-            )}
-            style={active ? { filter: "brightness(1.3)" } : undefined}
-          />
-        );
-      })}
-    </svg>
+    <div ref={containerRef} className="w-full h-10 sm:h-12 md:h-16">
+      <svg
+        width={size.width}
+        height={size.height}
+        viewBox={`0 0 ${size.width} ${size.height}`}
+        className="cursor-pointer"
+        onClick={handleClick}
+      >
+        {(barData.current.length > 0
+          ? barData.current
+          : Array.from({ length: bars }, () => Math.random() * 0.7 + 0.1)
+        ).map((amp, i) => {
+          const x = startX + i * (barWidth + spacing);
+          const bh = Math.max(amp * size.height * 0.85, minH);
+          const topY = centerY - bh / 2;
+          const played = i / bars < progress;
+          const active = Math.abs(i / bars - progress) < 1 / bars;
+          return (
+            <rect
+              key={i}
+              x={x}
+              y={topY}
+              width={barWidth}
+              height={bh}
+              rx={rx}
+              ry={rx}
+              className={cn(
+                "transition-colors duration-75",
+                played || active ? "fill-primary" : "fill-muted-foreground/40",
+              )}
+              style={active ? { filter: "brightness(1.3)" } : undefined}
+            />
+          );
+        })}
+      </svg>
+    </div>
   );
 };
 
@@ -205,7 +219,6 @@ const AudioPlayerCard = ({ file, audioBuffer, onRemove }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isRemoving, setIsRemoving] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
   const objectUrlRef = useRef(null);
 
@@ -258,65 +271,31 @@ const AudioPlayerCard = ({ file, audioBuffer, onRemove }) => {
   const handleRemove = () => {
     if (audioRef.current) audioRef.current.pause();
     setIsPlaying(false);
-    setIsRemoving(true);
     setTimeout(() => onRemove?.(), 400);
   };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={isRemoving ? "removing" : "active"}
-        className="relative z-20 w-full flex justify-center"
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] },
-        }}
-        exit={{
-          opacity: 0,
-          scale: 0.9,
-          y: 10,
-          filter: "blur(6px)",
-          transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] },
-        }}
-      >
-        <motion.div
-          initial={{ scale: 1.5 }}
-          animate={[
-            { scale: 1.1 },
-            {
-              scale: 1.0,
-              transition: { duration: 0.8, ease: [0.68, -0.55, 0.265, 1.55] },
-            },
-          ]}
-          className="rounded-xl border border-border/40 bg-card shadow-xl backdrop-blur-sm relative group w-72"
-        >
-          {/* Hidden audio element */}
-          <audio ref={audioRef} preload="metadata" />
-
-          {/* Remove button */}
-          <button
-            onClick={handleRemove}
-            className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110 z-30"
-          >
-            <X size={12} />
-          </button>
-
-          <div className="p-3 space-y-2.5">
-            {/* File name + meta toggle */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <FileAudio size={13} className="text-primary shrink-0" />
-                <span className="text-xs font-semibold text-foreground truncate">
-                  {truncateFilename(file.name)}
-                </span>
-              </div>
+    <MovingBorderWrapper
+      as="div"
+      className="border-neutral-200 dark:border-slate-800"
+    >
+      <div className="h-full w-full">
+        {/* Hidden audio element */}
+        <audio ref={audioRef} preload="metadata" />
+        <div className="p-3 space-y-2.5">
+          {/* File name + meta toggle */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <FileAudio size={13} className="text-primary shrink-0" />
+              <span className="text-xs font-semibold text-foreground truncate">
+                {truncateFilename(file.name)}
+              </span>
+            </div>
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowMeta((v) => !v)}
                 className={cn(
-                  "shrink-0 rounded-md p-0.5 transition-colors",
+                  "rounded-md transition-colors w-5 h-5 bg-accent hover:bg-amber-500 grid place-items-center",
                   showMeta
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground",
@@ -324,100 +303,99 @@ const AudioPlayerCard = ({ file, audioBuffer, onRemove }) => {
               >
                 <Info size={13} />
               </button>
-            </div>
-
-            {/* Metadata panel */}
-            <AnimatePresence>
-              {showMeta && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 px-2 py-1.5">
-                    {[
-                      { label: "Type", value: getMimeLabel(file.type) },
-                      { label: "Size", value: formatFileSize(file.size) },
-                      { label: "Duration", value: formatTime(duration) },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="flex flex-col items-center">
-                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
-                          {label}
-                        </span>
-                        <span className="text-[11px] font-semibold text-foreground">
-                          {value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Waveform */}
-            <div className="flex items-center justify-center">
-              <RealWaveform
-                audioBuffer={audioBuffer}
-                currentTime={currentTime}
-                duration={duration}
-                onSeek={handleSeek}
-                width={248}
-                height={40}
-                bars={60}
-              />
-            </div>
-
-            {/* Controls row */}
-            <div className="flex items-center gap-2">
-              {/* Play/Pause */}
+              {/* Remove button */}
               <button
-                onClick={togglePlay}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:brightness-110 transition-all active:scale-95"
+                onClick={handleRemove}
+                className="w-5 h-5 bg-destructive hover:bg-red-500 text-destructive-foreground rounded-full grid place-items-center"
               >
-                {isPlaying ? (
-                  <Pause size={13} fill="currentColor" />
-                ) : (
-                  <Play
-                    size={13}
-                    fill="currentColor"
-                    className="translate-x-px"
-                  />
-                )}
+                <X size={12} />
               </button>
-
-              {/* Time */}
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground tabular-nums shrink-0">
-                <Clock size={9} />
-                <span>{formatTime(currentTime)}</span>
-                <span className="opacity-40">/</span>
-                <span>{formatTime(duration)}</span>
-              </div>
-
-              {/* Progress bar (thin) */}
-              <div
-                className="relative h-1 flex-1 cursor-pointer rounded-full bg-muted overflow-hidden"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  handleSeek(((e.clientX - rect.left) / rect.width) * duration);
-                }}
-              >
-                <motion.div
-                  className="absolute inset-y-0 left-0 rounded-full bg-primary"
-                  style={{
-                    width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-                  }}
-                />
-              </div>
-
-              {/* Volume icon (decorative) */}
-              <Volume2 size={11} className="text-muted-foreground shrink-0" />
             </div>
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+          {/* Metadata panel */}
+          <AnimatePresence>
+            {showMeta && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 px-2 py-1.5">
+                  {[
+                    { label: "Type", value: getMimeLabel(file.type) },
+                    { label: "Size", value: formatFileSize(file.size) },
+                    { label: "Duration", value: formatTime(duration) },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex flex-col items-center">
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                        {label}
+                      </span>
+                      <span className="text-[11px] font-semibold text-foreground">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {/* Waveform */}
+          <div className="flex items-center justify-center w-full">
+            <RealWaveform
+              audioBuffer={audioBuffer}
+              currentTime={currentTime}
+              duration={duration}
+              onSeek={handleSeek}
+              bars={60}
+            />
+          </div>
+          {/* Controls row */}
+          <div className="flex items-center gap-2">
+            {/* Play/Pause */}
+            <button
+              onClick={togglePlay}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:brightness-110 transition-all active:scale-95"
+            >
+              {isPlaying ? (
+                <Pause size={13} fill="currentColor" />
+              ) : (
+                <Play
+                  size={13}
+                  fill="currentColor"
+                  className="translate-x-px"
+                />
+              )}
+            </button>
+            {/* Time */}
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground tabular-nums shrink-0">
+              <Clock size={9} />
+              <span>{formatTime(currentTime)}</span>
+              <span className="opacity-40">/</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+            {/* Progress bar (thin) */}
+            <div
+              className="relative h-1 flex-1 cursor-pointer rounded-full bg-muted overflow-hidden"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                handleSeek(((e.clientX - rect.left) / rect.width) * duration);
+              }}
+            >
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full bg-primary"
+                style={{
+                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                }}
+              />
+            </div>
+            {/* Volume icon (decorative) */}
+            <Volume2 size={11} className="text-muted-foreground shrink-0" />
+          </div>
+        </div>
+      </div>
+    </MovingBorderWrapper>
   );
 };
 

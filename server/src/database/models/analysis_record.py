@@ -1,14 +1,13 @@
 import uuid
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import JSON, Enum, ForeignKey, Text
+from sqlalchemy import JSON, Enum, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.base import Base
 from src.database.enums import AnalysisType
 from src.database.mixins import (
     AudioFileReferenceMixin,
-    ProjectReferenceMixin,
     TimestampMixin,
     UUIDMixin,
 )
@@ -20,19 +19,24 @@ from src.models.emotion_recognition.pipeline.postprocessor import (
 )
 
 if TYPE_CHECKING:
-    from src.database.models import AudioFeature, Model
+    from src.database.models import AudioFeature, Model, Project
 
 
 class AnalysisRecord(
     UUIDMixin,
     TimestampMixin,
     AudioFileReferenceMixin,
-    ProjectReferenceMixin,
     Base,
 ):
     analysis_type: Mapped[AnalysisType] = mapped_column(Enum(AnalysisType))
     results: Mapped[dict] = mapped_column(JSON)
     summary_text: Mapped[str] = mapped_column(Text)
+
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     model_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("models.id", ondelete="SET NULL"),
@@ -41,6 +45,12 @@ class AnalysisRecord(
 
     model: Mapped["Model"] = relationship(
         "Model", back_populates="analysis_records", lazy="selectin"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "analysis_type", name="uq_project_analysis_type"
+        ),
     )
 
     __mapper_args__ = {
@@ -57,6 +67,9 @@ class EmotionAnalysisRecord(AnalysisRecord):
     prediction_result: Mapped[
         StaticPrediction | DynamicPrediction | CombinedPrediction
     ] = mapped_column(JSON)
+    project: Mapped["Project"] = relationship(
+        "Project", back_populates="emotion_analysis_records"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": AnalysisType.EMOTION,
@@ -69,6 +82,9 @@ class InstrumentAnalysisRecord(AnalysisRecord):
     )
     instruments: Mapped[list[str]] = mapped_column(JSON)
     confidence_scores: Mapped[dict] = mapped_column(JSON)
+    project: Mapped["Project"] = relationship(
+        "Project", back_populates="instrument_analysis_records"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": AnalysisType.INSTRUMENT,
@@ -82,6 +98,9 @@ class FeatureAnalysisRecord(AnalysisRecord):
     feature_vector: Mapped[dict] = mapped_column(JSON)
     audio_features: Mapped[list["AudioFeature"]] = relationship(
         "AudioFeature", back_populates="feature_analysis_record", lazy="selectin"
+    )
+    project: Mapped["Project"] = relationship(
+        "Project", back_populates="feature_analysis_records"
     )
 
     __mapper_args__ = {
@@ -99,6 +118,9 @@ class SeparationAnalysisRecord(AnalysisRecord):
         cascade="all, delete-orphan",
         back_populates="separation_analysis",
         single_parent=True,
+    )
+    project: Mapped["Project"] = relationship(
+        "Project", back_populates="separation_analysis_records"
     )
 
     __mapper_args__ = {

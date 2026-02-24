@@ -27,14 +27,14 @@ const SIDEBAR_DATA = {
     },
     {
       title: "Library",
-      url: "/app/library?view=all",
+      url: "/app/projects?view=all",
       icon: IconFolder,
     },
   ],
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/app/user/settings",
       icon: IconSettings,
     },
     {
@@ -44,7 +44,7 @@ const SIDEBAR_DATA = {
     },
     {
       title: "Search",
-      url: "/app/library?view=search",
+      url: "/app/projects?view=search",
       icon: IconSearch,
     },
   ],
@@ -53,17 +53,17 @@ const SIDEBAR_DATA = {
 const DUMMY_PROJECTS = [
   {
     name: "Interstellar",
-    url: "#",
+    url: "/app/projects/12",
     icon: IconFileAnalytics,
   },
   {
     name: "Believer",
-    url: "#",
+    url: "/app/projects/100",
     icon: IconFileAnalytics,
   },
   {
     name: "Why This Kolaveri Di? (The Soup of Love)",
-    url: "#",
+    url: "/app/projects/2046",
     icon: IconFileAnalytics,
   },
 ];

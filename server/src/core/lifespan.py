@@ -31,7 +31,6 @@ async def lifespan(app: FastAPI):
     logger.info("🎵 Musimo API Starting...")
     AppRegistry.register(app)
 
-   
     try:
         supabase = create_supabase_client()
         app.state.supabase = supabase
@@ -48,7 +47,6 @@ async def lifespan(app: FastAPI):
         app.state.supabase_service = None
         logger.error(f"❌ Supabase service role client connection failed: {e}")
 
-   
     try:
         await supabase_storage_client.connect()
         app.state.storage = supabase_storage_client  # keeps app.state in sync too

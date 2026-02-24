@@ -14,7 +14,6 @@ from sqlalchemy.orm import (
 
 if TYPE_CHECKING:
     from .models.audio_file import AudioFile
-    from .models.project import Project
     from .models.user import User
 
 
@@ -63,26 +62,6 @@ class UserReferenceMixin:
             "User",
             back_populates=cls.__tablename__,
             foreign_keys=[cls.user_id],
-            lazy="selectin",
-        )
-
-
-@declarative_mixin
-class ProjectReferenceMixin:
-    @declared_attr
-    def project_id(cls) -> Mapped[uuid.UUID]:
-        return mapped_column(
-            ForeignKey("projects.id", ondelete="CASCADE"),
-            nullable=False,
-            index=True,
-        )
-
-    @declared_attr
-    def project(cls) -> Mapped["Project"]:
-        return relationship(
-            "Project",
-            back_populates=cls.__tablename__,
-            foreign_keys=[cls.project_id],
             lazy="selectin",
         )
 

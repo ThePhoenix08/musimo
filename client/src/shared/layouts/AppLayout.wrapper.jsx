@@ -11,7 +11,7 @@ function AppLayout() {
         <AppSidebar />
         <SidebarInset>
           <main>
-            <AppHeader/>
+            <AppHeader />
             <Outlet />
           </main>
         </SidebarInset>

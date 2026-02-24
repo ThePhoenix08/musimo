@@ -1,15 +1,13 @@
-import logging
-
-import io
 import hashlib
+import io
 import logging
 import mimetypes
 import uuid
-from typing import Optional
 from datetime import datetime, timedelta, timezone
-from mutagen import File as MutagenFile
+from typing import Optional
 
 from fastapi import HTTPException, UploadFile, status
+from mutagen import File as MutagenFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.settings import CONSTANTS
@@ -82,19 +80,20 @@ class AudioFileService:
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
-    
     @staticmethod
-    def _extract_audio_metadata(raw_bytes: bytes, filename: str) -> tuple[float | None, int | None, int]:
-        
+    def _extract_audio_metadata(
+        raw_bytes: bytes, filename: str
+    ) -> tuple[float | None, int | None, int]:
+
         audio = MutagenFile(io.BytesIO(raw_bytes))
         if audio is None:
             return None, None, 1
         duration = audio.info.length if hasattr(audio.info, "length") else None
-        sample_rate = audio.info.sample_rate if hasattr(audio.info, "sample_rate") else None
+        sample_rate = (
+            audio.info.sample_rate if hasattr(audio.info, "sample_rate") else None
+        )
         channels = audio.info.channels if hasattr(audio.info, "channels") else 1
         return duration, sample_rate, channels
-    
-
 
     async def _assert_project_access(
         self, project_id: uuid.UUID, user_id: uuid.UUID
@@ -165,7 +164,9 @@ class AudioFileService:
                 detail=f"Storage upload failed: {exc}",
             ) from exc
 
-        duration, sample_rate, channels = AudioFileService._extract_audio_metadata(raw_bytes, file.filename or "")
+        duration, sample_rate, channels = AudioFileService._extract_audio_metadata(
+            raw_bytes, file.filename or ""
+        )
 
         dto = AudioFileCreateDTO(
             project_id=project_id,
@@ -175,7 +176,8 @@ class AudioFileService:
             format=audio_format,
             status=AudioFileStatus.UPLOADED,
             source_type=AudioSourceType.ORIGINAL,
-            scheduled_deletion_at=datetime.now(timezone.utc) + timedelta(days=FILE_DELETION_TTL_DAYS),
+            scheduled_deletion_at=datetime.now(timezone.utc)
+            + timedelta(days=FILE_DELETION_TTL_DAYS),
             duration=duration,
             sample_rate=sample_rate,
             channels=channels,
@@ -234,6 +236,8 @@ class AudioFileService:
         await self._assert_project_access(project_id, user_id)
         audio_file = await self._get_audio_file_or_404(audio_file_id, project_id)
 
-        scheduled_at = datetime.now(timezone.utc) + timedelta(days=FILE_DELETION_TTL_DAYS)
+        scheduled_at = datetime.now(timezone.utc) + timedelta(
+            days=FILE_DELETION_TTL_DAYS
+        )
         await self._audio_repo.mark_scheduled_for_deletion(audio_file, scheduled_at)
         await self._session.commit()  # ← was missing; this is why nothing persisted

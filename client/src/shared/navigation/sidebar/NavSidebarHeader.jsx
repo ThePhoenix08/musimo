@@ -4,6 +4,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Link } from "react-router";
 
 export function NavSidebarHeader() {
   return (
@@ -13,10 +14,10 @@ export function NavSidebarHeader() {
           asChild
           className="data-[slot=sidebar-menu-button]:p-1.5!"
         >
-          <a href="/app">
+          <Link to="/app">
             <IconInnerShadowTop className="size-5!" />
             <span className="text-base font-semibold">Musimo</span>
-          </a>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import React, { useRef, useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "motion/react";
 import { IconUpload } from "@tabler/icons-react";
 import { useDropzone } from "react-dropzone";

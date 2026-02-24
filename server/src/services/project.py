@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.repo.projectRepo import ProjectRepository
 from src.schemas.project import (
     ProjectCreateRequest,
     ProjectListResponse,
     ProjectResponse,
     ProjectUpdateRequest,
 )
-from src.repo.projectRepo import ProjectRepository
 
 
 class ProjectService:
@@ -20,9 +19,7 @@ class ProjectService:
         self._session = session
         self._repo = ProjectRepository(session)
 
-    async def _get_or_404(
-        self, project_id: uuid.UUID, user_id: uuid.UUID
-    ):
+    async def _get_or_404(self, project_id: uuid.UUID, user_id: uuid.UUID):
         project = await self._repo.get_by_id(project_id, user_id)
         if project is None:
             raise HTTPException(
@@ -46,7 +43,6 @@ class ProjectService:
         await self._session.commit()
 
         return ProjectResponse.model_validate(project)
-    
 
     async def get_project(
         self,
@@ -96,5 +92,5 @@ class ProjectService:
         project = await self._get_or_404(project_id, user_id)
         await self._repo.delete(project)
         await self._session.commit()
-        
+
         return print("Project deleted: ", project_id)

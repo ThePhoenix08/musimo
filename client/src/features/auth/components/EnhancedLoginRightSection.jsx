@@ -6,8 +6,6 @@ import { motion } from "framer-motion";
 import RIGHT_SECTION_BG_IMG from "@/assets/Images/login-background.jpg?w=400;800;1200;1600&format=webp&imagetools&as=picture&metadata";
 import SmartImage from "@/components/misc/SmartImage";
 
-
-
 function EnhancedLoginRightSection() {
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -47,7 +45,6 @@ function EnhancedLoginRightSection() {
         fit="cover"
         showPlaceholder={true}
       />
-
 
       {/* Small dark overlay for subtle readability */}
       <motion.div

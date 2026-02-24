@@ -8,12 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.supabase import SupabaseStorageClient, get_storage
 from src.services.audio_file import AudioFileService
 from src.database.session import get_db
-from src.services.dependencies import get_current_user
-from src.services.project import ProjectService
 from src.schemas.project import (
     ProjectCreateRequest,
     ProjectUpdateRequest,
 )
+from src.services.dependencies import get_current_user
+from src.services.project import ProjectService
 
 from src.schemas.api.response import ApiResponse, ApiErrorResponse  
 
@@ -38,7 +38,6 @@ async def create_project_with_audio(
         project_service = ProjectService(db)
         audio_service = AudioFileService(session=db, storage=storage)
 
-        # 1️⃣ Create project first
         project_payload = ProjectCreateRequest(
             name=name,
             description=description,
@@ -51,7 +50,6 @@ async def create_project_with_audio(
 
         audio_data = None
 
-        # 2️⃣ If file provided → upload
         if file:
             audio = await audio_service.upload_audio_file(
                 project_id=project.id,
@@ -175,21 +173,6 @@ async def delete_project(
     project_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
-):
-    try:
-        service = ProjectService(db)
-        await service.delete_project(
-            project_id=project_id,
-            user_id=user.id,
-        )
-
-        return ApiResponse(
-            message="Project deleted successfully",
-            status_code=status.HTTP_200_OK,
-        )
-    except Exception as e:
-        return ApiErrorResponse(
-            code="PROJECT_DELETE_FAILED",
-            message="Failed to delete project",
-            details=str(e),
-        )   
+) -> None:
+    service = ProjectService(db)
+    await service.delete_project(project_id=project_id, user_id=user.id)

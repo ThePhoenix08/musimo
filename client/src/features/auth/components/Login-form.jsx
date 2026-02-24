@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import useUserAuthFlow from "../flows/userAuth.flow";
+import { Link } from "react-router";
 
 import { loginSchema } from "../validators/AuthApi.validator";
 
@@ -172,9 +173,9 @@ export function LoginForm({ className, ...props }) {
           </Button>
           <FieldDescription className="text-center">
             Don&apos;t have an account?{" "}
-            <a href="/register" className="underline underline-offset-4">
+            <Link to="/register" className="underline underline-offset-4">
               Sign up
-            </a>
+            </Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

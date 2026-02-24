@@ -1,8 +1,9 @@
 from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from src.core.logger_setup import logger
+from src.core.settings import CONSTANTS
 
 
 async def db_query(
@@ -27,13 +28,6 @@ async def db_query(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
-
-
-# src/core/db_utils.py
-from sqlalchemy.ext.asyncio import create_async_engine
-
-from src.core.logger_setup import logger
-from src.core.settings import CONSTANTS
 
 
 async def test_db_connection() -> bool:

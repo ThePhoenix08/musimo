@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import logging
@@ -47,7 +46,11 @@ async def sweep_expired_audio_files(
 
         await repo.hard_delete(audio_file)
         purged += 1
-        logger.info("Sweeper: purged audio_file id=%s path=%s", audio_file.id, audio_file.file_path)
+        logger.info(
+            "Sweeper: purged audio_file id=%s path=%s",
+            audio_file.id,
+            audio_file.file_path,
+        )
 
     if purged:
         await session.commit()

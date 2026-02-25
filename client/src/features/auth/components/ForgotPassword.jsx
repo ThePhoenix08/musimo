@@ -8,6 +8,7 @@ import { Mail, Lock, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { FieldDescription } from "@/components/ui/field";
 
 export function ForgotPassword() {
   const dispatch = useDispatch();
@@ -45,7 +46,6 @@ export function ForgotPassword() {
               <Lock className="h-10 w-10 text-primary relative" />
             </div>
           </div>
-
           {/* Title and Description */}
           <div className="space-y-2.5 text-center">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
@@ -56,7 +56,6 @@ export function ForgotPassword() {
               reset your password.
             </p>
           </div>
-
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Input */}
@@ -91,37 +90,23 @@ export function ForgotPassword() {
                 </>
               ) : (
                 <>
-                  <span>Send Reset Link</span>
+                  <span>Send Reset OTP</span>
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-0.5 transition-transform duration-200" />
                 </>
               )}
             </Button>
           </form>
-
-          {/* Success Message */}
-          {isSubmitted && (
-            <div className="rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 p-4 text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <p className="text-sm text-foreground leading-relaxed">
-                <span className="font-semibold">Success!</span> Check your email
-                for a password reset link. It should arrive in a few minutes.
-              </p>
-            </div>
-          )}
-
-          {/* Help Text */}
-          <div className="pt-2 border-t border-border/30 text-center">
-            <p className="text-xs text-muted-foreground">
-              Remember your password?{" "}
-              <button
-                onClick={() => {
-                  dispatch(setAuthStep("register"));
-                }}
-                className="text-primary font-semibold hover:underline transition-all duration-200"
-              >
-                Sign In
-              </button>
-            </p>
-          </div>
+          <FieldDescription className="px-6 text-center mt-4">
+            Remember your password?{" "}
+            <button
+              onClick={() => {
+                dispatch(setAuthStep("register"));
+              }}
+              className="text-primary underline underline-offset-4 font-medium hover:cursor-pointer"
+            >
+              Sign In
+            </button>
+          </FieldDescription>
         </div>
       </Card>
     </div>

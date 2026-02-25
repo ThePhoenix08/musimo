@@ -121,7 +121,7 @@ export function LoginForm({ className, ...props }) {
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <button
               onClick={() => dispatch(setAuthStep("forgotPassword"))}
-              className="ml-auto text-sm underline-offset-4 hover:underline text-primary"
+              className="ml-auto text-sm underline underline-offset-4 hover:cursor-pointer text-primary"
             >
               Forgot your password?
             </button>
@@ -178,7 +178,10 @@ export function LoginForm({ className, ...props }) {
           </Button>
           <FieldDescription className="text-center">
             Don&apos;t have an account?{" "}
-            <Link to="/register" className="underline underline-offset-4">
+            <Link
+              to="/register"
+              className="text-primary underline underline-offset-4"
+            >
               Sign up
             </Link>
           </FieldDescription>

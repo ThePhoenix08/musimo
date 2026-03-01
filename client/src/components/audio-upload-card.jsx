@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -63,7 +63,7 @@ const RealWaveform = ({
 }) => {
   const barData = useRef([]);
   const containerRef = useRef(null);
-  const [size, setSize] = useState({ width: null, height: null });
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     const el = containerRef.current;
@@ -107,6 +107,11 @@ const RealWaveform = ({
     onSeek?.(ratio * duration);
   };
 
+  const randomBarData = useMemo(
+    () => Array.from({ length: bars }, () => Math.random() * 0.7 + 0.1),
+    [bars],
+  );
+
   return (
     <div ref={containerRef} className="w-full h-10 sm:h-12 md:h-16">
       <svg
@@ -118,7 +123,7 @@ const RealWaveform = ({
       >
         {(barData.current.length > 0
           ? barData.current
-          : Array.from({ length: bars }, () => Math.random() * 0.7 + 0.1)
+          : randomBarData
         ).map((amp, i) => {
           const x = startX + i * (barWidth + spacing);
           const bh = Math.max(amp * size.height * 0.85, minH);
@@ -147,38 +152,6 @@ const RealWaveform = ({
   );
 };
 
-// ── Dummy waveform for pre-decode state ──────────────────────────────────────
-
-const DummyWaveform = ({ width = 180, height = 32, bars = 40 }) => {
-  const heights = useRef(
-    Array.from({ length: bars }, () => Math.random() * 0.65 + 0.1),
-  );
-  const bw = (width / bars) * 0.5;
-  const sp = (width / bars) * 0.5;
-  const totalW = (bw + sp) * bars - sp;
-  const sx = (width - totalW) / 2;
-  const cy = height / 2;
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      {heights.current.map((amp, i) => {
-        const bh = Math.max(amp * height * 0.85, height * 0.08);
-        return (
-          <rect
-            key={i}
-            x={sx + i * (bw + sp)}
-            y={cy - bh / 2}
-            width={bw}
-            height={bh}
-            rx={bw * 0.6}
-            ry={bw * 0.6}
-            className="fill-muted-foreground/50"
-          />
-        );
-      })}
-    </svg>
-  );
-};
-
 // ── Upload Card Base ─────────────────────────────────────────────────────────
 
 const UploadCardBase = ({ children, isDragOver, isUploading }) => {
@@ -187,23 +160,19 @@ const UploadCardBase = ({ children, isDragOver, isUploading }) => {
     <div
       className={cn(
         "rounded-xl border-2 border-dashed border-border/60 p-6 backdrop-blur-sm min-h-[120px] flex items-center justify-center relative transition-colors duration-200 h-full",
-        !isUploading && "cursor-pointer hover:bg-accent/20",
+        !isUploading && "cursor-pointer hover:bg-card",
         isUploading
-          ? "bg-primary/20 border-primary/60"
+          ? "bg-card/20 border-primary/60"
           : isDragOver
-            ? "bg-accent/40 border-accent/80 shadow-inner"
-            : "bg-card",
+            ? "bg-input/40 border-accent/80 shadow-inner"
+            : "bg-input/40",
       )}
     >
       {!hasChildren && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <Upload
             size={48}
-            className={cn(
-              "transition-colors duration-200",
-              isDragOver ? "text-primary" : "text-muted",
-              isUploading && "text-primary",
-            )}
+            className={cn("transition-colors duration-200 text-secondary")}
           />
         </div>
       )}
@@ -403,34 +372,46 @@ const AudioPlayerCard = ({ file, audioBuffer, onRemove }) => {
 
 export function AudioUploadCard({
   className,
-  title = "Upload Your Audio",
-  description = "Drop in your recordings and start transcribing instantly.",
+  description = "Upload audio file here.",
+  id,
+  uploadedFile,
+  setUploadedFile,
+  schema,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState(null);
   const [audioBuffer, setAudioBuffer] = useState(null);
+  const [validationError, setValidationError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const processFile = useCallback(async (file) => {
-    if (!file || !file.type.startsWith("audio/")) return;
-    setUploadedFile(file);
-    setIsUploading(true);
+  const processFile = useCallback(
+    async (file) => {
+      const result = schema.safeParse(file);
+      if (!result.success) {
+        setValidationError(result.error.errors[0].message);
+        return;
+      }
 
-    // Decode audio for real waveform
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const decoded = await ctx.decodeAudioData(arrayBuffer);
-      setAudioBuffer(decoded);
-    } catch {
-      setAudioBuffer(null);
-    }
+      setValidationError(null);
+      setIsUploading(true);
+      setUploadedFile(file);
 
-    setTimeout(() => {
-      setIsUploading(false);
-    }, 200);
-  }, []);
+      // Decode audio for real waveform
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const decoded = await ctx.decodeAudioData(arrayBuffer);
+        setAudioBuffer(decoded);
+      } catch {
+        setAudioBuffer(null);
+      }
+
+      setTimeout(() => {
+        setIsUploading(false);
+      }, 200);
+    },
+    [setUploadedFile, schema],
+  );
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
@@ -467,7 +448,7 @@ export function AudioUploadCard({
     setUploadedFile(null);
     setAudioBuffer(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
+  }, [setUploadedFile]);
 
   const handleBaseClick = useCallback(() => {
     if (!isUploading && !uploadedFile) fileInputRef.current?.click();
@@ -482,8 +463,8 @@ export function AudioUploadCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card p-6 text-center h-full">
-        <div className="flex flex-col justify-center space-y-8 h-full">
+      <div className="relative overflow-hidden bg-transparent p-0 text-center h-full mb-2">
+        <div className="flex flex-col justify-center space-y-2 h-full">
           {renderAudioUploadArea ? (
             <div className="relative w-full mx-auto h-full">
               <div
@@ -503,6 +484,7 @@ export function AudioUploadCard({
                   accept="audio/*"
                   onChange={handleFileSelect}
                   className="sr-only"
+                  id={id}
                 />
               </div>
             </div>
@@ -515,11 +497,12 @@ export function AudioUploadCard({
           )}
 
           <div className="flex flex-col items-start">
-            <h2 className="text-lg font-semibold text-foreground text-left">
-              {title}
-            </h2>
             <p className="text-sm text-muted-foreground text-left">
-              {description}
+              {validationError ? (
+                <p className="text-sm text-red-500 mt-1">{validationError}</p>
+              ) : (
+                description
+              )}
             </p>
           </div>
         </div>

@@ -68,7 +68,7 @@ class EmotionAnalysisRecord(AnalysisRecord):
         StaticPrediction | DynamicPrediction | CombinedPrediction
     ] = mapped_column(JSON)
     project: Mapped["Project"] = relationship(
-        "Project", back_populates="emotion_analysis_records"
+        "Project", back_populates="emotion_analysis_record"
     )
 
     __mapper_args__ = {
@@ -83,7 +83,7 @@ class InstrumentAnalysisRecord(AnalysisRecord):
     instruments: Mapped[list[str]] = mapped_column(JSON)
     confidence_scores: Mapped[dict] = mapped_column(JSON)
     project: Mapped["Project"] = relationship(
-        "Project", back_populates="instrument_analysis_records"
+        "Project", back_populates="instrument_analysis_record"
     )
 
     __mapper_args__ = {
@@ -100,7 +100,7 @@ class FeatureAnalysisRecord(AnalysisRecord):
         "AudioFeature", back_populates="feature_analysis_record", lazy="selectin"
     )
     project: Mapped["Project"] = relationship(
-        "Project", back_populates="feature_analysis_records"
+        "Project", back_populates="feature_analysis_record"
     )
 
     __mapper_args__ = {
@@ -116,11 +116,11 @@ class SeparationAnalysisRecord(AnalysisRecord):
         "SeparatedAudioFile",
         lazy="selectin",
         cascade="all, delete-orphan",
-        back_populates="separation_analysis",
+        back_populates="separation_analysis_record",
         single_parent=True,
     )
     project: Mapped["Project"] = relationship(
-        "Project", back_populates="separation_analysis_records"
+        "Project", back_populates="separation_analysis_record"
     )
 
     __mapper_args__ = {

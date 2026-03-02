@@ -39,7 +39,7 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         uselist=False,
     )
 
-    emotion_analysis: Mapped[Optional["EmotionAnalysisRecord"]] = relationship(
+    emotion_analysis_record: Mapped[Optional["EmotionAnalysisRecord"]] = relationship(
         "EmotionAnalysisRecord",
         primaryjoin="and_(Project.id==EmotionAnalysisRecord.project_id, "
         "EmotionAnalysisRecord.analysis_type=='EMOTION')",
@@ -48,7 +48,7 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         lazy="selectin",
     )
 
-    instrument_analysis: Mapped[Optional["InstrumentAnalysisRecord"]] = relationship(
+    instrument_analysis_record: Mapped[Optional["InstrumentAnalysisRecord"]] = relationship(
         "InstrumentAnalysisRecord",
         primaryjoin="and_(Project.id==InstrumentAnalysisRecord.project_id, "
         "InstrumentAnalysisRecord.analysis_type=='INSTRUMENT')",
@@ -57,7 +57,7 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         lazy="selectin",
     )
 
-    feature_analysis: Mapped[Optional["FeatureAnalysisRecord"]] = relationship(
+    feature_analysis_record: Mapped[Optional["FeatureAnalysisRecord"]] = relationship(
         "FeatureAnalysisRecord",
         primaryjoin="and_(Project.id==FeatureAnalysisRecord.project_id, "
         "FeatureAnalysisRecord.analysis_type=='FEATURES')",
@@ -66,7 +66,7 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         lazy="selectin",
     )
 
-    separation_analysis: Mapped[Optional["SeparationAnalysisRecord"]] = relationship(
+    separation_analysis_record: Mapped[Optional["SeparationAnalysisRecord"]] = relationship(
         "SeparationAnalysisRecord",
         primaryjoin="and_(Project.id==SeparationAnalysisRecord.project_id, "
         "SeparationAnalysisRecord.analysis_type=='SEPARATION')",

@@ -119,7 +119,7 @@ class SeparatedAudioFile(AudioFile):
         index=True,
     )
 
-    separation_analysis: Mapped["SeparationAnalysisRecord"] = relationship(
+    separation_analysis_record: Mapped["SeparationAnalysisRecord"] = relationship(
         "SeparationAnalysisRecord",
         back_populates="separated_files",  # ✅ reciprocal link
         lazy="selectin",

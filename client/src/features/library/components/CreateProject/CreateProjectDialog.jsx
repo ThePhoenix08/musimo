@@ -14,7 +14,7 @@ import { Controller, useForm } from "react-hook-form";
 import {
   CREATE_PROJECT_SCHEMA,
   AUDIO_FILE_SCHEMA,
-} from "@/features/library/project.validator.js";
+} from "@/features/library/validator/project.validator.js";
 import {
   Field,
   FieldError,
@@ -32,6 +32,11 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import SmartImage from "@/components/misc/SmartImage";
 import RIGHT_SECTION_BG_IMG from "@/assets/Images/create_project_Side.jpg?w=400;800;1200;1600&format=webp&imagetools&as=picture&metadata";
+import { useCreateProjectMutation } from "@/features/library/api/project.api.js";
+import z from "zod";
+import { useNavigate } from "react-router";
+import { toast } from "react-toastify";
+import { IconLoader2 } from "@tabler/icons-react";
 
 function CreateProjectDialog({ open, changeView, children }) {
   const form = useForm({
@@ -42,15 +47,43 @@ function CreateProjectDialog({ open, changeView, children }) {
     },
     mode: "onChange",
   });
+  const navigate = useNavigate();
+
   const [uploadedFile, setUploadedFile] = useState(null);
-  function handleSubmit(data) {
+  const [createProject, { isLoading: isSubmitting }] =
+    useCreateProjectMutation();
+
+  const handleSubmit = async (data) => {
+    const zodDataValidationResult = CREATE_PROJECT_SCHEMA.safeParse(data);
+    if (!zodDataValidationResult.success) {
+      const error = z.treeifyError(zodDataValidationResult.error);
+      console.error(`[CREATE PROJECT FORM FIELD ERROR]:`, error);
+      return;
+    }
+
+    const zodFileValidationResult = CREATE_PROJECT_SCHEMA.safeParse(data);
+    if (!zodFileValidationResult.success) {
+      const error = z.treeifyError(zodFileValidationResult.error);
+      console.error(`[AUDIO FILE FIELD ERROR]:`, error);
+      return;
+    }
+
     const payload = new FormData();
-    payload.append("title", data.title);
+    payload.append("name", data.title);
     payload.append("description", data.description);
     payload.append("main-audio", uploadedFile, uploadedFile.name);
-
     // console.debug(Object.fromEntries(payload.entries()));
-  }
+
+    try {
+      const response = await createProject(payload).unwrap();
+      toast.success("Project Created Successfully");
+      const projectId = response?.data?.project?.id;
+      navigate(`/app/projects/${projectId}`);
+    } catch (error) {
+      toast.error("Error while creating your project.");
+      console.debug("Error occured while creating project: ", error);
+    }
+  };
 
   return (
     <Dialog
@@ -60,7 +93,7 @@ function CreateProjectDialog({ open, changeView, children }) {
       }}
     >
       {children}
-      <DialogContent className="sm:max-w-md lg:max-w-6xl">
+      <DialogContent className="sm:max-w-md lg:max-w-4xl lg:max-h-11/12">
         <DialogHeader>
           <DialogTitle>Create new Project</DialogTitle>
           <DialogDescription>
@@ -108,8 +141,9 @@ function CreateProjectDialog({ open, changeView, children }) {
             className="w-1/2"
             type="submit"
             form="create-project-form"
-            disabled={!form.formState.isValid || !uploadedFile}
+            disabled={!form.formState.isValid || !uploadedFile || isSubmitting}
           >
+            {isSubmitting && <IconLoader2 className="animate-spin" />}
             Submit
           </Button>
         </DialogFooter>

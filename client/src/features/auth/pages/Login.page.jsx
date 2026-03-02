@@ -11,6 +11,7 @@ import {
   selectAuthStep,
 } from "../state/slices/auth.slice";
 import { ForgotPassword } from "@/features/auth/components/ForgotPassword";
+import { InputOTPForm } from "@/features/auth/components/OTP-form";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -31,7 +32,13 @@ export default function LoginPage() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md">
-            {authStep === "forgotPassword" ? <ForgotPassword /> : <LoginForm />}
+            {authStep === "forgotPassword" ? (
+              <ForgotPassword />
+            ) : authStep === "otp" ? (
+              <InputOTPForm />
+            ) : (
+              <LoginForm />
+            )}
           </div>
         </div>
       </div>

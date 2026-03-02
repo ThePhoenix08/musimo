@@ -19,6 +19,8 @@ import {
 
 import { requestOtpSchema } from "../validators/AuthApi.validator";
 
+import { toast } from "react-toastify";
+
 function useUserAuthFlow() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -32,9 +34,6 @@ function useUserAuthFlow() {
     try {
       if (type === "register") {
         const result = await register(formData).unwrap();
-
-        const email = formData.get("email");
-        dispatch(setVerificationEmail(email));
 
         const parsedFormData = {
           email: formData.get("email"),
@@ -54,8 +53,41 @@ function useUserAuthFlow() {
           purpose: zodResult.data?.purpose,
         }).unwrap();
 
+        dispatch(setVerificationEmail(zodResult.data?.email));
+
         dispatch(setAuthStep("otp"));
         return result;
+      }
+
+      if (type === "forgotPassword") {
+        const parsedFormData = {
+          email: formData.get("email"),
+          purpose: "password_reset",
+        };
+
+        const zodResult = requestOtpSchema.safeParse(parsedFormData);
+
+        if (!zodResult.success) {
+          const zodError = zodResult.error.flatten().fieldErrors;
+          console.error(`[REQUEST OTP ERROR]:`, zodError);
+
+          throw { type: "Validation", errors: zodError };
+        }
+
+        await requestOtp({
+          email: zodResult.data?.email,
+          purpose: zodResult.data?.purpose,
+        }).unwrap();
+
+        dispatch(setVerificationEmail(zodResult.data?.email));
+
+        dispatch(setAuthStep("otp"));
+        toast.success("OTP Sent Successfully 🎉", {
+          position: "top-right",
+          autoClose: 1000,
+          theme: "dark",
+        });
+        return;
       }
 
       if (type === "login") {
@@ -71,7 +103,7 @@ function useUserAuthFlow() {
           }),
         );
 
-        navigate(ROUTES.PROFILE);
+        navigate(ROUTES.PROFILE, { replace: true });
 
         return result;
       }
@@ -82,7 +114,7 @@ function useUserAuthFlow() {
         dispatch(clearCredentials());
         dispatch(setAuthStep("register"));
 
-        navigate(ROUTES.LANDING_PAGE);
+        navigate(ROUTES.LANDING_PAGE, { replace: true });
         return;
       }
 

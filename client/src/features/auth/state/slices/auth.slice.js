@@ -29,6 +29,9 @@ const authSlice = createSlice({
     setVerificationEmail: (state, { payload }) => {
       state.verificationEmail = payload;
     },
+    resetVerificationEmail: (state) => {
+      state.verificationEmail = null;
+    },
     setUpdateTokens: (state, action) => {
       const { accessToken } = action.payload;
       state.accessToken = accessToken;
@@ -70,6 +73,7 @@ export const {
   setPreferences,
   setAuthStep,
   setVerificationEmail,
+  resetVerificationEmail,
 } = authSlice.actions;
 
 // selectors

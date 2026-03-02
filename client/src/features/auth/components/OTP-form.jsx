@@ -52,6 +52,7 @@ export function InputOTPForm() {
   const handleResendOTP = async () => {
     try {
       setGeneralError(null);
+      setOtp("");
 
       const parsedFormData = {
         email: verificationEmail,

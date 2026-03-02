@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import useUserAuthFlow from "../flows/userAuth.flow";
 import { toast } from "react-toastify";
+import { Link } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -77,13 +78,6 @@ export function RegisterForm({ className, ...props }) {
         autoClose: 1000,
         theme: "dark",
       });
-
-      const apiError = error?.data.message;
-
-      // validation errors
-      if (apiError?.errors && typeof apiError.errors === "object") {
-        setErrors(apiError.errors);
-      }
     } finally {
       setIsSubmitting(false);
     }
@@ -266,12 +260,12 @@ export function RegisterForm({ className, ...props }) {
           </Button>
           <FieldDescription className="px-6 text-center mt-4">
             Already have an account?{" "}
-            <a
-              href="/login"
-              className="text-primary hover:underline font-medium"
+            <Link
+              to="/login"
+              className="text-primary underline underline-offset-4"
             >
               Sign in
-            </a>
+            </Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { setAuthStep } from "../state/slices/auth.slice";
+import useUserAuthFlow from "@/features/auth/flows/userAuth.flow";
+import { toast } from "react-toastify";
 
 import { Mail, Lock, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,26 +15,50 @@ import { FieldDescription } from "@/components/ui/field";
 export function ForgotPassword() {
   const dispatch = useDispatch();
   const [email, setEmail] = useState("");
+  const [errors, setErrors] = useState({});
+  const [generalError, setGeneralError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { flow } = useUserAuthFlow();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) return;
+    try {
+      e.preventDefault();
+      setIsLoading(true);
 
-    setIsLoading(true);
+      const formData = new FormData(e.target);
+      const userEmail = formData.get("email");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+      const apiFormData = new FormData();
+      apiFormData.append("email", userEmail);
 
-    setIsLoading(false);
-    setIsSubmitted(true);
+      await flow("forgotPassword", apiFormData);
 
-    // Reset after 4 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setEmail("");
-    }, 4000);
+      setIsLoading(false);
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error("Forgot Password error:", error);
+      setIsLoading(false);
+
+      // ZOD VALIDATION ERROR
+      if (error?.type === "Validation") {
+        setErrors(error.errors);
+        return;
+      }
+
+      const backendMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Something went wroung";
+
+      setGeneralError(backendMessage);
+
+      toast.error("Forgot Password Failed 😕", {
+        position: "top-right",
+        autoClose: 1000,
+        theme: "dark",
+      });
+    }
   };
 
   return (
@@ -55,27 +81,53 @@ export function ForgotPassword() {
               No worries! Enter your email address and we'll send you a link to
               reset your password.
             </p>
+
+            {generalError && (
+              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-md text-sm">
+                {generalError} 😟
+              </div>
+            )}
           </div>
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Input */}
             <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+              <Mail
+                className={`absolute left-4 top-6 -translate-y-1/2 h-5 w-5 transition-colors duration-200
+      ${
+        errors.email
+          ? "text-red-500"
+          : "text-muted-foreground group-focus-within:text-primary"
+      }`}
+              />
+
               <Input
-                type="email"
-                placeholder="your@email.com"
+                id="email"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
                 required
                 disabled={isSubmitted}
-                className="pl-12 h-12 bg-background/50 border-border/50 text-base placeholder:text-muted-foreground/60 focus:border-primary/50 focus:bg-background/80 transition-all duration-200"
+                className={`pl-12 h-12 text-base transition-all duration-200 bg-background/50 placeholder:text-muted-foreground/60 ${
+                  errors.email
+                    ? "border-destructive focus-visible:ring-destructive focus-visible:ring-2"
+                    : "border-border/50 focus:border-primary/50 focus-visible:ring-primary/40"
+                }`}
               />
+
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
+                  <span className="inline-block mt-0.5">⚠</span>
+                  <span>{errors.email[0]}</span>
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isLoading || isSubmitted || !email}
+              disabled={isLoading || isSubmitted || !email.trim()}
               className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group"
             >
               {isLoading ? (

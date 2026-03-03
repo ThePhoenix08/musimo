@@ -3,6 +3,7 @@ import TopBar from "@/features/library/components/TopBar.jsx";
 import FilterSidebar from "@/features/library/components/Filter/FilterSidebar";
 import LibraryMenuBar from "@/features/library/components/LibraryMenuBar";
 import CreateProjectDialog from "@/features/library/components/CreateProject/CreateProjectDialog.jsx";
+import ProjectsArea from "./components/ProjectsArea";
 function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -21,7 +22,7 @@ function LibraryPage() {
         <div className="main-area flex">
           <div className="main-content-area">
             <LibraryMenuBar />
-            <div className="projects-area"></div>
+            <ProjectsArea />
           </div>
           <FilterSidebar />
         </div>

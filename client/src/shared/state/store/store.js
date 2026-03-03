@@ -17,6 +17,7 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { ENVS } from "@/shared/constants/env.constants.js";
+import { ProjectApi } from "@/features/library/actions/project.api";
 
 const authPersistConfig = {
   key: "auth",
@@ -42,6 +43,7 @@ const store = configureStore({
     auth: persistReducer(authPersistConfig, authReducer),
     theme: persistReducer(themePersistConfig, themeReducer),
     [UserAuthenticationApi.reducerPath]: UserAuthenticationApi.reducer,
+    [ProjectApi.reducerPath]: ProjectApi.reducer,
   },
 
   middleware: (getDefaultMiddleware) =>
@@ -50,7 +52,9 @@ const store = configureStore({
         // Required for redux-persist + RTK Query to work together
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(UserAuthenticationApi.middleware),
+    })
+      .concat(UserAuthenticationApi.middleware)
+      .concat(ProjectApi.middleware),
   devTools: ENVS.DEV_MODE,
 });
 

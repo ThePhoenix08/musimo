@@ -32,7 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import SmartImage from "@/components/misc/SmartImage";
 import RIGHT_SECTION_BG_IMG from "@/assets/Images/create_project_Side.jpg?w=400;800;1200;1600&format=webp&imagetools&as=picture&metadata";
-import { useCreateProjectMutation } from "@/features/library/api/project.api.js";
+import { useCreateProjectMutation } from "@/features/library/actions/project.api.js";
 import z from "zod";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";

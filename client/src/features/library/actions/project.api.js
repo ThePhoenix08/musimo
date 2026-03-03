@@ -4,7 +4,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 export const ProjectApi = createApi({
   reducerPath: "ProjectApi",
   baseQuery,
-  tagTypes: ["Project"],
+  tagTypes: ["Project", "ProjectList"],
   endpoints: (builder) => ({
     createProject: builder.mutation({
       query: (projectData) => ({
@@ -12,10 +12,17 @@ export const ProjectApi = createApi({
         method: "POST",
         body: projectData
       })
+    }),
+    getAllProjects: builder.query({
+      query: ({page = 1, page_size = 20}) => ({
+        url: `/projects?page=${page}&page_size=${page_size}`,
+        method: "GET",
+      })
     })
   }),
 })
 
 export const {
-  useCreateProjectMutation
+  useCreateProjectMutation,
+  useGetAllProjectsQuery
 } = ProjectApi;

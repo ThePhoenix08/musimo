@@ -29,8 +29,6 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  console.log("Original result:", result);
-  
   if (result?.error?.status === 401) {
     console.log("Access token expired. Trying refresh...");
 
@@ -46,11 +44,13 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       extraOptions,
     );
 
-    console.log("Refresh result:", refreshResult);
+    const headers = refreshResult?.meta?.response?.headers;
 
     if (refreshResult?.data) {
       api.dispatch(
-        setUpdateTokens({ accessToken: refreshResult?.data.access_token }),
+        setUpdateTokens({
+          accessToken: headers.get("authorization")?.replace("Bearer ", ""),
+        }),
       );
 
       result = await baseQuery(args, api, extraOptions);

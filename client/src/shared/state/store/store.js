@@ -29,6 +29,7 @@ const authPersistConfig = {
     "verificationEmail",
     "tokenExpiryEstimate",
     "isAuthenticated",
+    "otpPurpose",
   ],
 };
 

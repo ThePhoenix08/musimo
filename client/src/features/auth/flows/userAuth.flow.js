@@ -8,6 +8,7 @@ import {
   setCredentials,
   clearCredentials,
   setUpdateTokens,
+  setOtpPurpose,
 } from "../state/slices/auth.slice";
 
 import {
@@ -54,6 +55,7 @@ function useUserAuthFlow() {
         }).unwrap();
 
         dispatch(setVerificationEmail(zodResult.data?.email));
+        dispatch(setOtpPurpose("email_verification"));
 
         dispatch(setAuthStep("otp"));
         return result;
@@ -80,6 +82,7 @@ function useUserAuthFlow() {
         }).unwrap();
 
         dispatch(setVerificationEmail(zodResult.data?.email));
+        dispatch(setOtpPurpose("password_reset"));
 
         dispatch(setAuthStep("otp"));
         toast.success("OTP Sent Successfully 🎉", {

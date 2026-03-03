@@ -11,10 +11,10 @@ export const BASE_URL = "http://127.0.0.1:8000/";
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
   credentials: "include",
-  prepareHeaders: (headers, { getState, /* _endpoint, */ body }) => {
+  prepareHeaders: (headers, { getState, endpoint, body }) => {
     const token = selectAccessToken(getState());
 
-    if (token) {
+    if (token && endpoint !== "refreshToken") {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
@@ -29,6 +29,8 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
+  console.log("Original result:", result);
+  
   if (result?.error?.status === 401) {
     console.log("Access token expired. Trying refresh...");
 
@@ -36,10 +38,15 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       {
         url: "/auth/refresh",
         method: "POST",
+        headers: {
+          Authorization: undefined,
+        },
       },
       api,
       extraOptions,
     );
+
+    console.log("Refresh result:", refreshResult);
 
     if (refreshResult?.data) {
       api.dispatch(

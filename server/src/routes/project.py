@@ -173,6 +173,7 @@ async def delete_project(
     project_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
+    storage:SupabaseStorageClient=Depends(get_storage),
 ) -> None:
     service = ProjectService(db)
-    await service.delete_project(project_id=project_id, user_id=user.id)
+    await service.delete_project(project_id=project_id, user_id=user.id, storage=storage)

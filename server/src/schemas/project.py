@@ -4,12 +4,14 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# Request Schemas
 
-#Request Schemas 
 
 class ProjectCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=150, examples=["My Music Project"])
-    description: Optional[str] = Field(None, max_length=2000, examples=["A project for analyzing concert recordings"])
+    description: Optional[str] = Field(
+        None, max_length=2000, examples=["A project for analyzing concert recordings"]
+    )
 
 
 class ProjectUpdateRequest(BaseModel):
@@ -17,7 +19,8 @@ class ProjectUpdateRequest(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
 
 
-#Response Schemas 
+# Response Schemas
+
 
 class ProjectResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

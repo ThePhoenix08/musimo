@@ -102,8 +102,6 @@ def ApiAuthResponse(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,
-            samesite="none",
             max_age=CONSTANTS.REFRESH_TOKEN_EXPIRE_SECONDS,
             path="/",
         )

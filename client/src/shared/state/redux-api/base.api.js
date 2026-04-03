@@ -1,6 +1,10 @@
 import { fetchBaseQuery } from "@reduxjs/toolkit/query";
 
-import { selectAccessToken } from "@/features/auth/state/slices/auth.slice";
+import {
+  selectAccessToken,
+  setUpdateTokens,
+  clearCredentials,
+} from "@/features/auth/state/slices/auth.slice";
 
 export const BASE_URL = "http://127.0.0.1:8000/";
 
@@ -10,7 +14,7 @@ const baseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState, endpoint, body }) => {
     const token = selectAccessToken(getState());
 
-    if (token) {
+    if (token && endpoint !== "refreshToken") {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
@@ -25,30 +29,34 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  // If access token expired
   if (result?.error?.status === 401) {
     console.log("Access token expired. Trying refresh...");
 
-    // Try refreshing token
-    // const refreshResult = await baseQuery(
-    //   {
-    //     url: "/auth/refresh",
-    //     method: "POST",
-    //   },
-    //   api,
-    //   extraOptions,
-    // );
+    const refreshResult = await baseQuery(
+      {
+        url: "/auth/refresh",
+        method: "POST",
+        headers: {
+          Authorization: undefined,
+        },
+      },
+      api,
+      extraOptions,
+    );
 
-    // if (refreshResult?.data) {
-    //   // Save new access token
-    //   api.dispatch(setCredentials(refreshResult.data));
+    const headers = refreshResult?.meta?.response?.headers;
 
-    //   // Retry original request
-    //   result = await baseQuery(args, api, extraOptions);
-    // } else {
-    //   // Refresh failed → logout user
-    //   api.dispatch(logout());
-    // }
+    if (refreshResult?.data) {
+      api.dispatch(
+        setUpdateTokens({
+          accessToken: headers.get("authorization")?.replace("Bearer ", ""),
+        }),
+      );
+
+      result = await baseQuery(args, api, extraOptions);
+    } else {
+      api.dispatch(clearCredentials());
+    }
   }
 
   return result;

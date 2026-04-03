@@ -6,7 +6,9 @@ Async Supabase storage client — singleton pattern.
 - `get_storage()` is the FastAPI dependency that injects the same instance.
 - Always use the singleton — never instantiate SupabaseStorageClient elsewhere.
 """
+
 from __future__ import annotations
+
 import logging
 from typing import Optional
 
@@ -25,10 +27,11 @@ class SupabaseStorageClient:
     async def connect(self) -> None:
         """Initialise the Supabase async client using service role key (server)."""
         self._client = await acreate_client(
-            CONSTANTS.SUPABASE_URL,
-            CONSTANTS.SUPABASE_SERVICE_KEY
+            CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_SERVICE_KEY
         )
-        logger.info("✅ Supabase async storage client initialised with service role key")
+        logger.info(
+            "✅ Supabase async storage client initialised with service role key"
+        )
 
     async def disconnect(self) -> None:
         self._client = None
@@ -68,8 +71,10 @@ class SupabaseStorageClient:
         self, bucket: str, path: str, expires_in: int = 3600
     ) -> str:
         """Create a signed URL for a file in storage."""
-        response = await self._storage().from_(bucket).create_signed_url(
-            path=path, expires_in=expires_in
+        response = (
+            await self._storage()
+            .from_(bucket)
+            .create_signed_url(path=path, expires_in=expires_in)
         )
         return response["signedURL"]
 
@@ -82,7 +87,9 @@ class SupabaseStorageClient:
         decide whether to swallow it or surface it.
         """
         response = await self._storage().from_(bucket).remove([path])
-        logger.debug("Storage delete response bucket=%s path=%s → %s", bucket, path, response)
+        logger.debug(
+            "Storage delete response bucket=%s path=%s → %s", bucket, path, response
+        )
 
         if not response:
             raise FileNotFoundError(

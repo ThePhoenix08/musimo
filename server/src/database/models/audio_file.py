@@ -1,7 +1,8 @@
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -29,8 +30,8 @@ if TYPE_CHECKING:
 class AudioFile(UUIDMixin, TimestampMixin, Base):
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     file_name: Mapped[str] = mapped_column(String(256), nullable=False)
-    duration: Mapped[float | None] = mapped_column(Float)
-    sample_rate: Mapped[int | None] = mapped_column(Integer)
+    duration: Mapped[float | None] = mapped_column(Float, nullable=True)
+    sample_rate: Mapped[int | None] = mapped_column(Integer, nullable=True)
     channels: Mapped[int] = mapped_column(Integer)
     format: Mapped[AudioFormat] = mapped_column(
         Enum(AudioFormat), default=AudioFormat.MP3
@@ -41,6 +42,10 @@ class AudioFile(UUIDMixin, TimestampMixin, Base):
     )
     project_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE")
+    )
+
+    scheduled_deletion_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     # Discriminator
@@ -114,7 +119,7 @@ class SeparatedAudioFile(AudioFile):
         index=True,
     )
 
-    separation_analysis: Mapped["SeparationAnalysisRecord"] = relationship(
+    separation_analysis_record: Mapped["SeparationAnalysisRecord"] = relationship(
         "SeparationAnalysisRecord",
         back_populates="separated_files",  # ✅ reciprocal link
         lazy="selectin",

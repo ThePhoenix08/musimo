@@ -1,17 +1,19 @@
 """
 Repository for AudioFile CRUD operations.
 """
+
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.schemas.audioFile import AudioFileCreateDTO
 from src.database.enums import AudioFileStatus, AudioSourceType
 from src.database.models.audio_file import AudioFile
+from src.schemas.audioFile import AudioFileCreateDTO
 
 
 class AudioFileRepository:
@@ -94,6 +96,16 @@ class AudioFileRepository:
         await self._session.flush()
         await self._session.refresh(audio_file)
         return audio_file
+
+    async def mark_scheduled_for_deletion(
+        self,
+        audio_file,
+        scheduled_at: datetime,
+    ) -> None:
+        audio_file.status = AudioFileStatus.PENDING_DELETION
+        audio_file.scheduled_deletion_at = scheduled_at
+        self._session.add(audio_file)
+        await self._session.flush()
 
     async def delete(self, audio_file: AudioFile) -> None:
         await self._session.delete(audio_file)

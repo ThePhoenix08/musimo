@@ -33,6 +33,7 @@ class AudioFileStatus(enum.Enum):
     PROCESSING = "processing"
     PROCESSED = "processed"
     FAILED = "failed"
+    PENDING_DELETION = "pending_deletion"
 
 
 class FeatureType(enum.Enum):

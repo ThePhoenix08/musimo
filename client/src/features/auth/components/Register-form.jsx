@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import useUserAuthFlow from "../flows/userAuth.flow";
 import { toast } from "react-toastify";
+import { Link } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,23 +16,44 @@ import { Input } from "@/components/ui/input";
 
 import { User, AtSign, Mail, Lock } from "lucide-react";
 
+import { registerSchema } from "../validators/AuthApi.validator";
+
 export function RegisterForm({ className, ...props }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generalError, setGeneralError] = useState(null);
   const { flow } = useUserAuthFlow();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
+    setGeneralError(null);
 
     const formData = new FormData(e.target);
 
+    const parsedFormData = {
+      name: formData.get("name"),
+      username: formData.get("username"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+    };
+
+    const zodResult = registerSchema.safeParse(parsedFormData);
+
+    if (!zodResult.success) {
+      setIsSubmitting(false);
+      const zodError = zodResult.error.flatten().fieldErrors;
+      setErrors(zodError);
+      console.error(`[REGISTRATION VALIDATION ERROR]:`, zodError);
+      return;
+    }
+
     const apiFormData = new FormData();
-    apiFormData.append("name", formData.get("name"));
-    apiFormData.append("username", formData.get("username"));
-    apiFormData.append("email", formData.get("email"));
-    apiFormData.append("password", formData.get("password"));
+    apiFormData.append("name", zodResult.data?.name);
+    apiFormData.append("username", zodResult.data?.username);
+    apiFormData.append("email", zodResult.data?.email);
+    apiFormData.append("password", zodResult.data?.password);
 
     try {
       await flow("register", apiFormData);
@@ -44,18 +66,18 @@ export function RegisterForm({ className, ...props }) {
     } catch (error) {
       console.error("Registration error:", error);
 
+      const backendMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Something went wroung";
+
+      setGeneralError(backendMessage);
+
       toast.error("Registration Failed 😕", {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",
       });
-
-      const apiError = error?.data.message;
-
-      // validation errors
-      if (apiError?.errors && typeof apiError.errors === "object") {
-        setErrors(apiError.errors);
-      }
     } finally {
       setIsSubmitting(false);
     }
@@ -74,6 +96,12 @@ export function RegisterForm({ className, ...props }) {
             Fill in the form below to create your account
           </p>
         </div>
+
+        {generalError && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-md text-sm">
+            {generalError} 😟
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>
@@ -94,9 +122,9 @@ export function RegisterForm({ className, ...props }) {
               )}
             />
             {errors.name && (
-              <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+              <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
                 <span className="inline-block mt-0.5">⚠</span>
-                <span>{errors.name}</span>
+                <span>{errors.name[0]}</span>
               </p>
             )}
           </Field>
@@ -119,9 +147,9 @@ export function RegisterForm({ className, ...props }) {
               )}
             />
             {errors.username && (
-              <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+              <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
                 <span className="inline-block mt-0.5">⚠</span>
-                <span>{errors.username}</span>
+                <span>{errors.username[0]}</span>
               </p>
             )}
           </Field>
@@ -145,9 +173,9 @@ export function RegisterForm({ className, ...props }) {
             )}
           />
           {errors.email && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.email}</span>
+              <span>{errors.email[0]}</span>
             </p>
           )}
         </Field>
@@ -170,9 +198,9 @@ export function RegisterForm({ className, ...props }) {
             )}
           />
           {errors.password && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.password}</span>
+              <span>{errors.password[0]}</span>
             </p>
           )}
         </Field>
@@ -232,12 +260,12 @@ export function RegisterForm({ className, ...props }) {
           </Button>
           <FieldDescription className="px-6 text-center mt-4">
             Already have an account?{" "}
-            <a
-              href="/login"
-              className="text-primary hover:underline font-medium"
+            <Link
+              to="/login"
+              className="text-primary underline underline-offset-4"
             >
               Sign in
-            </a>
+            </Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

@@ -11,6 +11,7 @@ const initialState = {
   tokenExpiryEstimate: null,
   authStep: "register",
   verificationEmail: null,
+  otpPurpose: null,
 };
 
 const authSlice = createSlice({
@@ -28,6 +29,12 @@ const authSlice = createSlice({
     },
     setVerificationEmail: (state, { payload }) => {
       state.verificationEmail = payload;
+    },
+    resetVerificationEmail: (state) => {
+      state.verificationEmail = null;
+    },
+    setOtpPurpose: (state, action) => {
+      state.otpPurpose = action.payload;
     },
     setUpdateTokens: (state, action) => {
       const { accessToken } = action.payload;
@@ -70,6 +77,8 @@ export const {
   setPreferences,
   setAuthStep,
   setVerificationEmail,
+  resetVerificationEmail,
+  setOtpPurpose,
 } = authSlice.actions;
 
 // selectors
@@ -80,6 +89,7 @@ export const selectAuthError = (state) => state.auth.error;
 export const selectIsRefreshing = (state) => state.auth.isRefreshing;
 export const selectAuthStep = (state) => state.auth.authStep;
 export const selectVerificationEmail = (state) => state.auth.verificationEmail;
+export const selectOTPPurpose = (state) => state.auth.otpPurpose;
 
 export const selectAccessToken = (state) => state.auth.accessToken;
 export const selectTokenExpiryEstimate = (state) =>

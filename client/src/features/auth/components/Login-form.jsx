@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import {
@@ -11,9 +13,16 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import useUserAuthFlow from "../flows/userAuth.flow";
+import { Link } from "react-router";
+import { setAuthStep } from "../../auth/state/slices/auth.slice";
+
+import { loginSchema } from "../validators/AuthApi.validator";
 
 export function LoginForm({ className, ...props }) {
+  const dispatch = useDispatch();
+
   const [errors, setErrors] = useState({});
+  const [generalError, setGeneralError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { flow } = useUserAuthFlow();
@@ -22,36 +31,52 @@ export function LoginForm({ className, ...props }) {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
+    setGeneralError(null);
 
     const formData = new FormData(e.target);
 
+    const parsedFormData = {
+      email: formData.get("email"),
+      password: formData.get("password"),
+    };
+
+    const zodResult = loginSchema.safeParse(parsedFormData);
+
+    if (!zodResult.success) {
+      isSubmitting(false);
+      const zodError = zodResult.error.flatten().fieldErrors;
+      setErrors(zodError);
+      console.error(`[LOGIN VALIDATION ERROR]:`, zodError);
+      return;
+    }
+
     const apiFormData = new FormData();
-    apiFormData.append("email", formData.get("email"));
-    apiFormData.append("password", formData.get("password"));
+    apiFormData.append("email", zodResult.data?.email);
+    apiFormData.append("password", zodResult.data?.password);
 
     try {
       await flow("login", apiFormData);
 
       toast.success("User LoggedIn Successfully 🎉", {
         position: "top-right",
-        autoClose: 1000,
+        autoClose: 3000,
         theme: "dark",
       });
     } catch (error) {
       console.error("Login error:", error);
+
+      const backendMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Something went wroung";
+
+      setGeneralError(backendMessage);
 
       toast.error("Login Failed 😕", {
         position: "top-right",
         autoClose: 1000,
         theme: "dark",
       });
-
-      const apiError = error?.data.message;
-
-      // validation errors
-      if (apiError?.errors && typeof apiError.errors === "object") {
-        setErrors(apiError.errors);
-      }
     } finally {
       setIsSubmitting(false);
     }
@@ -70,6 +95,11 @@ export function LoginForm({ className, ...props }) {
             Enter your email below to login to your account
           </p>
         </div>
+        {generalError && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-md text-sm">
+            {generalError} 😟
+          </div>
+        )}
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
@@ -80,27 +110,27 @@ export function LoginForm({ className, ...props }) {
             required
           />
           {errors.email && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.email}</span>
+              <span>{errors.email[0]}</span>
             </p>
           )}
         </Field>
         <Field>
           <div className="flex items-center">
             <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a
-              href="#"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
+            <button
+              onClick={() => dispatch(setAuthStep("forgotPassword"))}
+              className="ml-auto text-sm underline underline-offset-4 hover:cursor-pointer text-primary"
             >
               Forgot your password?
-            </a>
+            </button>
           </div>
           <Input id="password" type="password" name="password" required />
           {errors.password && (
-            <p className="text-destructive text-xs mt-1.5 flex items-start gap-1">
+            <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>
-              <span>{errors.password}</span>
+              <span>{errors.password[0]}</span>
             </p>
           )}
         </Field>
@@ -148,9 +178,12 @@ export function LoginForm({ className, ...props }) {
           </Button>
           <FieldDescription className="text-center">
             Don&apos;t have an account?{" "}
-            <a href="/register" className="underline underline-offset-4">
+            <Link
+              to="/register"
+              className="text-primary underline underline-offset-4"
+            >
               Sign up
-            </a>
+            </Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

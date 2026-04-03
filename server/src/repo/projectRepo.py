@@ -1,12 +1,9 @@
-
-
 from __future__ import annotations
 
-from sqlalchemy import update
 import uuid
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models.project import Project
@@ -15,7 +12,6 @@ from src.database.models.project import Project
 class ProjectRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
-
 
     async def get_by_id(
         self, project_id: uuid.UUID, user_id: uuid.UUID
@@ -60,7 +56,6 @@ class ProjectRepository:
         )
         return result.scalar_one() > 0
 
-
     async def create(
         self,
         user_id: uuid.UUID,
@@ -73,7 +68,7 @@ class ProjectRepository:
             description=description,
         )
         self._session.add(project)
-        await self._session.flush()   # populate PK/timestamps without committing
+        await self._session.flush()  # populate PK/timestamps without committing
         await self._session.refresh(project)
         return project
 
@@ -90,7 +85,6 @@ class ProjectRepository:
         await self._session.flush()
         await self._session.refresh(project)
         return project
-    
 
     async def set_main_audio(
         self,

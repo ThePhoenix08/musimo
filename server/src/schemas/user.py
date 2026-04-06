@@ -11,6 +11,7 @@ class UserProfile(BaseModel):
     username: str
     email: str
     created_at: datetime
+    email_verified: bool = Field(default=False)
 
 
 class UserProfileUpdate(BaseModel):

@@ -32,7 +32,8 @@ from src.core.error_hooks import setup_global_error_hooks
 
 setup_global_error_hooks()
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone as UTC
+
 
 import uvicorn
 from fastapi import FastAPI

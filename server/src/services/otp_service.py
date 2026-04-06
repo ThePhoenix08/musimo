@@ -2,7 +2,7 @@
 
 import secrets
 import string
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone as UTC
 from typing import Optional
 
 from fastapi import HTTPException, status

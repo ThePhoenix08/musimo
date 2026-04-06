@@ -5,7 +5,7 @@ import subprocess
 import sys
 import traceback
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime , timezone as UTC
 from pathlib import Path
 
 from sqlalchemy import select

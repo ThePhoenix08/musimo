@@ -84,8 +84,10 @@ class SupabaseStorageClient:
 
         if isinstance(response, bytes):
             return response
+        
         if hasattr(response, "content"):
             return response.content
+        
         if hasattr(response, "__await__"):
             response = await response
             return response

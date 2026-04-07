@@ -142,14 +142,14 @@ class AudioFeatureService:
                     "std": float(np.std(flatness)),
                 },
                 "tempo": tempo,
-                "tempogram": {
-                    "mean": np.mean(tempogram, axis=1).tolist(),
-                    "std": np.std(tempogram, axis=1).tolist(),
-                },
-                "mel": {
-                    "mean": np.mean(log_mel, axis=1).tolist(),
-                    "std": np.std(log_mel, axis=1).tolist(),
-                },
+                # "tempogram": {
+                #     "mean": np.mean(tempogram, axis=1).tolist(),
+                #     "std": np.std(tempogram, axis=1).tolist(),
+                # },
+                # "mel": {
+                #     "mean": np.mean(log_mel, axis=1).tolist(),
+                #     "std": np.std(log_mel, axis=1).tolist(),
+                # },
                 "chroma": {
                     "mean": np.mean(chroma, axis=1).tolist(),
                     "std": np.std(chroma, axis=1).tolist(),

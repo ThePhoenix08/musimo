@@ -8,7 +8,6 @@ from src.services.audio_feature_service import AudioFeatureService
 from src.schemas.api.response import ApiResponse, ApiErrorResponse
 
 router = APIRouter(
-    prefix="/api/audio/audio-feature",
     tags=["Audio Feature"]
 )
 

@@ -4,6 +4,7 @@ import { UserAuthenticationApi } from "@/features/auth/state/redux-api/auth.api"
 
 import authReducer from "@/features/auth/state/slices/auth.slice";
 import themeReducer from "../slices/theme.slice";
+import interfaceReducer from "@/features/interface/reducers/interface.slice";
 
 import {
   persistStore,
@@ -45,6 +46,7 @@ const store = configureStore({
     theme: persistReducer(themePersistConfig, themeReducer),
     [UserAuthenticationApi.reducerPath]: UserAuthenticationApi.reducer,
     [ProjectApi.reducerPath]: ProjectApi.reducer,
+    interface: interfaceReducer,
   },
 
   middleware: (getDefaultMiddleware) =>

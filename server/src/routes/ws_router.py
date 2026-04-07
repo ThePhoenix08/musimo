@@ -17,7 +17,7 @@ from ..models.model_service import ModelService
 from ..models.progress_tracker import ProgressTracker
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/ws", tags=["WebSocket"])
+router = APIRouter(prefix="/api/ws", tags=["WebSocket"])
 
 EMOTION_PIPELINE_STEPS = [
     {"id": "load_audio", "name": "Loading Audio File"},

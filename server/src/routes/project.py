@@ -18,7 +18,7 @@ from src.services.project import ProjectService
 from src.schemas.api.response import ApiResponse, ApiErrorResponse  
 
 
-router = APIRouter(prefix="/projects", tags=["Projects"])
+router = APIRouter(tags=["Projects"])
 
 
 @router.post(

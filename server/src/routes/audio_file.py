@@ -13,7 +13,6 @@ from src.schemas.api.response import ApiResponse, ApiErrorResponse
 
 
 router = APIRouter(
-    prefix="/projects/{project_id}/audio-files",
     tags=["Audio Files"],
 )
 

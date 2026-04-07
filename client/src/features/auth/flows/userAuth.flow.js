@@ -124,6 +124,9 @@ function useUserAuthFlow() {
       throw new Error(`No type ${type} flow available for role user.`);
     } catch (error) {
       console.error(`[AUTH ${type?.toUpperCase()} ERROR]:`, error);
+      navigate("/login");
+      dispatch(clearCredentials());
+      dispatch(setAuthStep("login"))
       throw error;
     }
   };

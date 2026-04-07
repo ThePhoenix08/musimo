@@ -12,15 +12,16 @@ import {
 } from "../state/slices/auth.slice";
 import { ForgotPassword } from "@/features/auth/components/ForgotPassword";
 import { InputOTPForm } from "@/features/auth/components/OTP-form";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const authStep = useSelector(selectAuthStep);
 
-  if (isAuthenticated) {
-    return navigate(ROUTES.PROFILE);
-  }
+  useEffect(() => {
+    if (isAuthenticated) navigate(ROUTES.PROFILE);
+  }, [navigate, isAuthenticated]);
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2 dark:bg-black/70">

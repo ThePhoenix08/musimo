@@ -6,7 +6,7 @@ import {
   clearCredentials,
 } from "@/features/auth/state/slices/auth.slice";
 
-export const BASE_URL = "http://127.0.0.1:8000/";
+export const BASE_URL = "/api/";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,

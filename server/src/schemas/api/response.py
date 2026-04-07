@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-UTC = timezone.utc
+from datetime import UTC, datetime, timezone
 from typing import Any, Optional, TypedDict
 
 from fastapi import status
@@ -104,7 +103,7 @@ def ApiAuthResponse(
             value=refresh_token,
             httponly=True,
             max_age=CONSTANTS.REFRESH_TOKEN_EXPIRE_SECONDS,
-            path="/",
+            secure=CONSTANTS.ENV == "prod",
         )
 
     return response

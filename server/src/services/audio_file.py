@@ -184,6 +184,7 @@ class AudioFileService:
         )
         audio_file = await self._audio_repo.create(dto)
         await self._project_repo.set_main_audio(project_id, audio_file.id)
+        await self._session.commit()
 
         return AudioFileUploadResponse.model_validate(audio_file)
 

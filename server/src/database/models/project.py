@@ -1,7 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
@@ -87,4 +87,13 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
 
     @property
     def all_audio_files(self):
-        return [self.main_audio] + (self.separated_audios or [])
+        audios = []
+        if self.main_audio:
+            audios.append(self.main_audio)
+        if self.separated_audios:
+            audios.extend(self.separated_audios)
+        return audios
+    
+    __table_args__ = (
+        Index("idx_project_user_id", "user_id"),
+    )

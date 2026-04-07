@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from typing import Optional
 
-from sqlalchemy import func, select, update
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.database.models.project import Project
 
@@ -17,12 +19,19 @@ class ProjectRepository:
         self, project_id: uuid.UUID, user_id: uuid.UUID
     ) -> Optional[Project]:
         result = await self._session.execute(
-            select(Project).where(
+            select(Project)
+            .where(
                 Project.id == project_id,
                 Project.user_id == user_id,
             )
+            .options(
+                selectinload(Project.main_audio), selectinload(Project.separated_audios)
+            )
         )
         return result.scalar_one_or_none()
+
+    import asyncio
+
 
     async def get_all_by_user(
         self,
@@ -31,30 +40,41 @@ class ProjectRepository:
         page_size: int = 20,
     ) -> tuple[list[Project], int]:
         """Return (items, total_count) for paginated project listing."""
+
         offset = (page - 1) * page_size
 
-        total_result = await self._session.execute(
+        total_stmt = (
             select(func.count()).select_from(Project).where(Project.user_id == user_id)
         )
-        total: int = total_result.scalar_one()
 
-        items_result = await self._session.execute(
+        items_stmt = (
             select(Project)
             .where(Project.user_id == user_id)
             .order_by(Project.created_at.desc())
             .offset(offset)
             .limit(page_size)
+            .options(
+                selectinload(Project.main_audio),
+                selectinload(Project.separated_audios),
+            )
         )
+
+        total_result, items_result = await asyncio.gather(
+            self._session.execute(total_stmt),
+            self._session.execute(items_stmt),
+        )
+
+        total: int = total_result.scalar_one()
         items = list(items_result.scalars().all())
+
         return items, total
 
     async def exists(self, project_id: uuid.UUID, user_id: uuid.UUID) -> bool:
-        result = await self._session.execute(
-            select(func.count())
-            .select_from(Project)
-            .where(Project.id == project_id, Project.user_id == user_id)
+        stmt = select(
+            exists().where(Project.id == project_id, Project.user_id == user_id)
         )
-        return result.scalar_one() > 0
+        result = await self._session.execute(stmt)
+        return result.scalar()
 
     async def create(
         self,
@@ -98,7 +118,8 @@ class ProjectRepository:
         )
 
         await self._session.execute(stmt)
-        await self._session.commit()
+        await self._session.flush()
 
     async def delete(self, project: Project) -> None:
         await self._session.delete(project)
+        await self._session.flush()

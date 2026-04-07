@@ -1,10 +1,11 @@
-import asyncio
+import asyncio  # noqa: I001
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import src.database.models  # noqa: F401
 from src.core.settings import CONSTANTS
 from src.database.base import Base
 

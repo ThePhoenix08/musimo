@@ -7,14 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.supabase import SupabaseStorageClient, get_storage
 from src.database.enums import AudioFileStatus, AudioSourceType
 from src.database.session import get_db
+from src.schemas.api.response import ApiErrorResponse, ApiResponse
 from src.services.audio_file import AudioFileService
 from src.services.dependencies import get_current_user
-from src.schemas.api.response import ApiResponse, ApiErrorResponse
 
-
-router = APIRouter(
-    tags=["Audio Files"],
-)
+router = APIRouter()
 
 
 # =========================

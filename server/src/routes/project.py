@@ -6,19 +6,17 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.supabase import SupabaseStorageClient, get_storage
-from src.services.audio_file import AudioFileService
 from src.database.session import get_db
+from src.schemas.api.response import ApiErrorResponse, ApiResponse
 from src.schemas.project import (
     ProjectCreateRequest,
     ProjectUpdateRequest,
 )
+from src.services.audio_file import AudioFileService
 from src.services.dependencies import get_current_user
 from src.services.project import ProjectService
 
-from src.schemas.api.response import ApiResponse, ApiErrorResponse  
-
-
-router = APIRouter(tags=["Projects"])
+router = APIRouter()
 
 
 @router.post(

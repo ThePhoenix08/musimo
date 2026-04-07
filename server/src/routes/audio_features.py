@@ -1,15 +1,14 @@
 import uuid
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.session import get_db
 from src.core.supabase import get_storage
+from src.database.session import get_db
+from src.schemas.api.response import ApiErrorResponse, ApiResponse
 from src.services.audio_feature_service import AudioFeatureService
-from src.schemas.api.response import ApiResponse, ApiErrorResponse
 
-router = APIRouter(
-    tags=["Audio Feature"]
-)
+router = APIRouter()
 
 
 """ Extract Features API """

@@ -61,18 +61,24 @@ function CreateProjectDialog({ open, changeView, children }) {
       return;
     }
 
-    const zodFileValidationResult = CREATE_PROJECT_SCHEMA.safeParse(data);
+    const zodFileValidationResult = AUDIO_FILE_SCHEMA.safeParse(uploadedFile);
     if (!zodFileValidationResult.success) {
       const error = z.treeifyError(zodFileValidationResult.error);
       console.error(`[AUDIO FILE FIELD ERROR]:`, error);
+      setUploadedFile(null);
+
+      toast.error(error.errors[0]);
       return;
     }
 
     const payload = new FormData();
     payload.append("name", data.title);
     payload.append("description", data.description);
-    payload.append("main-audio", uploadedFile, uploadedFile.name);
-    // console.debug(Object.fromEntries(payload.entries()));
+    payload.append("file", uploadedFile);
+    
+    for (let pair of payload.entries()) {
+      console.debug(pair[0], pair[1]);
+    }
 
     try {
       const response = await createProject(payload).unwrap();
@@ -108,7 +114,7 @@ function CreateProjectDialog({ open, changeView, children }) {
             </div>
             <div className="audio-upload-box grow flex flex-col">
               <FieldLabel htmlFor="create-project-form-audio-upload">
-                Project Title
+                Audio
               </FieldLabel>
               <AudioUploadCard
                 id="create-project-form-audio-upload"

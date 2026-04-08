@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const FILE_SIZE_LIMIT = 200 * 1024 * 1024;
 
-const SUPPORTED_AUDIO_MINE_TYPES = [
+const SUPPORTED_AUDIO_MIME_TYPES = [
   "audio/mpeg",
   "audio/mp3",
   "audio/wav",
@@ -14,16 +14,16 @@ const SUPPORTED_AUDIO_MINE_TYPES = [
 ];
 
 export const AUDIO_FILE_SCHEMA = z
-  .custom((val) => val instanceof File, { error: "Invalid file." })
-  .refine((file) => SUPPORTED_AUDIO_MINE_TYPES.includes(file.type), {
-    error: "Invalid audio file type.",
+  .instanceof(File, { message: "Invalid file." })
+  .refine((file) => SUPPORTED_AUDIO_MIME_TYPES.includes(file.type), {
+    message: "Invalid audio file type.",
   })
   .refine((file) => file.size <= FILE_SIZE_LIMIT, {
-    error: "Audio File should not exceed 200MB",
+    message: "Audio File should not exceed 200MB",
   })
   .refine((file) => file.size > 0, {
-    error: "Audio File should not be empty"
-  })
+    message: "Audio File should not be empty",
+  });
 
 export const CREATE_PROJECT_SCHEMA = z.object({
   title: z

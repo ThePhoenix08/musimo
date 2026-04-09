@@ -15,6 +15,7 @@ class AudioFileResponse(BaseModel):
     id: uuid.UUID
     project_id: Optional[uuid.UUID] = None
     file_name: str
+    file_size: int
     file_path: str
     duration: Optional[float]
     sample_rate: Optional[int]
@@ -58,6 +59,7 @@ class AudioFileCreateDTO(BaseModel):
     project_id: Optional[uuid.UUID] = None
     file_path: str  # supabase storage path
     file_name: str
+    file_size: int
     checksum: str
     channels: int = Field(default=1)
     format: AudioFormat = AudioFormat.MP3

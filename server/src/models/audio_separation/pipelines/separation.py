@@ -5,7 +5,8 @@ import subprocess
 import sys
 import traceback
 import uuid
-from datetime import datetime , timezone as UTC
+from datetime import datetime
+from datetime import timezone as UTC
 from pathlib import Path
 
 from sqlalchemy import select
@@ -175,6 +176,7 @@ async def separate_audio_pipeline(
                     parent_audio_id=uuid.UUID(audio_id),
                     project_id=uuid.UUID(project_id),
                     file_path=public_url,
+                    file_size=stem_metadata["file_size"],
                     file_name=f"{audio_file_path.stem}_{stem}.wav",
                     duration=stem_metadata["duration"],
                     sample_rate=stem_metadata["sample_rate"],

@@ -129,7 +129,8 @@ class AudioFileService:
         await self._assert_project_access(project_id, user_id)
 
         raw_bytes = await file.read()
-        if len(raw_bytes) > MAX_UPLOAD_BYTES:
+        file_size = len(raw_bytes)
+        if file_size > MAX_UPLOAD_BYTES:
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 detail=f"File exceeds maximum allowed size of {MAX_UPLOAD_BYTES // (1024*1024)} MB.",
@@ -172,6 +173,7 @@ class AudioFileService:
             project_id=project_id,
             file_path=storage_path,
             file_name=file.filename or f"{file_id}.bin",
+            file_size=file_size,
             checksum=checksum,
             format=audio_format,
             status=AudioFileStatus.UPLOADED,

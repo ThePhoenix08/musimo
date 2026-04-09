@@ -56,6 +56,8 @@ def get_audio_duration(audio_path: Path) -> float:
 def get_audio_metadata(audio_path: Path) -> Dict:
     """Get audio metadata using ffprobe"""
     try:
+        file_size_mb = audio_path.stat().st_size / (1024 * 1024)
+
         cmd = [
             "ffprobe",
             "-v",
@@ -79,6 +81,7 @@ def get_audio_metadata(audio_path: Path) -> Dict:
             "sample_rate": sample_rate,
             "channels": channels,
             "format": format_name,
+            "file_size": file_size_mb
         }
     except Exception as e:
         logger.error(f"Error getting audio metadata: {e}")
@@ -87,6 +90,7 @@ def get_audio_metadata(audio_path: Path) -> Dict:
             "sample_rate": 44100,
             "channels": 2,
             "format": "unknown",
+            "file_size": 0
         }
 
 

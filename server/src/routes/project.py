@@ -41,27 +41,25 @@ async def create_project_with_audio(
             description=description,
         )
 
-        project = await project_service.create_project(
+        created_project = await project_service.create_project(
             user_id=user.id,
             payload=project_payload,
         )
 
-        audio_data = None
-
         if file:
-            audio = await audio_service.upload_audio_file(
-                project_id=project.id,
+            await audio_service.upload_audio_file(
+                project_id=created_project.id,
                 user_id=user.id,
                 file=file,
             )
-            audio_data = audio.model_dump()
+
+        project = await project_service.get_project(created_project.id, user.id)
 
         return ApiResponse(
             message="Project created successfully"
                     + (" and audio uploaded" if file else ""),
             data={
-                "project": project.model_dump(),
-                "audio_file": audio_data,
+                "project": project.model_dump()
             },
             status_code=status.HTTP_201_CREATED,
         )

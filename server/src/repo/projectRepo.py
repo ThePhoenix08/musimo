@@ -8,8 +8,17 @@ from sqlalchemy import exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.core.logger_setup import logger
 from src.database.models.project import Project
 
+PROJECT_POPULATE = [
+    selectinload(Project.main_audio),
+    selectinload(Project.separated_audios),
+    selectinload(Project.emotion_analysis_record),
+    selectinload(Project.instrument_analysis_record),
+    selectinload(Project.feature_analysis_record),
+    selectinload(Project.separation_analysis_record),
+]
 
 class ProjectRepository:
     def __init__(self, session: AsyncSession) -> None:
@@ -24,14 +33,9 @@ class ProjectRepository:
                 Project.id == project_id,
                 Project.user_id == user_id,
             )
-            .options(
-                selectinload(Project.main_audio), selectinload(Project.separated_audios)
-            )
+            .options(*PROJECT_POPULATE)
         )
         return result.scalar_one_or_none()
-
-    import asyncio
-
 
     async def get_all_by_user(
         self,
@@ -53,10 +57,7 @@ class ProjectRepository:
             .order_by(Project.created_at.desc())
             .offset(offset)
             .limit(page_size)
-            .options(
-                selectinload(Project.main_audio),
-                selectinload(Project.separated_audios),
-            )
+            .options(*PROJECT_POPULATE)
         )
 
         total_result, items_result = await asyncio.gather(

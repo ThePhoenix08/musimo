@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.schemas.audioFile import AudioFileResponse
+
 # Request Schemas
 
 
@@ -21,7 +23,6 @@ class ProjectUpdateRequest(BaseModel):
 
 # Response Schemas
 
-
 class ProjectResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -31,6 +32,17 @@ class ProjectResponse(BaseModel):
     user_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+
+    main_audio_id: Optional[uuid.UUID]
+
+    # populated relationships
+    main_audio: Optional[AudioFileResponse] = None
+    separated_audios: list[AudioFileResponse] = []
+    # emotion_analysis_record: Optional["EmotionAnalysisRecord"] = None
+    # instrument_analysis_record: Optional["InstrumentAnalysisRecord"] = None
+    # feature_analysis_record: Optional["FeatureAnalysisRecord"] = None
+    # separation_analysis_record: Optional["SeparationAnalysisRecord"] = None
+
 
 
 class ProjectListResponse(BaseModel):

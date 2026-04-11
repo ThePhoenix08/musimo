@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -30,6 +31,10 @@ import {
   selectVerificationEmail,
   setCredentials,
   setUpdateTokens,
+  selectOTPPurpose,
+  setAuthStep,
+  setVerificationEmail,
+  setOtpPurpose,
 } from "@/features/auth/state/slices/auth.slice";
 
 import {
@@ -44,10 +49,17 @@ export function InputOTPForm() {
   const [generalError, setGeneralError] = useState(null);
 
   const verificationEmail = useSelector(selectVerificationEmail);
+  const otpPurpose = useSelector(selectOTPPurpose);
 
   const [requestOtp, { isLoading: requestOtpLoading }] =
     useRequestOtpMutation();
   const [verifyOtp, { isLoading: verifyOtpLoading }] = useVerifyOtpMutation();
+
+  const handleBackNavigation = () => {
+    dispatch(setAuthStep("forgotPassword"));
+    dispatch(setVerificationEmail(""));
+    dispatch(setOtpPurpose(""));
+  };
 
   const handleResendOTP = async () => {
     try {
@@ -56,7 +68,7 @@ export function InputOTPForm() {
 
       const parsedFormData = {
         email: verificationEmail,
-        purpose: "email_verification",
+        purpose: otpPurpose,
       };
 
       const zodResult = requestOtpSchema.safeParse(parsedFormData);
@@ -101,7 +113,7 @@ export function InputOTPForm() {
 
       const parsedFormData = {
         email: verificationEmail,
-        purpose: "email_verification",
+        purpose: otpPurpose,
         code: otp,
       };
 
@@ -130,7 +142,7 @@ export function InputOTPForm() {
         }),
       );
 
-      navigate(ROUTES.PROFILE);
+      navigate(ROUTES.PROFILE, { replace: true });
 
       toast.success("User Verified Successfully 🎉", {
         position: "top-right",
@@ -158,9 +170,23 @@ export function InputOTPForm() {
   return (
     <Card className="mx-auto max-w-md">
       <CardHeader>
-        <CardTitle className="flex items-center gap-1">
-          <ShieldCheck /> Verify your login
+        {otpPurpose === "password_reset" && (
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={handleBackNavigation}
+              className="flex items-center gap-1 px-2 text-muted-foreground hover:text-foreground"
+            >
+              <span className="text-lg">←</span>
+              <span className="text-sm">Back</span>
+            </Button>
+          </div>
+        )}
+        <CardTitle className="flex items-center gap-2 mt-2">
+          <ShieldCheck className="h-5 w-5 text-primary" />
+          <span>Verify your login</span>
         </CardTitle>
+
         <CardDescription>
           Enter the verification code we sent to your email address:{" "}
           <span className="font-medium">{verificationEmail}</span>.
@@ -183,7 +209,16 @@ export function InputOTPForm() {
               onClick={handleResendOTP}
               disabled={requestOtpLoading}
             >
-              <RefreshCwIcon />
+              <motion.div
+                animate={requestOtpLoading ? { rotate: 360 } : { rotate: 0 }}
+                transition={
+                  requestOtpLoading
+                    ? { repeat: Infinity, duration: 1, ease: "linear" }
+                    : { duration: 0 }
+                }
+              >
+                <RefreshCwIcon />
+              </motion.div>
               Resend Code
             </Button>
           </div>

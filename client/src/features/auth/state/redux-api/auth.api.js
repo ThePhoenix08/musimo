@@ -1,5 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQuery } from "@/shared/state/redux-api/base.api";
+import {
+  baseQuery,
+  baseQueryWithReauth,
+} from "@/shared/state/redux-api/base.api";
 
 export const UserAuthenticationApi = createApi({
   reducerPath: "userAuthenticationApi",
@@ -66,6 +69,24 @@ export const UserAuthenticationApi = createApi({
         method: "POST",
       }),
     }),
+
+    resetPassword: builder.mutation({
+      async queryFn(args, api, extraOptions, baseQuery) {
+        const result = await baseQueryWithReauth(
+          {
+            url: "auth/reset-password",
+            method: "POST",
+            body: args,
+          },
+          api,
+          extraOptions,
+        );
+
+        console.log("result -> ", result);
+
+        return result;
+      },
+    }),
   }),
 });
 
@@ -75,4 +96,5 @@ export const {
   useRequestOtpMutation,
   useVerifyOtpMutation,
   useLogoutMutation,
+  useResetPasswordMutation,
 } = UserAuthenticationApi;

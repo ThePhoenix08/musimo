@@ -16,6 +16,7 @@ import {
   useLoginMutation,
   useRequestOtpMutation,
   useLogoutMutation,
+  useResetPasswordMutation,
 } from "../state/redux-api/auth.api";
 
 import { requestOtpSchema } from "../validators/AuthApi.validator";
@@ -30,6 +31,7 @@ function useUserAuthFlow() {
   const [register] = useRegisterMutation();
   const [requestOtp] = useRequestOtpMutation();
   const [logout] = useLogoutMutation();
+  const [resetPassword] = useResetPasswordMutation();
 
   const flow = async (type, formData) => {
     try {
@@ -118,6 +120,19 @@ function useUserAuthFlow() {
         dispatch(setAuthStep("register"));
 
         navigate(ROUTES.LANDING_PAGE, { replace: true });
+        return;
+      }
+
+      if (type === "resetPassword") {
+        await resetPassword(formData).unwrap();
+
+        dispatch(setOtpPurpose(null));
+
+        toast.success("Password Reset Successfully 🎉", {
+          position: "top-right",
+          autoClose: 1000,
+          theme: "dark",
+        });
         return;
       }
 

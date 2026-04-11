@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { setAuthStep } from "../state/slices/auth.slice";
+import { setAuthStep, setVerificationEmail } from "../state/slices/auth.slice";
 import useUserAuthFlow from "@/features/auth/flows/userAuth.flow";
 import { toast } from "react-toastify";
-
 import { Mail, Lock, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +23,8 @@ export function ForgotPassword() {
   const handleSubmit = async (e) => {
     try {
       e.preventDefault();
+      setGeneralError(null);
+      setErrors({});
       setIsLoading(true);
 
       const formData = new FormData(e.target);
@@ -94,11 +95,11 @@ export function ForgotPassword() {
             <div className="relative group">
               <Mail
                 className={`absolute left-4 top-6 -translate-y-1/2 h-5 w-5 transition-colors duration-200
-      ${
-        errors.email
-          ? "text-red-500"
-          : "text-muted-foreground group-focus-within:text-primary"
-      }`}
+                ${
+                  errors?.email
+                    ? "text-red-500"
+                    : "text-muted-foreground group-focus-within:text-primary"
+                }`}
               />
 
               <Input
@@ -110,13 +111,13 @@ export function ForgotPassword() {
                 required
                 disabled={isSubmitted}
                 className={`pl-12 h-12 text-base transition-all duration-200 bg-background/50 placeholder:text-muted-foreground/60 ${
-                  errors.email
+                  errors?.email
                     ? "border-destructive focus-visible:ring-destructive focus-visible:ring-2"
                     : "border-border/50 focus:border-primary/50 focus-visible:ring-primary/40"
                 }`}
               />
 
-              {errors.email && (
+              {errors?.email && (
                 <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
                   <span className="inline-block mt-0.5">⚠</span>
                   <span>{errors.email[0]}</span>
@@ -153,6 +154,7 @@ export function ForgotPassword() {
             <button
               onClick={() => {
                 dispatch(setAuthStep("register"));
+                dispatch(setVerificationEmail(""));
               }}
               className="text-primary underline underline-offset-4 font-medium hover:cursor-pointer"
             >

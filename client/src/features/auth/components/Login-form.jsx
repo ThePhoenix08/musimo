@@ -108,6 +108,7 @@ export function LoginForm({ className, ...props }) {
             name="email"
             placeholder="m@example.com"
             required
+            autocomplete
           />
           {errors.email && (
             <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
@@ -126,7 +127,7 @@ export function LoginForm({ className, ...props }) {
               Forgot your password?
             </button>
           </div>
-          <Input id="password" type="password" name="password" required />
+          <Input id="password" type="password" name="password" required autocomplete/>
           {errors.password && (
             <p className="text-red-500 text-xs mt-1.5 flex items-start gap-1">
               <span className="inline-block mt-0.5">⚠</span>

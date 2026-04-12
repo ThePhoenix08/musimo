@@ -1,16 +1,7 @@
 import { useGetAllProjectsQuery } from "@/features/library/actions/project.api.js";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { LibraryPagination } from "@/features/library/components/LibraryPagination.jsx";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import ProjectCard from "./ProjectCard";
 
 const ProjectsArea = () => {
   const [searchParams] = useSearchParams();
@@ -36,22 +27,7 @@ const ProjectsArea = () => {
     <div>
       <div className="grid grid-cols-3 gap-4">
         {items?.map((p) => (
-          <Card>
-            <CardHeader>
-              <CardTitle>{p.name}</CardTitle>
-              <CardDescription>{p.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Card Content</p>
-            </CardContent>
-            <CardFooter>
-              <Button asChild>
-                <Link to={`/app/projects/${p.id}`}>
-                  Open
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
+          <ProjectCard project={p} />
         ))}
       </div>
       <div className="flex justify-center items-center gap-4 mt-6">

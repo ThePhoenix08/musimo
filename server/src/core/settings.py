@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     SUPABASE_AUDIO_STEM_BUCKET: str
     SUPABASE_AUDIO_SOURCE_BUCKET: str
 
+    @computed_field
+    @property
+    def AUDIO_STORAGE_BASE_URL(self) -> str:
+        return f"{self.SUPABASE_URL}/storage/v1/object/public/{self.SUPABASE_AUDIO_SOURCE_BUCKET}"
+
     # Database
     DATABASE_HOST: str
     DATABASE_PORT: int = 5432

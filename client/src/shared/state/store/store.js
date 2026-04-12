@@ -19,6 +19,7 @@ import {
 import storage from "redux-persist/lib/storage";
 import { ENVS } from "@/shared/constants/env.constants.js";
 import { ProjectApi } from "@/features/library/actions/project.api";
+import audioPlayerReducer from "@/features/interface/audio-player/AudioPlayer.slice";
 
 const authPersistConfig = {
   key: "auth",
@@ -46,6 +47,7 @@ const store = configureStore({
     theme: persistReducer(themePersistConfig, themeReducer),
     [UserAuthenticationApi.reducerPath]: UserAuthenticationApi.reducer,
     [ProjectApi.reducerPath]: ProjectApi.reducer,
+    audioPlayer: audioPlayerReducer,
     interface: interfaceReducer,
   },
 

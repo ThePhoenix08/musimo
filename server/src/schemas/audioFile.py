@@ -2,8 +2,9 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
+from src.core.settings import CONSTANTS
 from src.database.enums import AudioFileStatus, AudioFormat, AudioSourceType
 
 #  Response Schemas
@@ -26,6 +27,15 @@ class AudioFileResponse(BaseModel):
     source_type: AudioSourceType
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def file_url(self) -> str:
+        return CONSTANTS.AUDIO_STORAGE_BASE_URL + "/" + self.file_path
+
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class AudioFileUploadResponse(BaseModel):

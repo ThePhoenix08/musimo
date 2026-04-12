@@ -1,17 +1,33 @@
 import { React, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useSelector } from "react-redux";
+import { useLocation } from "react-router";
 import useUserAuthFlow from "@/features/auth/flows/userAuth.flow";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 
-import { setAuthStep } from "../../auth/state/slices/auth.slice";
+import {
+  setAuthStep,
+  selectOTPPurpose,
+} from "../../auth/state/slices/auth.slice";
 
 import { ResetPasswordDialog } from "@/features/auth/components/ResetPassword";
 
 function ProfilePage() {
-  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const location = useLocation();
   const dispatch = useDispatch();
   const { flow } = useUserAuthFlow();
+  const otpPurpose = useSelector(selectOTPPurpose);
+
+  let isForcedReset = true;
+
+  if (otpPurpose != "password_reset") {
+    isForcedReset = false;
+  }
+
+  const [manualOpen, setManualOpen] = useState(false);
+
+  const openModal = isForcedReset || manualOpen;
 
   const handleLogout = async () => {
     try {
@@ -40,16 +56,21 @@ function ProfilePage() {
       <Button onClick={handleLogout}>LOGOUT</Button>
 
       <Button
-        onClick={() => setIsResetDialogOpen(true)}
+        onClick={() => {
+          setManualOpen(true);
+        }}
         className="px-6 py-2 mt-10"
       >
         Open Reset Password Dialog
       </Button>
 
-      <ResetPasswordDialog
-        open={isResetDialogOpen}
-        onOpenChange={setIsResetDialogOpen}
-      />
+      {openModal && (
+        <ResetPasswordDialog
+          open={openModal}
+          forcedReset={isForcedReset}
+          onClose={() => !isForcedReset && setManualOpen(false)}
+        />
+      )}
     </div>
   );
 }

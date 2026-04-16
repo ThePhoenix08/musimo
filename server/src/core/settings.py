@@ -1,16 +1,10 @@
-from pathlib import Path
+from functools import cached_property, lru_cache
 from typing import List, Literal
 
-from dotenv import load_dotenv
 from pydantic import Field, ValidationError, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .logger_setup import logger
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # src/core → server/
-ENV_PATH = BASE_DIR / ".env"
-
-load_dotenv(ENV_PATH)
 
 
 class Settings(BaseSettings):
@@ -29,8 +23,9 @@ class Settings(BaseSettings):
     SUPABASE_AUDIO_STEM_BUCKET: str
     SUPABASE_AUDIO_SOURCE_BUCKET: str
 
-    @computed_field
-    @property
+    # @computed_field
+    # @property
+    @cached_property
     def AUDIO_STORAGE_BASE_URL(self) -> str:
         return f"{self.SUPABASE_URL}/storage/v1/object/public/{self.SUPABASE_AUDIO_SOURCE_BUCKET}"
 
@@ -43,21 +38,24 @@ class Settings(BaseSettings):
     DATABASE_POOLER_HOST: str
     DATABASE_POOLER_USER: str
 
-    @computed_field
-    @property
+    # @computed_field
+    # @property
+    @cached_property
     def ASYNC_DATABASE_URL(self) -> str:
         return (
             f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
 
-    @computed_field
-    @property
+    # @computed_field
+    # @property
+    @cached_property
     def SYNC_DATABASE_URL(self) -> str:
         return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
-    @computed_field
-    @property
+    # @computed_field
+    # @property
+    @cached_property
     def ASYNC_POOLER_DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.DATABASE_POOLER_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_POOLER_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
@@ -100,13 +98,16 @@ class Settings(BaseSettings):
     PASSWORD_MIN_LENGTH: int = 8
     PASSWORD_MAX_LENGTH: int = 32
 
-    model_config = SettingsConfigDict(
-        env_file=str(ENV_PATH), extra="ignore", case_sensitive=True
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=True)
+
+
+@lru_cache()
+def get_settings():
+    return Settings()
 
 
 try:
-    CONSTANTS = Settings()
+    CONSTANTS = get_settings()
     logger.info(
         f"✅ Loaded settings for ENV='{CONSTANTS.ENV}' (DEBUG={CONSTANTS.DEBUG})"
     )
@@ -115,3 +116,5 @@ except ValidationError as e:
     for err in e.errors():
         logger.critical(f"  {'.'.join(map(str, err['loc']))}: {err['msg']}")
     raise SystemExit(1)
+
+__all__ = ["CONSTANTS", "get_settings"]

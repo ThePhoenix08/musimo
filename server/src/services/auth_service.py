@@ -1,5 +1,6 @@
 # ruff: noqa: E712
 # security and authentication service
+import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -13,7 +14,6 @@ from fastapi import HTTPException, Request, status
 from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.logger_setup import logger
 from src.core.settings import CONSTANTS
 from src.database.models import RefreshToken
 from src.database.models.user import User
@@ -22,6 +22,9 @@ from src.schemas.token import (
     Refresh_Token_Payload,
 )
 from src.utils.db_util import db_query
+
+logger = logging.getLogger(__name__)
+
 
 ph = PasswordHasher(
     time_cost=3,  # number of iterations

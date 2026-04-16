@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from pathlib import Path
@@ -7,7 +8,6 @@ from typing import Optional
 import numpy as np
 import torch
 
-from src.core.logger_setup import logger
 from src.models.emotion_recognition.config import ConfigManager
 from src.models.emotion_recognition.pipeline.embedding import AudioEmbeddingExtractor
 from src.models.emotion_recognition.pipeline.inference import GEMS9EmotionRecognizer
@@ -20,6 +20,8 @@ from src.models.emotion_recognition.pipeline.postprocessor import (
 )
 from src.models.emotion_recognition.pipeline.preprocessor import Preprocessor
 from src.models.progress_tracker import ProgressTracker
+
+logger = logging.getLogger(__name__)
 
 
 class PredictionType(Enum):

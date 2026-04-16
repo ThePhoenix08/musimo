@@ -2,10 +2,19 @@ from pathlib import Path
 
 import pretty_errors
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path.cwd()
+
+_initialized = False
 
 
 def setup_error_beautifier(IS_DEV: bool = True, enable: bool = True) -> None:
+    global _initialized
+
+    if _initialized or not enable or not IS_DEV:
+        return
+
+    _initialized = True
+
     if not enable or not IS_DEV:
         return
 
@@ -36,4 +45,3 @@ def setup_error_beautifier(IS_DEV: bool = True, enable: bool = True) -> None:
             return path
 
     pretty_errors.replace_filename = trim_path
-    pretty_errors.replace_stderr()

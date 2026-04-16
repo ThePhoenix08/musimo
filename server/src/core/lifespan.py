@@ -1,25 +1,15 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from supabase import Client, create_client
 
 from src.core.app_registry import AppRegistry
-from src.core.logger_setup import logger
-from src.core.settings import CONSTANTS
-from src.core.supabase import (
-    supabase_storage_client,  # ← the singleton your service uses
-)
-from src.database.session import test_db_connection
+from src.core.lazy_loads import background_warmup
+from src.core.supabase import supabase_storage_client
+from src.database.session import get_engine
 
-
-def create_supabase_client() -> Client:
-    """Create a raw Supabase client using default API key (used for app.state)."""
-    return create_client(CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_KEY)
-
-
-def create_supabase_admin_client() -> Client:
-    """Create a raw Supabase client using service key (used for app.state)."""
-    return create_client(CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_SERVICE_KEY)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -28,50 +18,36 @@ async def lifespan(app: FastAPI):
     FastAPI lifespan context.
     Handles startup and shutdown events.
     """
+
     logger.info("🎵 Musimo API Starting...")
+
+    # Register app
     AppRegistry.register(app)
 
-    try:
-        supabase = create_supabase_client()
-        app.state.supabase = supabase
-        logger.info("✅ Supabase connected successfully")
-    except Exception as e:
-        app.state.supabase = None
-        logger.error(f"❌ Supabase connection failed: {e}")
+    # ── Lazy placeholders (NO heavy initialization here) ──────────────
+    app.state.supabase = None
+    app.state.supabase_service = None
+    app.state.storage = None
+    app.state.emotion_model = None
+    app.state.db_engine = None
 
-    try:
-        supabase_service = create_supabase_admin_client()
-        app.state.supabase_service = supabase_service
-        logger.info("✅ Supabase service role client connected successfully")
-    except Exception as e:
-        app.state.supabase_service = None
-        logger.error(f"❌ Supabase service role client connection failed: {e}")
+    asyncio.create_task(background_warmup())
 
-    try:
-        await supabase_storage_client.connect()
-        app.state.storage = supabase_storage_client  # keeps app.state in sync too
-        logger.info("✅ Supabase async storage client connected successfully")
-    except Exception as e:
-        app.state.storage = None
-        logger.error(f"❌ Supabase async storage client connection failed: {e}")
-
-    # ── Test DB connection ─────────────────────────────────────────────────────
-    db_health: dict = await test_db_connection()
-    if db_health["ok"]:
-        logger.info("🗄️ Database connection established successfully at startup.")
-    else:
-        logger.critical("⚠️ Database unreachable during startup.")
-
-    # ── ML models ─────────────────────────────────────────────────────────────
-    try:
-        logger.info("📦 Loading emotion detection model...")
-        # ModelService.initialize_emotion_pipeline()
-        logger.info("✅ Emotion detection model loaded successfully")
-    except Exception as e:
-        logger.error(f"❌ Failed to load emotion model: {e}")
+    logger.info("⚡ Lazy initialization enabled (fast startup)")
 
     yield  # ← app runs here
 
-    # ── Shutdown ──────────────────────────────────────────────────────────────
-    await supabase_storage_client.disconnect()
+    # ── Shutdown ─────────────────────────────────────────────────────
+    try:
+        if supabase_storage_client.is_connected:
+            await supabase_storage_client.disconnect()
+    except Exception:
+        pass
+
+    try:
+        engine = get_engine()
+        await engine.dispose()
+    except Exception:
+        pass
+
     logger.info("🎵 Musimo API shut down cleanly.")

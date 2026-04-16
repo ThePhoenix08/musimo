@@ -1,10 +1,12 @@
+import logging
 import os
 from typing import Any
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
 
-from src.core.logger_setup import logger
+logger = logging.getLogger(__name__)
+
 
 colorama_init(autoreset=True)
 

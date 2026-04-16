@@ -1,35 +1,60 @@
+import logging
 import time
+from typing import AsyncGenerator
 
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-from src.core.logger_setup import logger
 from src.core.settings import CONSTANTS
 
-# ✅ Create async engine
-engine = create_async_engine(
-    # CONSTANTS.ASYNC_DATABASE_URL,
-    CONSTANTS.ASYNC_POOLER_DATABASE_URL,
-    echo=CONSTANTS.DEBUG,
-    pool_pre_ping=True,  # helps recover stale Supabase connections
-    future=True,
-    poolclass=None,
-)
+logger = logging.getLogger(__name__)
+_engine: AsyncEngine | None = None
 
 
-# ✅ Create async session factory
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,  # keeps attributes loaded after commit
-    autoflush=False,
-    autocommit=False,
-)
+def get_engine():
+    global _engine
+    if _engine is None:
+        engine = create_async_engine(
+            # CONSTANTS.ASYNC_DATABASE_URL,
+            CONSTANTS.ASYNC_POOLER_DATABASE_URL,
+            echo=CONSTANTS.DEBUG,
+            pool_pre_ping=True,  # helps recover stale Supabase connections
+            future=True,
+            poolclass=None,
+        )
+    return engine
 
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
+_sessionmaker: async_sessionmaker[AsyncSession] | None = None
+
+
+def get_sessionmaker() -> async_sessionmaker[AsyncSession]:
+    global _sessionmaker
+
+    if _sessionmaker is None:
+        engine = get_engine()
+
+        _sessionmaker = async_sessionmaker(
+            bind=engine,
+            class_=AsyncSession,
+            expire_on_commit=False,  # keeps attributes loaded after commit
+            autoflush=False,
+            autocommit=False,
+        )
+
+    return _sessionmaker
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    sessionmaker = get_sessionmaker()
+
+    async with sessionmaker() as session:
         try:
             yield session
             await session.commit()  # optional auto-commit pattern
@@ -46,8 +71,9 @@ async def test_db_connection() -> dict:
     Returns True if DB is reachable, False otherwise.
     """
     start = time.perf_counter()
+    engine = get_engine()
     try:
-        async with engine.begin() as conn:
+        async with engine.connect() as conn:
             result = await conn.execute(text("SELECT 1"))
             ok = result.scalar() == 1
             latency_ms = round((time.perf_counter() - start) * 1000, 2)

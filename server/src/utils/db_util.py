@@ -1,9 +1,12 @@
+import logging
+
 from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from src.core.logger_setup import logger
 from src.core.settings import CONSTANTS
+
+logger = logging.getLogger(__name__)
 
 
 async def db_query(

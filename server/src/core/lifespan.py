@@ -7,7 +7,6 @@ from fastapi import FastAPI
 from src.core.app_registry import AppRegistry
 from src.core.lazy_loads import background_warmup
 from src.core.supabase import supabase_storage_client
-from src.database.session import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,14 @@ async def lifespan(app: FastAPI):
     app.state.emotion_model = None
     app.state.db_engine = None
 
-    asyncio.create_task(background_warmup())
+    app.state.warmup_config = {
+        "db": True,
+        "emotion_model": False,
+        "storage": True,
+        "supabase": False,
+    }
+
+    asyncio.create_task(background_warmup(app.state.warmup_config))
 
     logger.info("⚡ Lazy initialization enabled (fast startup)")
 
@@ -45,8 +51,9 @@ async def lifespan(app: FastAPI):
         pass
 
     try:
-        engine = get_engine()
-        await engine.dispose()
+        engine = AppRegistry.get_state("db_engine")
+        if engine:
+            await engine.dispose()
     except Exception:
         pass
 

@@ -23,7 +23,7 @@ class AppRegistry:
             cls._app = app
 
     @classmethod
-    def get_app(cls) -> FastAPI:
+    def get(cls) -> FastAPI:
         with cls._lock:
             if cls._app is None:
                 raise RuntimeError(

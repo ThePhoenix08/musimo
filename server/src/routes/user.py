@@ -2,7 +2,7 @@ from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.core.app_registry import AppRegistry
+from src.core.lazy_loads import get_supabase
 from src.schemas.user import PasswordChange, UserProfile, UserProfileUpdate
 from src.services.auth_service import AuthService
 from src.services.dependencies import get_current_user
@@ -30,7 +30,7 @@ async def update_profile(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update"
         )
 
-    supabase = AppRegistry.get_state("supabase")
+    supabase = get_supabase()
 
     try:
         result = (
@@ -59,7 +59,7 @@ async def update_profile(
 async def change_password(
     password_change: PasswordChange, current_user: Dict = Depends(get_current_user)
 ):
-    supabase = AppRegistry.get_state("supabase")
+    supabase = get_supabase()
 
     user_result = (
         supabase.table("users")
@@ -78,8 +78,7 @@ async def change_password(
     ):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
-    ph = AppRegistry.get_state("ph")
-    new_password_hash = AuthService.hash_password(ph, password_change.new_password)
+    new_password_hash = AuthService.hash_password(password_change.new_password)
 
     update_result = (
         supabase.table("users")
@@ -96,7 +95,7 @@ async def change_password(
 
 @router.delete("/account")
 async def delete_account(current_user: Dict = Depends(get_current_user)):
-    supabase = AppRegistry.get_state("supabase")
+    supabase = get_supabase()
 
     try:
         # 1: Soft delete (mark as deleted)
@@ -121,7 +120,7 @@ async def delete_account(current_user: Dict = Depends(get_current_user)):
 
 @router.get("/stats")
 async def get_user_stats(current_user: Dict = Depends(get_current_user)):
-    supabase = AppRegistry.get_state("supabase")
+    supabase = get_supabase()
 
     try:
         transactions = (

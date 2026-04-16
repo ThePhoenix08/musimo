@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter
 
-from src.core.app_registry import AppRegistry
+from src.core.lazy_loads import get_supabase
 from src.core.settings import CONSTANTS
 from src.database.session import test_db_connection
 from src.models.model_service import ModelService
@@ -36,7 +36,7 @@ async def root():
 
 @router.get("/api/health")
 async def health_check():
-    supabase = AppRegistry.get_state("supabase")
+    supabase = get_supabase()
     db_health, health = await asyncio.gather(
         test_db_connection(),
         ModelService.health_check(),

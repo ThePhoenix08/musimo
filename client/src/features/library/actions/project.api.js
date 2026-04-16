@@ -14,7 +14,7 @@ export const ProjectApi = createApi({
         method: "POST",
         body: projectData,
       }),
-      invalidatesTags: [PROJECT_LIST_TAG]
+      invalidatesTags: [PROJECT_LIST_TAG],
     }),
     getAllProjects: builder.query({
       query: ({ page = 1, page_size = 20 }) => ({
@@ -24,9 +24,9 @@ export const ProjectApi = createApi({
       providesTags: (result) =>
         result
           ? [
-            ...result.data.items.map(({ id }) => ({ type: "Project", id })),
-            PROJECT_LIST_TAG,
-          ]
+              ...result.data.items.map(({ id }) => ({ type: "Project", id })),
+              PROJECT_LIST_TAG,
+            ]
           : [PROJECT_LIST_TAG],
     }),
     getProjectById: builder.query({
@@ -55,5 +55,5 @@ export const {
   useCreateProjectMutation,
   useGetAllProjectsQuery,
   useGetProjectByIdQuery,
-  useDeleteProjectByIdMutation
+  useDeleteProjectByIdMutation,
 } = ProjectApi;

@@ -119,7 +119,7 @@ const emotionColorAt = (fraction, duration, segments) => {
   if (!segments?.length || !duration) return null;
   const t = fraction * duration;
   const seg = segments.find((e) => t >= e.startTime && t < e.endTime);
-  return seg ? GES_LABELS[seg.emotion]?.color ?? null : null;
+  return seg ? (GES_LABELS[seg.emotion]?.color ?? null) : null;
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -248,8 +248,7 @@ const WaveformSVG = React.memo(
             const topY = cx - bh / 2;
             const frac = i / numBars;
             const played = frac < clampedWP;
-            const isHead =
-              Math.abs(frac - clampedWP) < 1.5 / numBars;
+            const isHead = Math.abs(frac - clampedWP) < 1.5 / numBars;
 
             // emotion colour
             const globalFrac =
@@ -264,15 +263,14 @@ const WaveformSVG = React.memo(
             if (isHead) {
               fill = "var(--color-primary)";
             } else if (played) {
-              fill = emoColor
-                ? emoColor + "dd"
-                : "var(--color-primary)";
+              fill = emoColor ? emoColor + "dd" : "var(--color-primary)";
             } else {
               fill = emoColor
                 ? emoColor + "55"
                 : "var(--color-muted-foreground)";
               if (!emoColor && !played) {
-                fill = "color-mix(in oklch, var(--color-muted-foreground) 35%, transparent)";
+                fill =
+                  "color-mix(in oklch, var(--color-muted-foreground) 35%, transparent)";
               }
             }
 
@@ -288,7 +286,10 @@ const WaveformSVG = React.memo(
                 fill={fill}
                 style={
                   isHead
-                    ? { filter: "brightness(1.4) drop-shadow(0 0 4px var(--color-primary))" }
+                    ? {
+                        filter:
+                          "brightness(1.4) drop-shadow(0 0 4px var(--color-primary))",
+                      }
                     : undefined
                 }
               />
@@ -342,7 +343,13 @@ WaveformSVG.displayName = "WaveformSVG";
 /**
  * EmotionTimeline — compact colour strip with emoji markers (expanded mode)
  */
-const EmotionTimeline = ({ segments, duration, currentTime, onSeek, height = 28 }) => {
+const EmotionTimeline = ({
+  segments,
+  duration,
+  currentTime,
+  onSeek,
+  height = 28,
+}) => {
   const containerRef = useRef(null);
   const [width, setWidth] = useState(0);
 
@@ -371,8 +378,7 @@ const EmotionTimeline = ({ segments, duration, currentTime, onSeek, height = 28 
       {width > 0 &&
         segments.map((seg, i) => {
           const left = (seg.startTime / duration) * width;
-          const segWidth =
-            ((seg.endTime - seg.startTime) / duration) * width;
+          const segWidth = ((seg.endTime - seg.startTime) / duration) * width;
           const info = GES_LABELS[seg.emotion];
           if (!info) return null;
           const showEmoji = segWidth > 24;
@@ -551,7 +557,11 @@ export default function AudioPlayerFooter() {
   useEffect(() => {
     const modeFromUrl = searchParams.get(MODE_PARAM);
     const validModes = Object.values(PLAYER_MODES);
-    if (modeFromUrl && validModes.includes(modeFromUrl) && modeFromUrl !== playerMode) {
+    if (
+      modeFromUrl &&
+      validModes.includes(modeFromUrl) &&
+      modeFromUrl !== playerMode
+    ) {
       dispatch(setPlayerMode(modeFromUrl));
     }
   }, [searchParams]); // eslint-disable-line
@@ -844,17 +854,20 @@ export default function AudioPlayerFooter() {
 
 // ─── ModeToggleBar ────────────────────────────────────────────────────────────
 
-function ModeToggleBar({ mode, onChangeMode, audioName, currentEmotionInfo, isDecoding }) {
+function ModeToggleBar({
+  mode,
+  onChangeMode,
+  audioName,
+  currentEmotionInfo,
+  isDecoding,
+}) {
   const isMini = mode === PLAYER_MODES.MINI;
   const isExpanded = mode === PLAYER_MODES.EXPANDED;
 
   return (
     <div className="flex items-center justify-between px-3 h-6 shrink-0 border-b border-border/40">
       <div className="flex items-center gap-2 min-w-0">
-        <Music
-          size={11}
-          className="text-muted-foreground shrink-0"
-        />
+        <Music size={11} className="text-muted-foreground shrink-0" />
         <span className="text-[11px] font-medium text-muted-foreground truncate max-w-[180px]">
           {audioName ?? "No track loaded"}
         </span>
@@ -890,7 +903,9 @@ function ModeToggleBar({ mode, onChangeMode, audioName, currentEmotionInfo, isDe
           active={isExpanded}
           title="Expanded"
           onClick={() =>
-            onChangeMode(isExpanded ? PLAYER_MODES.NORMAL : PLAYER_MODES.EXPANDED)
+            onChangeMode(
+              isExpanded ? PLAYER_MODES.NORMAL : PLAYER_MODES.EXPANDED,
+            )
           }
         >
           {isExpanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
@@ -925,9 +940,17 @@ const ModeBtn = ({ active, title, onClick, children }) => (
 // ─── MiniContent ──────────────────────────────────────────────────────────────
 
 function MiniContent({
-  progress, duration, currentTime, isPlaying,
-  onSeek, onPlayPause, volume, isMuted,
-  onVolumeChange, onToggleMute, emotionSegments,
+  progress,
+  duration,
+  currentTime,
+  isPlaying,
+  onSeek,
+  onPlayPause,
+  volume,
+  isMuted,
+  onVolumeChange,
+  onToggleMute,
+  emotionSegments,
 }) {
   return (
     <div className="flex flex-col px-4 py-1.5 gap-1.5 flex-1 min-h-0">
@@ -976,7 +999,10 @@ function MiniContent({
           {fmt(duration)}
         </span>
         <div className="flex-1" />
-        <button onClick={onToggleMute} className="text-muted-foreground hover:text-foreground transition-colors">
+        <button
+          onClick={onToggleMute}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
         </button>
         <input
@@ -996,11 +1022,27 @@ function MiniContent({
 // ─── NormalContent ────────────────────────────────────────────────────────────
 
 function NormalContent({
-  peaks, progress, duration, currentTime, isPlaying,
-  onSeek, onPlayPause, onSkip, volume, isMuted,
-  onVolumeChange, onToggleMute, playbackRate, onRateChange,
-  emotionSegments, beatTimestamps, showBeats, onToggleBeats,
-  loopEnabled, onToggleLoop, isDecoding,
+  peaks,
+  progress,
+  duration,
+  currentTime,
+  isPlaying,
+  onSeek,
+  onPlayPause,
+  onSkip,
+  volume,
+  isMuted,
+  onVolumeChange,
+  onToggleMute,
+  playbackRate,
+  onRateChange,
+  emotionSegments,
+  beatTimestamps,
+  showBeats,
+  onToggleBeats,
+  loopEnabled,
+  onToggleLoop,
+  isDecoding,
 }) {
   return (
     <div className="flex flex-col flex-1 min-h-0 px-4 py-2 gap-1.5">
@@ -1009,7 +1051,10 @@ function NormalContent({
         {isDecoding || !peaks.length ? (
           <div className="w-full h-full flex items-center justify-center">
             {isDecoding ? (
-              <Loader2 size={16} className="animate-spin text-muted-foreground" />
+              <Loader2
+                size={16}
+                className="animate-spin text-muted-foreground"
+              />
             ) : (
               <div className="w-full h-8 flex items-center">
                 <div className="w-full h-0.5 bg-border rounded-full" />
@@ -1057,12 +1102,32 @@ function NormalContent({
 // ─── ExpandedContent ──────────────────────────────────────────────────────────
 
 function ExpandedContent({
-  peaks, progress, duration, currentTime, isPlaying,
-  onSeek, onPlayPause, onSkip, volume, isMuted,
-  onVolumeChange, onToggleMute, playbackRate, onRateChange,
-  emotionSegments, beatTimestamps, showBeats, onToggleBeats,
-  loopEnabled, onToggleLoop, zoomWindow, onZoomLeft, onZoomRight,
-  onResetZoom, analyserNode, isDecoding,
+  peaks,
+  progress,
+  duration,
+  currentTime,
+  isPlaying,
+  onSeek,
+  onPlayPause,
+  onSkip,
+  volume,
+  isMuted,
+  onVolumeChange,
+  onToggleMute,
+  playbackRate,
+  onRateChange,
+  emotionSegments,
+  beatTimestamps,
+  showBeats,
+  onToggleBeats,
+  loopEnabled,
+  onToggleLoop,
+  zoomWindow,
+  onZoomLeft,
+  onZoomRight,
+  onResetZoom,
+  analyserNode,
+  isDecoding,
 }) {
   const zoomFactor = useMemo(
     () => Math.round(1 / Math.max(zoomWindow.end - zoomWindow.start, 0.01)),
@@ -1095,7 +1160,10 @@ function ExpandedContent({
         <div className="flex-1 min-h-0 relative">
           {isDecoding || !peaks.length ? (
             <div className="w-full h-full flex items-center justify-center">
-              <Loader2 size={18} className="animate-spin text-muted-foreground" />
+              <Loader2
+                size={18}
+                className="animate-spin text-muted-foreground"
+              />
             </div>
           ) : (
             <WaveformSVG
@@ -1122,7 +1190,11 @@ function ExpandedContent({
             Spectrum
           </span>
         </div>
-        <SpectrumCanvas analyserNode={analyserNode} isPlaying={isPlaying} height={52} />
+        <SpectrumCanvas
+          analyserNode={analyserNode}
+          isPlaying={isPlaying}
+          height={52}
+        />
       </div>
 
       {/* ── Overview waveform with trim handles ───────────────────────────── */}
@@ -1160,8 +1232,16 @@ function ExpandedContent({
               right: `${(1 - zoomWindow.end) * 100}%`,
             }}
           />
-          <ZoomHandle side="left" position={zoomWindow.start} onDrag={onZoomLeft} />
-          <ZoomHandle side="right" position={zoomWindow.end} onDrag={onZoomRight} />
+          <ZoomHandle
+            side="left"
+            position={zoomWindow.start}
+            onDrag={onZoomLeft}
+          />
+          <ZoomHandle
+            side="right"
+            position={zoomWindow.end}
+            onDrag={onZoomRight}
+          />
         </div>
       </div>
 
@@ -1223,10 +1303,21 @@ function ExpandedContent({
 // ─── PlayerControls ───────────────────────────────────────────────────────────
 
 function PlayerControls({
-  isPlaying, currentTime, duration, volume, isMuted, playbackRate,
-  loopEnabled, showBeats,
-  onPlayPause, onSkip, onVolumeChange, onToggleMute,
-  onRateChange, onToggleLoop, onToggleBeats,
+  isPlaying,
+  currentTime,
+  duration,
+  volume,
+  isMuted,
+  playbackRate,
+  loopEnabled,
+  showBeats,
+  onPlayPause,
+  onSkip,
+  onVolumeChange,
+  onToggleMute,
+  onRateChange,
+  onToggleLoop,
+  onToggleBeats,
 }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
@@ -1267,7 +1358,11 @@ function PlayerControls({
       </ControlBtn>
 
       {/* Beat markers */}
-      <ControlBtn active={showBeats} onClick={onToggleBeats} title="Beat markers">
+      <ControlBtn
+        active={showBeats}
+        onClick={onToggleBeats}
+        title="Beat markers"
+      >
         <Activity size={12} />
       </ControlBtn>
 
@@ -1281,7 +1376,10 @@ function PlayerControls({
       </button>
 
       {/* Volume */}
-      <button onClick={onToggleMute} className="text-muted-foreground hover:text-foreground transition-colors">
+      <button
+        onClick={onToggleMute}
+        className="text-muted-foreground hover:text-foreground transition-colors"
+      >
         {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
       </button>
       <input

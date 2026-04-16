@@ -75,7 +75,7 @@ function CreateProjectDialog({ open, changeView, children }) {
     payload.append("name", data.title);
     payload.append("description", data.description);
     payload.append("file", uploadedFile);
-    
+
     for (let pair of payload.entries()) {
       console.debug(pair[0], pair[1]);
     }

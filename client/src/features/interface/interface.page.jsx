@@ -12,7 +12,10 @@ import InstrumentPage from "./views/instrument/Instrument.page";
 import FeaturesPage from "./views/midLevelFeatures/Features.page";
 import SourceSeparationPage from "./views/sourceSeperation/SourceSeparation.page";
 import AudioPlayerFooter from "./audio-player/AudioPlayerFooter.jsx";
-import { selectPlayerMode, PLAYER_MODES } from "@/features/interface/audio-player/AudioPlayer.slice";
+import {
+  selectPlayerMode,
+  PLAYER_MODES,
+} from "@/features/interface/audio-player/AudioPlayer.slice";
 import { setAudioSource } from "./audio-player/AudioPlayer.slice";
 
 const TAB_COMPONENTS = {
@@ -43,7 +46,7 @@ function InterfacePage() {
     dispatch(setLoading(isLoading));
     if (data) {
       dispatch(setProject(data));
-      const {file_name, file_url} = data.data.main_audio;
+      const { file_name, file_url } = data.data.main_audio;
       dispatch(
         setAudioSource({
           url: file_url,

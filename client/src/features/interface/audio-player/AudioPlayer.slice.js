@@ -25,14 +25,14 @@ export const GES_LABELS = {
 
 const PLAYER_MODES = {
   HIDDEN: "hidden",
-  MINI: "mini",     // h-16 collapsed strip
+  MINI: "mini", // h-16 collapsed strip
   NORMAL: "normal", // default — waveform + controls
   EXPANDED: "expanded", // fullscreen with zoom, analysis
 };
 
 const initialState = {
   // ── Audio source ────────────────────────────────────────────────────────────
-  audioUrl: null,         // object URL or remote URL
+  audioUrl: null, // object URL or remote URL
   audioName: null,
   audioDuration: 0,
 
@@ -48,18 +48,18 @@ const initialState = {
 
   // ── Waveform ─────────────────────────────────────────────────────────────
   // Float32Array peaks, serialised as plain number[] for Redux serialisability
-  waveformPeaks: [],      // normalised 0-1 amplitudes, length ≈ 800
+  waveformPeaks: [], // normalised 0-1 amplitudes, length ≈ 800
 
   // ── Expanded-mode zoom window ────────────────────────────────────────────
-  zoomStart: 0,           // fraction 0-1
-  zoomEnd: 1,             // fraction 0-1
+  zoomStart: 0, // fraction 0-1
+  zoomEnd: 1, // fraction 0-1
 
   // ── Geneva Emotion Labels ────────────────────────────────────────────────
-  emotionSegments: [],    // EmotionSegment[]
+  emotionSegments: [], // EmotionSegment[]
 
   // ── External seek request (from active tab) ──────────────────────────────
   // A tab sets this object; the footer reads it and clears it.
-  seekRequest: null,      // { time: number, source: string } | null
+  seekRequest: null, // { time: number, source: string } | null
 
   // ── Loop region ─────────────────────────────────────────────────────────
   loopEnabled: false,
@@ -69,7 +69,7 @@ const initialState = {
   // ── Analysis overlays (expanded mode) ───────────────────────────────────
   showSpectrum: false,
   showBeats: false,
-  beatTimestamps: [],     // number[] seconds
+  beatTimestamps: [], // number[] seconds
 };
 
 const audioPlayerSlice = createSlice({
@@ -171,7 +171,10 @@ const audioPlayerSlice = createSlice({
      */
     seekToTime(state, { payload }) {
       // payload: { time: number, source?: string }
-      state.seekRequest = { time: payload.time, source: payload.source ?? "external" };
+      state.seekRequest = {
+        time: payload.time,
+        source: payload.source ?? "external",
+      };
     },
     clearSeekRequest(state) {
       state.seekRequest = null;
@@ -259,13 +262,13 @@ export const selectShowBeats = (s) => s.audioPlayer.showBeats;
 export const selectZoomWindow = createSelector(
   (s) => s.audioPlayer.zoomStart,
   (s) => s.audioPlayer.zoomEnd,
-  (start, end) => ({ start, end })
+  (start, end) => ({ start, end }),
 );
 
 export const selectLoopRegion = createSelector(
   (s) => s.audioPlayer.loopStart,
   (s) => s.audioPlayer.loopEnd,
-  (start, end) => ({ start, end })
+  (start, end) => ({ start, end }),
 );
 
 /**

@@ -6,27 +6,27 @@ import {
   PaginationPrevious,
   PaginationNext,
   PaginationEllipsis,
-} from "@/components/ui/pagination"
-import { useSearchParams } from "react-router"
+} from "@/components/ui/pagination";
+import { useSearchParams } from "react-router";
 
 export function LibraryPagination({ totalPages }) {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const currentPage = Number(searchParams.get("page")) || 1
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = Number(searchParams.get("page")) || 1;
 
   const goToPage = (page) => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.set("page", page)
-    setSearchParams(nextParams)
-  }
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("page", page);
+    setSearchParams(nextParams);
+  };
 
-  const canPrev = currentPage > 1
-  const canNext = currentPage < totalPages
+  const canPrev = currentPage > 1;
+  const canNext = currentPage < totalPages;
 
   // optional: generate small page range window
-  const visiblePages = Array.from({ length: totalPages }, (_, i) => i + 1).slice(
-    Math.max(0, currentPage - 3),
-    Math.min(totalPages, currentPage + 2)
-  )
+  const visiblePages = Array.from(
+    { length: totalPages },
+    (_, i) => i + 1,
+  ).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2));
 
   return (
     <Pagination>
@@ -36,8 +36,8 @@ export function LibraryPagination({ totalPages }) {
           <PaginationPrevious
             to="#"
             onClick={(e) => {
-              e.preventDefault()
-              if (canPrev) goToPage(currentPage - 1)
+              e.preventDefault();
+              if (canPrev) goToPage(currentPage - 1);
             }}
             className={!canPrev ? "opacity-50 pointer-events-none" : ""}
           />
@@ -50,8 +50,8 @@ export function LibraryPagination({ totalPages }) {
               to="#"
               isActive={page === currentPage}
               onClick={(e) => {
-                e.preventDefault()
-                goToPage(page)
+                e.preventDefault();
+                goToPage(page);
               }}
             >
               {page}
@@ -71,13 +71,13 @@ export function LibraryPagination({ totalPages }) {
           <PaginationNext
             to="#"
             onClick={(e) => {
-              e.preventDefault()
-              if (canNext) goToPage(currentPage + 1)
+              e.preventDefault();
+              if (canNext) goToPage(currentPage + 1);
             }}
             className={!canNext ? "opacity-50 pointer-events-none" : ""}
           />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
-  )
+  );
 }

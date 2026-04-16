@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -121,32 +127,33 @@ const RealWaveform = ({
         className="cursor-pointer"
         onClick={handleClick}
       >
-        {(barData.current.length > 0
-          ? barData.current
-          : randomBarData
-        ).map((amp, i) => {
-          const x = startX + i * (barWidth + spacing);
-          const bh = Math.max(amp * size.height * 0.85, minH);
-          const topY = centerY - bh / 2;
-          const played = i / bars < progress;
-          const active = Math.abs(i / bars - progress) < 1 / bars;
-          return (
-            <rect
-              key={i}
-              x={x}
-              y={topY}
-              width={barWidth}
-              height={bh}
-              rx={rx}
-              ry={rx}
-              className={cn(
-                "transition-colors duration-75",
-                played || active ? "fill-primary" : "fill-muted-foreground/40",
-              )}
-              style={active ? { filter: "brightness(1.3)" } : undefined}
-            />
-          );
-        })}
+        {(barData.current.length > 0 ? barData.current : randomBarData).map(
+          (amp, i) => {
+            const x = startX + i * (barWidth + spacing);
+            const bh = Math.max(amp * size.height * 0.85, minH);
+            const topY = centerY - bh / 2;
+            const played = i / bars < progress;
+            const active = Math.abs(i / bars - progress) < 1 / bars;
+            return (
+              <rect
+                key={i}
+                x={x}
+                y={topY}
+                width={barWidth}
+                height={bh}
+                rx={rx}
+                ry={rx}
+                className={cn(
+                  "transition-colors duration-75",
+                  played || active
+                    ? "fill-primary"
+                    : "fill-muted-foreground/40",
+                )}
+                style={active ? { filter: "brightness(1.3)" } : undefined}
+              />
+            );
+          },
+        )}
       </svg>
     </div>
   );

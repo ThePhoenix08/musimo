@@ -141,7 +141,7 @@ function useUserAuthFlow() {
       console.error(`[AUTH ${type?.toUpperCase()} ERROR]:`, error);
       navigate("/login");
       dispatch(clearCredentials());
-      dispatch(setAuthStep("login"))
+      dispatch(setAuthStep("login"));
       throw error;
     }
   };

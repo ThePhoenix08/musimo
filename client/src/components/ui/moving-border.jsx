@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import {
+  // eslint-disable-next-line no-unused-vars
   motion,
   useAnimationFrame,
   useMotionTemplate,
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 export function Button({
   borderRadius = "1.75rem",
   children,
+  // eslint-disable-next-line no-unused-vars
   as: Component = "button",
   containerClassName,
   borderClassName,

@@ -39,4 +39,5 @@ function Badge({ className, variant = "default", asChild = false, ...props }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Badge, badgeVariants };

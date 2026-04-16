@@ -27,6 +27,7 @@ def convert_numpy(obj):
         return [convert_numpy(i) for i in obj]
     return obj
 
+
 class AudioFeatureService:
 
     def __init__(self, session, storage):
@@ -36,17 +37,14 @@ class AudioFeatureService:
         self._analysis_repo = FeatureAnalysisRepository(session)
         self._storage = storage
 
-    
     """# Extract Features"""
-  
-    async def extract_and_store(self, audio_file_id):
 
+    async def extract_and_store(self, audio_file_id):
         """# Get audio"""
         audio = await self._audio_repo.get_by_id(audio_file_id)
         if not audio:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Audio not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Audio not found"
             )
 
         """ # Download file from Supabase"""
@@ -58,7 +56,7 @@ class AudioFeatureService:
         if not file_bytes:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to download audio file"
+                detail="Failed to download audio file",
             )
 
         temp_path = None
@@ -71,13 +69,13 @@ class AudioFeatureService:
             """Load audio"""
             y, sr = librosa.load(temp_path, sr=None)
 
-            """  # Feature Extraction """        
+            """  # Feature Extraction """
 
             mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-            
+
             """# MFCC Delta"""
             mfcc_delta = librosa.feature.delta(mfcc)
-            
+
             """ Spectral Features """
             centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
             bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
@@ -89,14 +87,14 @@ class AudioFeatureService:
             onset_env = librosa.onset.onset_strength(y=y, sr=sr)
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
             tempogram = librosa.feature.tempogram(onset_envelope=onset_env, sr=sr)
-            
+
             """Mel Spectrogram"""
             mel = librosa.feature.melspectrogram(y=y, sr=sr)
             log_mel = librosa.power_to_db(mel)
-            
+
             """ Chroma Features"""
             chroma = librosa.feature.chroma_stft(y=y, sr=sr)
-            
+
             """ Tonal Features  """
             y_harmonic = librosa.effects.harmonic(y)
             tonnetz = librosa.feature.tonnetz(y=y_harmonic, sr=sr)
@@ -162,7 +160,7 @@ class AudioFeatureService:
             }
 
             features = convert_numpy(features)
-        
+
             """          # DB Operations          """
 
             analysis = await self._analysis_repo.get_by_audio(audio_file_id)
@@ -172,7 +170,7 @@ class AudioFeatureService:
                 analysis = await self._analysis_repo.create(
                     audio_file_id=audio_file_id,
                     project_id=audio.project_id,
-                    feature_vector=features   
+                    feature_vector=features,
                 )
 
             """# Check existing feature"""
@@ -189,7 +187,7 @@ class AudioFeatureService:
                     audio_file_id=audio.id,
                     analysis_record_id=analysis.id,
                     data=features,
-                    feature_type=FeatureType.LOW_LEVEL
+                    feature_type=FeatureType.LOW_LEVEL,
                 )
 
             await self._session.commit()
@@ -201,24 +199,26 @@ class AudioFeatureService:
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
 
-    """    # Get Features """  
+    """    # Get Features """
+
     async def get_all_features(self, audio_file_id):
 
         audio = await self._audio_repo.get_by_id(audio_file_id)
 
         if not audio:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Audio not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Audio not found"
             )
 
         result = []
 
         for feature in audio.audio_features:
-            result.append({
-                "analysis_id": str(feature.analysis_record_id),
-                "feature_type": str(feature.feature_type),
-                "data": feature.data
-            })
+            result.append(
+                {
+                    "analysis_id": str(feature.analysis_record_id),
+                    "feature_type": str(feature.feature_type),
+                    "data": feature.data,
+                }
+            )
 
         return result

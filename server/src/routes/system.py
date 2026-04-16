@@ -11,6 +11,7 @@ from src.schemas.api.response import ApiResponse
 
 router = APIRouter()
 
+
 @router.get("/api/")
 async def root():
     data = {

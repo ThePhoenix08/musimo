@@ -57,10 +57,8 @@ async def create_project_with_audio(
 
         return ApiResponse(
             message="Project created successfully"
-                    + (" and audio uploaded" if file else ""),
-            data={
-                "project": project.model_dump()
-            },
+            + (" and audio uploaded" if file else ""),
+            data={"project": project.model_dump()},
             status_code=status.HTTP_201_CREATED,
         )
 
@@ -115,9 +113,7 @@ async def get_project(
 ):
     try:
         service = ProjectService(db)
-        project = await service.get_project(
-            project_id=project_id, user_id=user.id
-        )
+        project = await service.get_project(project_id=project_id, user_id=user.id)
 
         return ApiResponse(
             message="Project fetched successfully",
@@ -169,7 +165,9 @@ async def delete_project(
     project_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
-    storage:SupabaseStorageClient=Depends(get_storage),
+    storage: SupabaseStorageClient = Depends(get_storage),
 ) -> None:
     service = ProjectService(db)
-    await service.delete_project(project_id=project_id, user_id=user.id, storage=storage)
+    await service.delete_project(
+        project_id=project_id, user_id=user.id, storage=storage
+    )

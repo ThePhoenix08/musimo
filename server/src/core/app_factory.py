@@ -18,10 +18,7 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
-    app.add_middleware(
-        CORSMiddleware,
-        CORS_POLICY
-    )
+    app.add_middleware(CORSMiddleware, CORS_POLICY)
     register_process_time_header(app)
 
     register_routes(app)

@@ -23,6 +23,7 @@ class ProjectUpdateRequest(BaseModel):
 
 # Response Schemas
 
+
 class ProjectResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -42,7 +43,6 @@ class ProjectResponse(BaseModel):
     # instrument_analysis_record: Optional["InstrumentAnalysisRecord"] = None
     # feature_analysis_record: Optional["FeatureAnalysisRecord"] = None
     # separation_analysis_record: Optional["SeparationAnalysisRecord"] = None
-
 
 
 class ProjectListResponse(BaseModel):

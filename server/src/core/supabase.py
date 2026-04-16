@@ -79,15 +79,16 @@ class SupabaseStorageClient:
         return response["signedURL"]
 
     """ Download File """
+
     async def download_file(self, bucket: str, path: str) -> bytes:
         response = self.client.storage.from_(bucket).download(path)
 
         if isinstance(response, bytes):
             return response
-        
+
         if hasattr(response, "content"):
             return response.content
-        
+
         if hasattr(response, "__await__"):
             response = await response
             return response

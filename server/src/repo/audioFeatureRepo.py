@@ -23,9 +23,7 @@ class FeatureAnalysisRepository:
             analysis_type=AnalysisType.FEATURES,
             summary_text="Audio Feature Analysis",
             results={},
-
-            
-            feature_vector=feature_vector
+            feature_vector=feature_vector,
         )
         self._session.add(record)
         await self._session.flush()

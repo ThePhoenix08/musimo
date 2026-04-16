@@ -13,25 +13,23 @@ router = APIRouter()
 
 """ Extract Features API """
 
+
 @router.post("/extract")
 async def extract_audio_features(
     audio_file_id: uuid.UUID = Query(..., description="Audio file ID"),
     db: AsyncSession = Depends(get_db),
-    storage=Depends(get_storage)
+    storage=Depends(get_storage),
 ):
     try:
         service = AudioFeatureService(db, storage)
 
         result = await service.extract_and_store(audio_file_id)
 
-        return ApiResponse(
-            message="Features extracted successfully",
-            data=result
-        )
+        return ApiResponse(message="Features extracted successfully", data=result)
 
     except Exception as e:
         print(f"Error in extract_audio_features: {str(e)}")  # Debugging log
-        await db.rollback() 
+        await db.rollback()
         return ApiErrorResponse(
             code="FEATURE_EXTRACTION_FAILED",
             message="Failed to extract features",
@@ -40,6 +38,7 @@ async def extract_audio_features(
 
 
 """ Get Features API"""
+
 
 @router.get("/list")
 async def get_audio_features(
@@ -51,10 +50,7 @@ async def get_audio_features(
 
         result = await service.get_all_features(audio_file_id)
 
-        return ApiResponse(
-            message="Features fetched successfully",
-            data=result
-        )
+        return ApiResponse(message="Features fetched successfully", data=result)
 
     except Exception as e:
         return ApiErrorResponse(

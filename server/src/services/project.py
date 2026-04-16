@@ -97,7 +97,7 @@ class ProjectService:
     ) -> None:
         project = await self._get_or_404(project_id, user_id)
 
-        main_audio = project.main_audio  
+        main_audio = project.main_audio
 
         await self._repo.delete(project)
         await self._session.commit()
@@ -105,10 +105,14 @@ class ProjectService:
         if main_audio:
             try:
                 await storage.delete_file(
-                bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
-                path=main_audio.file_path,
+                    bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
+                    path=main_audio.file_path,
                 )
             except FileNotFoundError:
-                logger.warning("Storage file already gone: path=%s", main_audio.file_path)
+                logger.warning(
+                    "Storage file already gone: path=%s", main_audio.file_path
+                )
             except Exception:
-                logger.exception("Failed to delete storage file: path=%s", main_audio.file_path)
+                logger.exception(
+                    "Failed to delete storage file: path=%s", main_audio.file_path
+                )

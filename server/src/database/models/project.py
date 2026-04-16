@@ -48,13 +48,15 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         lazy="selectin",
     )
 
-    instrument_analysis_record: Mapped[Optional["InstrumentAnalysisRecord"]] = relationship(
-        "InstrumentAnalysisRecord",
-        primaryjoin="and_(Project.id==InstrumentAnalysisRecord.project_id, "
-        "InstrumentAnalysisRecord.analysis_type=='INSTRUMENT')",
-        back_populates="project",
-        uselist=False,
-        lazy="selectin",
+    instrument_analysis_record: Mapped[Optional["InstrumentAnalysisRecord"]] = (
+        relationship(
+            "InstrumentAnalysisRecord",
+            primaryjoin="and_(Project.id==InstrumentAnalysisRecord.project_id, "
+            "InstrumentAnalysisRecord.analysis_type=='INSTRUMENT')",
+            back_populates="project",
+            uselist=False,
+            lazy="selectin",
+        )
     )
 
     feature_analysis_record: Mapped[Optional["FeatureAnalysisRecord"]] = relationship(
@@ -66,13 +68,15 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         lazy="selectin",
     )
 
-    separation_analysis_record: Mapped[Optional["SeparationAnalysisRecord"]] = relationship(
-        "SeparationAnalysisRecord",
-        primaryjoin="and_(Project.id==SeparationAnalysisRecord.project_id, "
-        "SeparationAnalysisRecord.analysis_type=='SEPARATION')",
-        back_populates="project",
-        uselist=False,
-        lazy="selectin",
+    separation_analysis_record: Mapped[Optional["SeparationAnalysisRecord"]] = (
+        relationship(
+            "SeparationAnalysisRecord",
+            primaryjoin="and_(Project.id==SeparationAnalysisRecord.project_id, "
+            "SeparationAnalysisRecord.analysis_type=='SEPARATION')",
+            back_populates="project",
+            uselist=False,
+            lazy="selectin",
+        )
     )
 
     # convenience accessor — all separated audios for this project
@@ -93,7 +97,5 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         if self.separated_audios:
             audios.extend(self.separated_audios)
         return audios
-    
-    __table_args__ = (
-        Index("idx_project_user_id", "user_id"),
-    )
+
+    __table_args__ = (Index("idx_project_user_id", "user_id"),)

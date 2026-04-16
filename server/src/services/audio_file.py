@@ -116,7 +116,7 @@ class AudioFileService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"AudioFile {audio_file_id} not found in project {project_id}.",
             )
-        
+
         return audio_file
 
     # ── Upload ────────────────────────────────────────────────────────────────
@@ -210,7 +210,7 @@ class AudioFileService:
             page=page,
             page_size=page_size,
         )
-        
+
         return AudioFileListResponse(
             items=[AudioFileResponse.model_validate(f) for f in items],
             total=total,

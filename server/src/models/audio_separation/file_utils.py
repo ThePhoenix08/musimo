@@ -81,7 +81,7 @@ def get_audio_metadata(audio_path: Path) -> Dict:
             "sample_rate": sample_rate,
             "channels": channels,
             "format": format_name,
-            "file_size": file_size_mb
+            "file_size": file_size_mb,
         }
     except Exception as e:
         logger.error(f"Error getting audio metadata: {e}")
@@ -90,7 +90,7 @@ def get_audio_metadata(audio_path: Path) -> Dict:
             "sample_rate": 44100,
             "channels": 2,
             "format": "unknown",
-            "file_size": 0
+            "file_size": 0,
         }
 
 

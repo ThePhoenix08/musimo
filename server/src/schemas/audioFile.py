@@ -33,9 +33,7 @@ class AudioFileResponse(BaseModel):
     def file_url(self) -> str:
         return CONSTANTS.AUDIO_STORAGE_BASE_URL + "/" + self.file_path
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 
 class AudioFileUploadResponse(BaseModel):

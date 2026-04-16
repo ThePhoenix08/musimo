@@ -12,27 +12,19 @@ class AudioFeatureRepository:
     # =========================
     async def get_by_audio(self, audio_file_id):
         result = await self._session.execute(
-            select(AudioFeature).where(
-                AudioFeature.audio_file_id == audio_file_id
-            )
+            select(AudioFeature).where(AudioFeature.audio_file_id == audio_file_id)
         )
         return list(result.scalars().all())
 
     # =========================
     # Create new feature
     # =========================
-    async def create(
-        self,
-        audio_file_id,
-        analysis_record_id,
-        data,
-        feature_type
-    ):
+    async def create(self, audio_file_id, analysis_record_id, data, feature_type):
         feature = AudioFeature(
             audio_file_id=audio_file_id,
             analysis_record_id=analysis_record_id,
             data=data,
-            feature_type=feature_type
+            feature_type=feature_type,
         )
 
         self._session.add(feature)

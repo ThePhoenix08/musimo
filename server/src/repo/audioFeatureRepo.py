@@ -1,6 +1,7 @@
 from sqlalchemy import select
-from src.database.models.analysis_record import FeatureAnalysisRecord
+
 from src.database.enums import AnalysisType
+from src.database.models.analysis_record import FeatureAnalysisRecord
 
 
 class FeatureAnalysisRepository:

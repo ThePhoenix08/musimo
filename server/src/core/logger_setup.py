@@ -4,7 +4,7 @@ import os
 import re
 import sys
 import traceback
-from datetime import datetime, timezone as UTC
+from datetime import UTC, datetime
 
 import pretty_errors
 

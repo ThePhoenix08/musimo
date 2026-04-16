@@ -1,9 +1,9 @@
 from __future__ import annotations
-import logging
 
+import logging
 import uuid
 
-from fastapi import HTTPException, logger, status
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.settings import CONSTANTS
@@ -15,6 +15,7 @@ from src.schemas.project import (
     ProjectResponse,
     ProjectUpdateRequest,
 )
+
 logger = logging.getLogger(__name__)
 
 

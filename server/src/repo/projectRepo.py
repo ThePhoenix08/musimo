@@ -8,7 +8,6 @@ from sqlalchemy import exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.core.logger_setup import logger
 from src.database.models.project import Project
 
 PROJECT_POPULATE = [

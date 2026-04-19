@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict
 
-from src.core.app_registry import AppRegistry
+from src.core.lazy_loads import get_storage
 from src.core.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -105,15 +105,15 @@ async def upload_to_supabase_bucket(file_path: Path, storage_path: str) -> str:
         # which is not present in background pipeline tasks → 403 RLS violation.
         # The service role client bypasses RLS and is safe for trusted server-side
         # operations. It is registered at startup alongside the anon client.
-        supabase = AppRegistry.get_state("supabase_service")
-        if not supabase:
+        storage = get_storage()
+        if not storage:
             raise RuntimeError(
                 "Supabase service role client is not initialized. "
                 "Ensure AppRegistry.set_state('supabase_service', ...) is called in lifespan."
             )
 
         with open(file_path, "rb") as f:
-            response = supabase.storage.from_(_settings.SUPABASE_BUCKET).upload(
+            response = storage.from_(_settings.SUPABASE_BUCKET).upload(
                 path=storage_path,
                 file=f,
                 file_options={
@@ -125,7 +125,7 @@ async def upload_to_supabase_bucket(file_path: Path, storage_path: str) -> str:
         if hasattr(response, "error") and response.error:
             raise Exception(f"Supabase upload error: {response.error}")
 
-        public_url_response = supabase.storage.from_(
+        public_url_response = storage.from_(
             _settings.SUPABASE_BUCKET
         ).get_public_url(storage_path)
 

@@ -3,15 +3,17 @@ ML Model service for emotion detection and instrument classification
 """
 
 import json
+import logging
 import os
 import sys
 from typing import Dict, Optional
 
-from src.core.logger_setup import logger
 from src.models.progress_tracker import ProgressTracker
 
 from .emotion_recognition.config import ConfigManager
 from .emotion_recognition.emotion_pipeline import GEMS9Pipeline, PredictionType
+
+logger = logging.getLogger(__name__)
 
 # Add instrument detection to path
 INSTRUMENT_MODEL_PATH = os.path.join(os.path.dirname(__file__), "instrument_detection")

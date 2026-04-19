@@ -17,19 +17,20 @@ class AppRegistry:
 
     @classmethod
     def register(cls, app: FastAPI):
-        """Register the FastAPI app globally (usually called in lifespan)."""
         with cls._lock:
+            if cls._app is not None:
+                raise RuntimeError("App already registered")
             cls._app = app
 
     @classmethod
-    def get_app(cls) -> FastAPI:
-        """Return the registered FastAPI app."""
-        if cls._app is None:
-            raise RuntimeError(
-                "⚠️ App not registered yet. "
-                "Call `AppRegistry.register(app)` inside lifespan before use."
-            )
-        return cls._app
+    def get(cls) -> FastAPI:
+        with cls._lock:
+            if cls._app is None:
+                raise RuntimeError(
+                    "⚠️ App not registered yet. "
+                    "Call `AppRegistry.register(app)` inside lifespan before use."
+                )
+            return cls._app
 
     @classmethod
     def get_state(cls, key: str, default: Any = None) -> Any:

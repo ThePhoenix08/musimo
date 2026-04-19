@@ -14,7 +14,7 @@ from sqlalchemy import select
 from src.core.separation_jobState import jobs_storage
 from src.database.enums import AudioFileStatus, AudioFormat, SeparatedSourceLabel
 from src.database.models import AudioFile, SeparatedAudioFile
-from src.database.session import AsyncSessionLocal
+from src.database.session import get_sessionmaker
 from src.models.audio_separation.file_utils import (
     calculate_checksum,
     get_audio_duration,
@@ -96,8 +96,9 @@ async def separate_audio_pipeline(
     project_id: str,
 ):
     """Complete audio separation pipeline with Supabase integration"""
+    sessionmaker = get_sessionmaker()
 
-    async with AsyncSessionLocal() as db:
+    async with sessionmaker() as db:
         try:
             await send_progress_update(job_id, 0, "Starting audio separation...")
 
@@ -226,7 +227,7 @@ async def separate_audio_pipeline(
             # left the connection in a bad state). Open a fresh session for the
             # status update so the rollback / commit always has a live connection.
             try:
-                async with AsyncSessionLocal() as error_db:
+                async with sessionmaker() as error_db:
                     stmt = select(AudioFile).where(AudioFile.id == uuid.UUID(audio_id))
                     result = await error_db.execute(stmt)
                     audio_file_record = result.scalar_one_or_none()

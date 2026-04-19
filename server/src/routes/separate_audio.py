@@ -1,3 +1,4 @@
+import logging
 import shutil
 import subprocess
 import traceback
@@ -20,7 +21,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from supabase_auth import User
 
-from src.core.logger_setup import logger
 from src.core.separation_jobState import jobs_storage, websocket_connections
 from src.database.enums import (
     AudioFileStatus,
@@ -39,6 +39,8 @@ from src.models.audio_separation.file_utils import (
 from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
 from src.schemas.audioSeparation import AudioUploadResponse
 from src.services.dependencies import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

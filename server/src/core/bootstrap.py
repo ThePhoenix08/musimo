@@ -2,7 +2,10 @@ import asyncio
 import os
 import sys
 import warnings
+from pathlib import Path
 from typing import Literal
+
+from dotenv import load_dotenv
 
 
 def bootstrap() -> tuple[bool, int]:
@@ -17,17 +20,23 @@ def bootstrap() -> tuple[bool, int]:
     ENV: Literal["dev", "prod"] = os.getenv("ENV", "dev").lower()
     IS_DEV: bool = ENV == "dev"
 
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+    ENV_PATH = BASE_DIR / ".env"
+
+    load_dotenv(ENV_PATH)
+
     from src.core.pretty_errors import setup_error_beautifier
 
     setup_error_beautifier(IS_DEV=IS_DEV, enable=True)
 
-    from src.core.logger_setup import logger
+    import logging
 
+    logger = logging.getLogger(__name__)
     logger.info("Logger initialized")
 
     from src.core.error_hooks import setup_global_error_hooks
 
     setup_global_error_hooks()
 
-    NUM_OF_WORKERS: int = os.cpu_count()
+    NUM_OF_WORKERS: int = max(1, os.cpu_count() or 1)
     return (IS_DEV, NUM_OF_WORKERS)

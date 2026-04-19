@@ -1,11 +1,13 @@
 import json
+import logging
 from pathlib import Path
 
 import torch
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from src.core.logger_setup import logger
+logger = logging.getLogger(__name__)
+
 
 BASE = Path(__file__).resolve()
 EMOTION_MODEL_CHECKPOINT = (

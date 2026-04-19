@@ -10,8 +10,8 @@ import pretty_errors
 
 IS_DEV: bool = os.getenv("ENV", "dev") == "dev"
 
-logger = logging.getLogger("app")
-logger.setLevel(logging.DEBUG if IS_DEV else logging.INFO)
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG if IS_DEV else logging.INFO)
 
 stream_handler = logging.StreamHandler(sys.stdout)
 
@@ -111,19 +111,32 @@ class JSONFormatter(logging.Formatter):
 
 
 # --- Handler assignment ------------------------------------------------------
-stream_handler.setFormatter(DevFormatter() if IS_DEV else JSONFormatter())
-logger.addHandler(stream_handler)
+if not root_logger.handlers:
+    stream_handler.setFormatter(DevFormatter() if IS_DEV else JSONFormatter())
+    root_logger.addHandler(stream_handler)
 
 # --- Integrate other loggers -------------------------------------------------
+logger = logging.getLogger("app")
+logger.propagate = True
 for name in [
     "uvicorn",
     "uvicorn.error",
     "uvicorn.access",
-    "sqlalchemy.engine",
+    "sqlalchemy",
     "sqlalchemy.pool",
+    "sqlalchemy.engine",
+    "sqlalchemy.orm",
 ]:
     lgr = logging.getLogger(name)
     lgr.handlers.clear()
     lgr.propagate = True
     lgr.setLevel(logger.level)
-    lgr.addHandler(stream_handler)
+
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+for noisy in [
+    "tensorflow",
+    "matplotlib",
+    "h5py",
+    "urllib3",
+]:
+    logging.getLogger(noisy).setLevel(logging.WARNING)

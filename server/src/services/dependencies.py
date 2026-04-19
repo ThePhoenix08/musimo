@@ -1,13 +1,16 @@
+import logging
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.logger_setup import logger
 from src.database.models.user import User
 from src.database.session import get_db
 from src.services.auth_service import AuthService
+
+logger = logging.getLogger(__name__)
+
 
 security = HTTPBearer(auto_error=True)
 

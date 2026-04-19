@@ -8,12 +8,13 @@ import matplotlib
 import numpy as np
 
 matplotlib.use("Agg")  # Use non-GUI backend
+import logging
 import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from src.core.logger_setup import logger
+logger = logging.getLogger(__name__)
 
 
 class AudioService:

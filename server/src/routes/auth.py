@@ -1,9 +1,9 @@
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.logger_setup import logger
 from src.database.enums import OtpType
 from src.database.models.otp import Otp
 from src.database.models.user import User
@@ -20,6 +20,8 @@ from src.services.dependencies import get_current_user, verify_refresh_token
 from src.services.email_service import send_otp_email
 from src.services.otp_service import OtpService
 from src.utils.auth_utils import construct_return_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

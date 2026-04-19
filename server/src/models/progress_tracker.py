@@ -1,10 +1,12 @@
+import logging
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Optional
 
-from src.core.logger_setup import logger
+logger = logging.getLogger(__name__)
+
 
 """
 Progress tracking system for ML pipelines with WebSocket support

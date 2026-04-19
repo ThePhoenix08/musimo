@@ -1,9 +1,11 @@
+import logging
 import smtplib
 from email.message import EmailMessage
 from email.utils import formataddr
 
-from src.core.logger_setup import logger
 from src.core.settings import CONSTANTS
+
+logger = logging.getLogger(__name__)
 
 
 def send_otp_email(receiver_email: str, otp: str) -> bool:

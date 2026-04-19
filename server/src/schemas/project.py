@@ -4,6 +4,12 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.schemas.analysis_record import (
+    EmotionAnalysisRecordResponse,
+    FeatureAnalysisRecordResponse,
+    InstrumentAnalysisRecordResponse,
+    SeparationAnalysisRecordResponse,
+)
 from src.schemas.audioFile import AudioFileResponse
 
 # Request Schemas
@@ -38,15 +44,16 @@ class ProjectResponse(BaseModel):
 
     # populated relationships
     main_audio: Optional[AudioFileResponse] = None
-    separated_audios: list[AudioFileResponse] = []
-    # emotion_analysis_record: Optional["EmotionAnalysisRecord"] = None
-    # instrument_analysis_record: Optional["InstrumentAnalysisRecord"] = None
-    # feature_analysis_record: Optional["FeatureAnalysisRecord"] = None
-    # separation_analysis_record: Optional["SeparationAnalysisRecord"] = None
+
+    separated_audios: list[AudioFileResponse] = Field(default_factory=list)
+    emotion_analysis_record: Optional["EmotionAnalysisRecordResponse"] = None
+    instrument_analysis_record: Optional["InstrumentAnalysisRecordResponse"] = None
+    feature_analysis_record: Optional["FeatureAnalysisRecordResponse"] = None
+    separation_analysis_record: Optional["SeparationAnalysisRecordResponse"] = None
 
 
 class ProjectListResponse(BaseModel):
-    items: list[ProjectResponse]
+    items: list[ProjectResponse] = Field(default_factory=list)
     total: int
     page: int
     page_size: int

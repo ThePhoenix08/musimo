@@ -1,8 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
-  AlertCircle,
   CheckCircle2,
   Clock,
   Music,
@@ -13,7 +10,6 @@ import {
   HardDrive,
   Gauge,
   Calendar,
-  Loader,
 } from "lucide-react";
 import {
   selectProject,
@@ -21,6 +17,7 @@ import {
   selectProjectLoading,
 } from "../../reducers/interface.slice";
 import { useSelector } from "react-redux";
+import { Button } from "@/components/ui/button";
 
 const ANALYSIS_TYPES = [
   {
@@ -46,17 +43,11 @@ const ANALYSIS_TYPES = [
 ];
 
 const STATUS_CONFIG = {
-  not_started: {
-    label: "Not Started",
-    badgeClass: "bg-muted text-muted-foreground",
+  start: {
+    label: "Start",
+    badgeClass: "bg-primary text-primary-foreground",
     icon: Clock,
     progress: 0,
-  },
-  in_progress: {
-    label: "Processing",
-    badgeClass: "bg-primary/15 text-primary",
-    icon: Loader,
-    progress: 60,
   },
   completed: {
     label: "Completed",
@@ -64,18 +55,17 @@ const STATUS_CONFIG = {
     icon: CheckCircle2,
     progress: 100,
   },
-  failed: {
-    label: "Failed",
-    badgeClass: "bg-destructive/15 text-destructive",
-    icon: AlertCircle,
-    progress: 0,
-  },
 };
 
-function StatusPage() {
+function StatusPage({ changeTab }) {
   const response = useSelector(selectProject);
   const project = response?.data;
-  const analysisStatus = {};
+  const analysisStatus = {
+    emotion_analysis_record: project?.emotion_analysis_record,
+    instrument_analysis_record: project?.instrument_analysis_record,
+    feature_analysis_record: project?.feature_analysis_record,
+    separation_analysis_record: project?.separation_analysis_record,
+  };
   const loading = useSelector(selectProjectLoading);
   const error = useSelector(selectProjectError);
   const audio = project?.main_audio;
@@ -92,7 +82,7 @@ function StatusPage() {
     if (!seconds) return "N/A";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
+    return `${mins}m ${secs.toFixed(2)}s`;
   };
 
   if (loading) {
@@ -220,7 +210,8 @@ function StatusPage() {
             </h2>
             <div className="space-y-3">
               {ANALYSIS_TYPES.map((analysis) => {
-                const status = analysisStatus[analysis.id] || "not_started";
+                const status =
+                  analysisStatus[analysis.id] == null ? "start" : "completed";
                 const statusConfig = STATUS_CONFIG[status];
                 const StatusIcon = statusConfig.icon;
                 const AnalysisIcon = analysis.icon;
@@ -242,21 +233,13 @@ function StatusPage() {
                           <h3 className="font-semibold text-foreground">
                             {analysis.name}
                           </h3>
-                          <Badge
-                            className={`${statusConfig.badgeClass} flex items-center gap-1.5 px-3 py-1 text-xs font-medium shrink-0`}
+                          <Button
+                            className={`${statusConfig.badgeClass} flex items-center gap-1.5 px-3 py-1 text-xs font-medium shrink-0 cursor-pointer bg-primary/80 hover:bg-primary`}
+                            onClick={() => changeTab(analysis.id)}
                           >
                             <StatusIcon className="w-3 h-3" />
                             {statusConfig.label}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Progress
-                            value={statusConfig.progress}
-                            className="h-2 flex-1"
-                          />
-                          <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap shrink-0">
-                            {statusConfig.progress}%
-                          </span>
+                          </Button>
                         </div>
                       </div>
                     </div>

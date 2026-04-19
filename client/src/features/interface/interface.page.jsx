@@ -84,7 +84,7 @@ function InterfacePage() {
         className="content w-full min-w-0 transition-[padding-bottom] duration-200"
         style={{ paddingBottom: footerHeight }}
       >
-        <ActiveTab />
+        <ActiveTab changeTab={changeView} />
       </div>
 
       <AudioPlayerFooter />

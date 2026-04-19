@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setError, setLoading, setProject } from "./reducers/interface.slice";
 import { useEffect } from "react";
 import EmotionPage from "./views/emotion/Emotion.page";
-import InstrumentPage from "./views/instrument/Instrument.page";
+import InstrumentPage from "./views/instrument/pages/Instrument.page";
 import FeaturesPage from "./views/midLevelFeatures/Features.page";
 import SourceSeparationPage from "./views/sourceSeperation/SourceSeparation.page";
 import AudioPlayerFooter from "./audio-player/AudioPlayerFooter.jsx";

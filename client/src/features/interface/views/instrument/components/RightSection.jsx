@@ -1,26 +1,9 @@
 import React from "react";
-import { useState, useEffect } from "react";
-import RadarChart from "../components/RadarChart";
+import ChartRadarDots from "./ChartRadarDots";
 import InstrumentTag from "../components/InstrumentTag";
 import { Guitar, Drum, Piano, Mic2, Music2, AudioWaveform } from "lucide-react";
 
 function RightSection() {
-  const [animated, setAnimated] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(true), 300);
-    return () => clearTimeout(t);
-  }, []);
-
-  const radarData = [
-    { label: "Rhythm", value: 82 },
-    { label: "Melody", value: 91 },
-    { label: "Harmony", value: 67 },
-    { label: "Dynamics", value: 74 },
-    { label: "Timbre", value: 88 },
-    { label: "Texture", value: 70 },
-  ];
-
   const instruments = [
     {
       Icon: Guitar,
@@ -77,8 +60,8 @@ function RightSection() {
             Characteristic Profile
           </span>
         </div>
-        <div className="w-full" style={{ height: "220px" }}>
-          <RadarChart data={radarData} animated={animated} />
+        <div className="w-full" style={{ height: "260px" }}>
+          <ChartRadarDots />
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+# src/models/audio_separation/file_utils.py
 import hashlib
 import json
 import logging
@@ -13,61 +14,54 @@ logger = logging.getLogger(__name__)
 INPUT_FOLDER = Path("input")
 OUTPUT_FOLDER = Path("output")
 TEMP_FOLDER = Path("temp")
+
 INPUT_FOLDER.mkdir(exist_ok=True)
 OUTPUT_FOLDER.mkdir(exist_ok=True)
 TEMP_FOLDER.mkdir(exist_ok=True)
 
-# Instantiate settings once at module level so all functions share the same
-# instance. The original code called Settings.SUPABASE_BUCKET as a class
-# attribute, which raises AttributeError because pydantic-settings fields only
-# exist on instances, not on the class itself.
 _settings = Settings()
 
 
+# CHECKSUM
 def calculate_checksum(file_path: Path) -> str:
-    """Calculate SHA256 checksum of a file"""
     sha256_hash = hashlib.sha256()
     with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
+        for chunk in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(chunk)
     return sha256_hash.hexdigest()
 
 
+#  DURATION
 def get_audio_duration(audio_path: Path) -> float:
-    """Get audio duration in seconds using ffprobe"""
     try:
         cmd = [
             "ffprobe",
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
+            "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
             str(audio_path),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         return float(result.stdout.strip())
     except Exception as e:
-        logger.warning(f"Could not get audio duration: {e}")
+        logger.warning(f"Could not get duration: {e}")
         return 0.0
 
 
+#  METADATA
 def get_audio_metadata(audio_path: Path) -> Dict:
-    """Get audio metadata using ffprobe"""
     try:
-        file_size_mb = audio_path.stat().st_size / (1024 * 1024)
+        file_size_bytes = audio_path.stat().st_size
 
         cmd = [
             "ffprobe",
-            "-v",
-            "error",
+            "-v", "error",
             "-show_entries",
             "format=duration,format_name:stream=sample_rate,channels",
-            "-of",
-            "json",
+            "-of", "json",
             str(audio_path),
         ]
+
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         data = json.loads(result.stdout)
 
@@ -81,8 +75,9 @@ def get_audio_metadata(audio_path: Path) -> Dict:
             "sample_rate": sample_rate,
             "channels": channels,
             "format": format_name,
-            "file_size": file_size_mb,
+            "file_size": file_size_bytes,
         }
+
     except Exception as e:
         logger.error(f"Error getting audio metadata: {e}")
         return {
@@ -94,52 +89,43 @@ def get_audio_metadata(audio_path: Path) -> Dict:
         }
 
 
-async def upload_to_supabase_bucket(file_path: Path, storage_path: str) -> str:
-    """Upload file to Supabase storage bucket and return public URL"""
+#  UPLOAD (FIXED)
+async def upload_to_supabase_bucket(
+    file_path: Path,
+    storage_path: str,
+    bucket_name: str = None,
+) -> str:
     try:
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        # Use the service role client so RLS does not block background uploads.
-        # The anon client (stored as "supabase") operates under the user's JWT,
-        # which is not present in background pipeline tasks → 403 RLS violation.
-        # The service role client bypasses RLS and is safe for trusted server-side
-        # operations. It is registered at startup alongside the anon client.
-        storage = get_storage()
+        storage = await get_storage()
+
         if not storage:
-            raise RuntimeError(
-                "Supabase service role client is not initialized. "
-                "Ensure AppRegistry.set_state('supabase_service', ...) is called in lifespan."
-            )
+            raise RuntimeError("Supabase client not initialized")
+
+        bucket = bucket_name or _settings.SUPABASE_BUCKET
 
         with open(file_path, "rb") as f:
-            response = storage.from_(_settings.SUPABASE_BUCKET).upload(
-                path=storage_path,
-                file=f,
-                file_options={
-                    "content-type": "audio/wav",
-                    "upsert": "true",  # must be a string — httpx rejects bool header values
-                },
-            )
+            file_bytes = f.read()
 
-        if hasattr(response, "error") and response.error:
-            raise Exception(f"Supabase upload error: {response.error}")
+        #  use wrapper
+        await storage.upload_file(
+            bucket=bucket,
+            destination_path=storage_path,
+            file_bytes=file_bytes,
+            content_type="audio/wav",
+        )
 
-        public_url_response = storage.from_(
-            _settings.SUPABASE_BUCKET
-        ).get_public_url(storage_path)
+        public_url = (
+            f"{_settings.SUPABASE_URL}/storage/v1/object/public/"
+            f"{bucket}/{storage_path}"
+        )
 
-        if isinstance(public_url_response, dict):
-            public_url = public_url_response.get("publicUrl")
-        else:
-            public_url = public_url_response
+        logger.info(f"Uploaded {file_path.name} → {storage_path}")
 
-        if not public_url:
-            raise Exception("Failed to retrieve public URL from Supabase")
-
-        logger.info(f"Successfully uploaded {file_path.name} → {storage_path}")
         return public_url
 
     except Exception as e:
-        logger.error(f"Error uploading to Supabase: {e}")
+        logger.error(f"Upload failed: {e}")
         raise

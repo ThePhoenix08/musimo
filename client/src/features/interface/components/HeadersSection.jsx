@@ -1,11 +1,9 @@
 import React from "react";
 import { useState } from "react";
 
-import { Guitar } from "lucide-react";
+import WaveformBars from "./WaveformBars";
 
-import WaveformBars from "../components/WaveformBars";
-
-function HeadersSection() {
+function HeadersSection({ title, icon: Icon, songName }) {
   const [playing, setPlaying] = useState(true);
 
   return (
@@ -23,10 +21,12 @@ function HeadersSection() {
             className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{ background: "oklch(0.829 0.1712 81.0381)" }}
           >
-            <Guitar
-              size={16}
-              style={{ color: "oklch(0.1469 0.0041 49.2499)" }}
-            />
+            {
+              <Icon
+                size={16}
+                style={{ color: "oklch(0.1469 0.0041 49.2499)" }}
+              />
+            }
           </div>
           {playing && (
             <div
@@ -43,13 +43,13 @@ function HeadersSection() {
             className="text-sm font-bold shimmer-text"
             style={{ letterSpacing: "0.06em" }}
           >
-            INSTRUMENTAL ANALYSIS
+            {title}
           </h1>
           <p
             className="text-[10px]"
             style={{ color: "oklch(0.7312 0.0102 93.609)" }}
           >
-            track_01_final_mix.wav · 4:23
+            {songName}
           </p>
         </div>
       </div>

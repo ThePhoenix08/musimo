@@ -7,10 +7,10 @@ import { useGetProjectByIdQuery } from "../library/actions/project.api";
 import { useDispatch, useSelector } from "react-redux";
 import { setError, setLoading, setProject } from "./reducers/interface.slice";
 import { useEffect } from "react";
-import EmotionPage from "./views/emotion/Emotion.page";
+import EmotionPage from "./views/emotion/pages/Emotion.page";
 import InstrumentPage from "./views/instrument/pages/Instrument.page";
-import FeaturesPage from "./views/midLevelFeatures/Features.page";
-import SourceSeparationPage from "./views/sourceSeperation/SourceSeparation.page";
+import FeaturesPage from "./views/midLevelFeatures/pages/Features.page";
+import SourceSeparationPage from "./views/sourceSeperation/pages/SourceSeparation.page";
 import AudioPlayerFooter from "./audio-player/AudioPlayerFooter.jsx";
 import {
   selectPlayerMode,

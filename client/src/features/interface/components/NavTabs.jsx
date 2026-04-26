@@ -1,16 +1,10 @@
 import { useRef, useLayoutEffect, useState } from "react";
-import {
-  Activity,
-  HeartPulse,
-  Guitar,
-  BarChart2,
-  Scissors,
-} from "lucide-react";
+import { Activity, Laugh, Guitar, BarChart2, Scissors } from "lucide-react";
 import { VALID_VIEWS } from "../data";
 
 const TAB_ICONS = {
   status: Activity,
-  emotion: HeartPulse,
+  emotion: Laugh,
   instrument: Guitar,
   features: BarChart2,
   separate: Scissors,

@@ -1,9 +1,7 @@
 import HeadersSection from "../../../components/HeadersSection";
-import LeftSection from "../components/LeftSection";
-import RightSection from "../components/RightSection";
-import { Guitar } from "lucide-react";
+import { Scissors } from "lucide-react";
 
-export default function InstrumentPage() {
+export default function SourceSeparationPage() {
   return (
     <>
       <style>{`
@@ -39,16 +37,10 @@ export default function InstrumentPage() {
       <div className="w-full" style={{ fontFamily: "system-ui, sans-serif" }}>
         <div>
           <HeadersSection
-            title="INSTRUMENTAL ANALYSIS"
-            icon={Guitar}
+            title="SOURCE SEPERATION"
+            icon={Scissors}
             songName="track_01_final_mix.wav · 4:23"
           />
-        </div>
-
-        <div className="flex w-full">
-          <LeftSection />
-
-          <RightSection />
         </div>
       </div>
     </>

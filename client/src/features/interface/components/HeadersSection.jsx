@@ -1,10 +1,15 @@
 import React from "react";
-import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
 import WaveformBars from "./WaveformBars";
+import {
+  selectIsPlaying,
+  togglePlay,
+} from "@/features/interface/audio-player/AudioPlayer.slice";
 
 function HeadersSection({ title, icon: Icon, songName }) {
-  const [playing, setPlaying] = useState(true);
+  const isPlaying = useSelector(selectIsPlaying);
+  const dispatch = useDispatch();
 
   return (
     <div
@@ -28,7 +33,7 @@ function HeadersSection({ title, icon: Icon, songName }) {
               />
             }
           </div>
-          {playing && (
+          {isPlaying && (
             <div
               className="absolute inset-0 rounded-xl pointer-events-none"
               style={{
@@ -54,19 +59,19 @@ function HeadersSection({ title, icon: Icon, songName }) {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <WaveformBars playing={playing} />
+        <WaveformBars />
         <button
-          onClick={() => setPlaying((p) => !p)}
+          onClick={() => dispatch(togglePlay())}
           className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
           style={{
-            background: playing
+            background: isPlaying
               ? "oklch(0.829 0.1712 81.0381 / 0.15)"
               : "transparent",
             borderColor: "oklch(0.829 0.1712 81.0381 / 0.45)",
             color: "oklch(0.829 0.1712 81.0381)",
           }}
         >
-          {playing ? "■ Stop" : "▶ Play"}
+          {isPlaying ? "■ Stop" : "▶ Play"}
         </button>
       </div>
     </div>

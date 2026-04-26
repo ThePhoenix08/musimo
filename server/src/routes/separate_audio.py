@@ -1,319 +1,283 @@
 import logging
-import shutil
-import subprocess
+import tempfile
 import traceback
 import uuid
-from datetime import datetime
 from pathlib import Path
+from io import BytesIO
 
 import aiofiles
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    File,
-    HTTPException,
-    UploadFile,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from supabase_auth import User
 
-from src.core.separation_jobState import jobs_storage, websocket_connections
-from src.database.enums import (
-    AudioFileStatus,
-    AudioFormat,
-    JobStatus,
-)
 from src.database.models import AudioFile, SeparatedAudioFile
-from src.database.models.project import Project
 from src.database.session import get_db
-from src.models.audio_separation.file_utils import (
-    INPUT_FOLDER,
-    OUTPUT_FOLDER,
-    calculate_checksum,
-    get_audio_metadata,
-)
 from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
-from src.schemas.audioSeparation import AudioUploadResponse
 from src.services.dependencies import get_current_user
+from src.core.supabase import SupabaseStorageClient, get_storage
+from src.core.settings import CONSTANTS
+from src.schemas.api.response import ApiResponse, ApiErrorResponse
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter()
 
 
-def convert_to_wav(input_path: Path) -> Path:
-    """Convert any audio file to WAV using ffmpeg"""
-    output_path = input_path.with_suffix(".wav")
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(input_path),
-            str(output_path),
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=True,
-    )
-    return output_path
-
-
-@router.websocket("/ws/jobs/{job_id}")
-async def websocket_job_progress(websocket: WebSocket, job_id: str):
-    """WebSocket endpoint for real-time job progress updates"""
-    await websocket.accept()
-    websocket_connections[job_id] = websocket
-
-    try:
-        if job_id in jobs_storage:
-            await websocket.send_json(
-                {
-                    "job_id": job_id,
-                    "progress": jobs_storage[job_id]["progress"],
-                    "message": jobs_storage[job_id]["message"],
-                }
-            )
-
-        while True:
-            try:
-                await websocket.receive_text()
-                await websocket.send_json({"type": "pong"})
-            except WebSocketDisconnect:
-                break
-
-    except Exception as e:
-        logger.error(f"WebSocket error for job {job_id}: {e}")
-    finally:
-        if job_id in websocket_connections:
-            del websocket_connections[job_id]
-
-
-@router.post("/api/audio/upload", response_model=AudioUploadResponse)
-async def upload_audio(
-    file: UploadFile = File(...),
-    project_id: str = None,
-    background_tasks: BackgroundTasks = None,
+# PROCESS AUDIO
+@router.post("/api/audio/process/{audio_id}")
+async def process_audio(
+    audio_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    storage: SupabaseStorageClient = Depends(get_storage),
 ):
-    """
-    Upload audio file for separation.
-    - Saves file locally and converts to WAV
-    - Stores metadata in database
-    - Initiates background separation task
-    """
+    temp_input: Path | None = None
+
     try:
-        if not file.filename:
-            raise HTTPException(status_code=400, detail="No file provided")
-
-        job_id = str(uuid.uuid4())
-        audio_id = str(uuid.uuid4())
-
-        # Resolve or create project
-        if not project_id:
-            new_project = Project(
-                name=f"Project {datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
-                description="Auto-created project",
-                user_id=current_user.id,
-            )
-            db.add(new_project)
-            await db.commit()
-            await db.refresh(new_project)
-            project_id = str(new_project.id)
-        else:
-            result = await db.execute(
-                select(Project).where(Project.id == uuid.UUID(project_id))
-            )
-            existing_project = result.scalar_one_or_none()
-            if not existing_project:
-                raise HTTPException(status_code=400, detail="Invalid project_id")
-
-        # Save uploaded file
-        file_extension = Path(file.filename).suffix
-        local_filename = f"{job_id}{file_extension}"
-        local_file_path = INPUT_FOLDER / local_filename
-
-        async with aiofiles.open(local_file_path, "wb") as f:
-            content = await file.read()
-            await f.write(content)
-
-        logger.info(f"Saved uploaded file: {local_file_path}")
-
-        # Convert to WAV and use that as the source for all downstream processing
-        converted_path = convert_to_wav(local_file_path)
-        metadata = get_audio_metadata(converted_path)
-        checksum = calculate_checksum(converted_path)
-        local_file_path = converted_path
-
-        # Check for duplicate checksum and return existing record if found
-        existing = await db.execute(
-            select(AudioFile).where(AudioFile.checksum == checksum)
-        )
-        existing_record = existing.scalar_one_or_none()
-        if existing_record:
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    f"This audio file has already been uploaded "
-                    f"(audio_id={existing_record.id}). "
-                    "Use the existing record or delete it first."
-                ),
+        try:
+            audio_uuid = uuid.UUID(audio_id)
+        except ValueError:
+            return ApiErrorResponse(
+                code="INVALID_ID",
+                message="Invalid audio ID format",
+                http_status=400,
             )
 
-        # Create AudioFile record
-        audio_file = AudioFile(
-            id=uuid.UUID(audio_id),
-            project_id=uuid.UUID(project_id),
-            file_path=str(local_file_path),
-            file_name=file.filename,
-            file_size=metadata["file_size"],
-            duration=metadata["duration"],
-            sample_rate=metadata["sample_rate"],
-            channels=metadata["channels"],
-            format=AudioFormat.WAV,
-            checksum=checksum,
-            status=AudioFileStatus.UPLOADED,
+        result = await db.execute(
+            select(AudioFile).where(AudioFile.id == audio_uuid)
+        )
+        audio = result.scalar_one_or_none()
+
+        if not audio:
+            return ApiErrorResponse(
+                code="NOT_FOUND",
+                message="Audio not found",
+                http_status=404,
+            )
+
+        if str(audio.project.user_id) != str(current_user.id):
+            return ApiErrorResponse(
+                code="FORBIDDEN",
+                message="Not authorized",
+                http_status=403,
+            )
+
+        file_bytes = await storage.download_file(
+            bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
+            path=audio.file_path,
         )
 
-        db.add(audio_file)
-        await db.commit()
-        await db.refresh(audio_file)
+        if not file_bytes:
+            return ApiErrorResponse(
+                code="EMPTY_FILE",
+                message="Downloaded file is empty",
+                http_status=400,
+            )
 
-        logger.info(f"Created AudioFile record with ID: {audio_id}")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            temp_input = Path(tmp.name)
 
-        # Initialize job state
-        jobs_storage[job_id] = {
-            "job_id": job_id,
-            "audio_id": audio_id,
-            "project_id": project_id,
-            "status": "queued",
-            "progress": 0,
-            "message": "Audio uploaded, queued for separation",
-            "input_file": file.filename,
-            "created_at": datetime.utcnow().isoformat(),
-            "stems": [],
-        }
+        async with aiofiles.open(temp_input, "wb") as f:
+            await f.write(file_bytes)
 
-        background_tasks.add_task(
-            separate_audio_pipeline,
-            local_file_path,
-            job_id,
-            audio_id,
-            project_id,
+        stems = await separate_audio_pipeline(
+            temp_input,
+            str(audio.id),
+            str(audio.project_id),
         )
 
-        logger.info(f"Background separation task started for job {job_id}")
+        if not stems:
+            return ApiErrorResponse(
+                code="NO_STEMS",
+                message="Audio processed but no stems generated",
+                http_status=422,
+            )
 
-        return AudioUploadResponse(
-            job_id=job_id,
-            audio_id=audio_id,
-            status="queued",
-            message="Audio uploaded successfully. Separation started.",
-            file_name=file.filename,
-            created_at=datetime.utcnow().isoformat(),
+        return ApiResponse(
+            message="Audio processed successfully",
+            data={
+                "audio_id": str(audio.id),
+                "project_id": str(audio.project_id),
+                "count": len(stems),
+                "stems": stems,
+            },
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error uploading audio: {e}")
         logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/api/jobs/{job_id}", response_model=JobStatus)
-async def get_job_status(job_id: str):
-    """Get the status of a separation job"""
-    if job_id not in jobs_storage:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    job_data = jobs_storage[job_id]
-
-    return JobStatus(
-        job_id=job_data["job_id"],
-        audio_id=job_data["audio_id"],
-        status=job_data["status"],
-        progress=job_data["progress"],
-        message=job_data["message"],
-        input_file=job_data.get("input_file"),
-        created_at=job_data["created_at"],
-        completed_at=job_data.get("completed_at"),
-        stems=job_data.get("stems", []),
-    )
-
-
-@router.get("/api/jobs")
-async def list_jobs():
-    """List all separation jobs"""
-    return {"jobs": list(jobs_storage.values()), "total": len(jobs_storage)}
-
-
-@router.get("/api/audio/{audio_id}/stems")
-async def get_audio_stems(audio_id: str, db: AsyncSession = Depends(get_db)):
-    """Get all separated stems for an audio file"""
-    try:
-        # Query separated audio files
-        stmt = select(SeparatedAudioFile).where(
-            SeparatedAudioFile.parent_audio_id == uuid.UUID(audio_id)
+        return ApiErrorResponse(
+            code="PROCESS_FAILED",
+            message="Failed to process audio",
+            details=str(e),
         )
-        result = await db.execute(stmt)
+
+    finally:
+        if temp_input and temp_input.exists():
+            temp_input.unlink(missing_ok=True)
+
+
+# GET STEMS
+@router.get("/api/audio/{audio_id}/stems")
+async def get_stems(
+    audio_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        try:
+            audio_uuid = uuid.UUID(audio_id)
+        except ValueError:
+            return ApiErrorResponse(
+                code="INVALID_ID",
+                message="Invalid audio ID format",
+                http_status=400,
+            )
+
+        result = await db.execute(
+            select(SeparatedAudioFile).where(
+                SeparatedAudioFile.parent_audio_id == audio_uuid
+            )
+        )
+
         stems = result.scalars().all()
 
         if not stems:
-            raise HTTPException(status_code=404, detail="No stems found for this audio")
+            return ApiErrorResponse(
+                code="NO_STEMS",
+                message="No stems found",
+                http_status=404,
+            )
 
-        return {
-            "audio_id": audio_id,
-            "stems": [
-                {
-                    "stem_id": str(stem.id),
-                    "label": stem.source_label.value,
-                    "file_name": stem.file_name,
-                    "file_size": stem.file_size,
-                    "file_path": stem.file_path,
-                    "duration": stem.duration,
-                    "sample_rate": stem.sample_rate,
-                    "channels": stem.channels,
-                    "status": stem.status.value,
-                }
-                for stem in stems
-            ],
-        }
+        data = [
+            {
+                "id": str(stem.id),
+                "file_name": stem.file_name,
+                "file_url": f"{CONSTANTS.AUDIO_STORAGE_BASE_URL}/{stem.file_path}",
+                "file_size": stem.file_size,
+                "source_type": stem.source_type.value,
+                "created_at": stem.created_at,
+            }
+            for stem in stems
+        ]
+
+        return ApiResponse(
+            message="Stems fetched successfully",
+            data={
+                "count": len(data),
+                "stems": data,
+            },
+        )
 
     except Exception as e:
-        logger.error(f"Error fetching stems: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(traceback.format_exc())
+        return ApiErrorResponse(
+            code="FETCH_FAILED",
+            message="Failed to fetch stems",
+            details=str(e),
+        )
 
 
-@router.delete("/api/jobs/{job_id}")
-async def delete_job(job_id: str):
-    """Delete a job and clean up associated files"""
-    if job_id not in jobs_storage:
-        raise HTTPException(status_code=404, detail="Job not found")
+#  DELETE AUDIO
+@router.delete("/api/audio/{audio_id}")
+async def delete_audio(
+    audio_id: str,
+    db: AsyncSession = Depends(get_db),
+    storage: SupabaseStorageClient = Depends(get_storage),
+):
+    try:
+        audio_uuid = uuid.UUID(audio_id)
 
-    # Clean up local files
-    job_output_dir = OUTPUT_FOLDER / job_id
-    if job_output_dir.exists():
-        shutil.rmtree(job_output_dir)
+        result = await db.execute(
+            select(AudioFile).where(AudioFile.id == audio_uuid)
+        )
+        audio = result.scalar_one_or_none()
 
-    # Remove from storage
-    del jobs_storage[job_id]
+        if not audio:
+            return ApiErrorResponse(
+                code="NOT_FOUND",
+                message="Audio not found",
+                http_status=404,
+            )
 
-    return {"message": "Job deleted successfully", "job_id": job_id}
+        for stem in audio.separated_sources:
+            try:
+                await storage.delete_file("audio_stem", stem.file_path)
+            except Exception:
+                logger.warning(f"Failed to delete stem: {stem.file_path}")
+
+        await storage.delete_file(
+            CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
+            audio.file_path,
+        )
+
+        await db.delete(audio)
+        await db.commit()
+
+        return ApiResponse(message="Audio and stems deleted")
+
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        return ApiErrorResponse(
+            code="DELETE_FAILED",
+            message="Failed to delete audio",
+            details=str(e),
+        )
 
 
+#  DOWNLOAD STEM
+@router.get("/api/audio/stem/{stem_id}/download")
+async def download_stem(
+    stem_id: str,
+    db: AsyncSession = Depends(get_db),
+    storage: SupabaseStorageClient = Depends(get_storage),
+):
+    try:
+        stem_uuid = uuid.UUID(stem_id)
+
+        result = await db.execute(
+            select(SeparatedAudioFile).where(
+                SeparatedAudioFile.id == stem_uuid
+            )
+        )
+        stem = result.scalar_one_or_none()
+
+        if not stem:
+            return ApiErrorResponse(
+                code="NOT_FOUND",
+                message="Stem not found",
+                http_status=404,
+            )
+
+        file_bytes = await storage.download_file(
+            bucket="audio_stem",
+            path=stem.file_path,
+        )
+
+        if not file_bytes:
+            return ApiErrorResponse(
+                code="FILE_MISSING",
+                message="File not found in storage",
+                http_status=404,
+            )
+
+        return StreamingResponse(
+            BytesIO(file_bytes),
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": f'attachment; filename="{stem.file_name}"'
+            },
+        )
+
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        return ApiErrorResponse(
+            code="DOWNLOAD_FAILED",
+            message="Failed to download stem",
+            details=str(e),
+        )
+
+
+#  HEALTH
 @router.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "Demucs Audio Separator",
-        "version": "1.0.0",
-        "active_jobs": len(jobs_storage),
-        "websocket_connections": len(websocket_connections),
-    }
+async def health():
+    return ApiResponse(message="Service is healthy")

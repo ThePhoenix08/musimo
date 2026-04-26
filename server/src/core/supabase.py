@@ -1,3 +1,4 @@
+# /* src/core/supabase.py
 """
 Async Supabase storage client — singleton pattern.
 
@@ -81,7 +82,8 @@ class SupabaseStorageClient:
     """ Download File """
 
     async def download_file(self, bucket: str, path: str) -> bytes:
-        response = self.client.storage.from_(bucket).download(path)
+        # response = self.client.storage.from_(bucket).download(path)
+        response = await self.client.storage.from_(bucket).download(path)
 
         if isinstance(response, bytes):
             return response

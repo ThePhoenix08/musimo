@@ -3,9 +3,10 @@ import {
   CheckCircle2,
   Clock,
   Music,
-  Zap,
-  Brain,
-  Radio,
+  Laugh,
+  Scissors,
+  Guitar,
+  BarChart2,
   FileAudio,
   HardDrive,
   Gauge,
@@ -23,22 +24,22 @@ const ANALYSIS_TYPES = [
   {
     id: "emotion",
     name: "Emotion Recognition",
-    icon: Brain,
+    icon: Laugh,
   },
   {
     id: "instrument",
     name: "Instrument Recognition",
-    icon: Music,
+    icon: Guitar,
   },
   {
     id: "source",
     name: "Source Separation",
-    icon: Zap,
+    icon: Scissors,
   },
   {
     id: "features",
     name: "Mid-level Feature Extraction",
-    icon: Radio,
+    icon: BarChart2,
   },
 ];
 

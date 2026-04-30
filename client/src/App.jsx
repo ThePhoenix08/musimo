@@ -44,7 +44,7 @@ const NotificationsPage = lazy(
 
 function App() {
   return (
-    <div className="w-screen h-screen flex flex-col bg-background overflow-y-auto">
+    <div className="w-screen h-screen flex flex-col bg-background overflow-hidden">
       <Router>
         <Suspense fallback={<GlobalLoader />}>
           <Routes>

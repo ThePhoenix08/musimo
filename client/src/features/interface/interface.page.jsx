@@ -74,14 +74,14 @@ function InterfacePage() {
   const footerHeight = FOOTER_HEIGHT[playerMode] ?? 0;
 
   return (
-    <div className="interface-page min-w-0 w-full">
-      <div className="top-bar sticky top-12 h-12 px-4 border-y-2 py-1 flex w-full min-w-0 bg-background">
+    <div className="interface-page min-w-0 w-full h-full min-h-0 flex flex-col">
+      <div className="sticky top-0 z-20 h-12 px-4 border-y-2 py-1 flex w-full min-w-0 bg-background">
         <NavTabs currentTab={view} changeTab={changeView} />
         <Separator orientation="vertical" className="shrink-0" />
       </div>
 
       <div
-        className="content w-full min-w-0 transition-[padding-bottom] duration-200"
+        className="content flex-1 min-h-0 w-full overflow-y-auto min-w-0 transition-[padding-bottom] duration-200"
         style={{ paddingBottom: footerHeight }}
       >
         <ActiveTab changeTab={changeView} />

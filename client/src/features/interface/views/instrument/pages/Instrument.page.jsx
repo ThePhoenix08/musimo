@@ -5,7 +5,7 @@ import { Guitar } from "lucide-react";
 
 export default function InstrumentPage() {
   return (
-    <>
+    <div>
       <style>{`
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -36,21 +36,22 @@ export default function InstrumentPage() {
         }
       `}</style>
 
-      <div className="w-full" style={{ fontFamily: "system-ui, sans-serif" }}>
-        <div>
-          <HeadersSection
-            title="INSTRUMENTAL ANALYSIS"
-            icon={Guitar}
-            songName="track_01_final_mix.wav · 4:23"
-          />
-        </div>
+      <div
+        className="w-full"
+        style={{ fontFamily: "system-ui, sans-serif" }}
+      >
+        <HeadersSection
+          title="INSTRUMENTAL ANALYSIS"
+          icon={Guitar}
+          songName="track_01_final_mix.wav · 4:23"
+        />
 
-        <div className="flex w-full">
+        <div className="flex w-full h-full">
           <LeftSection />
 
           <RightSection />
         </div>
       </div>
-    </>
+    </div>
   );
 }

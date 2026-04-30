@@ -3,6 +3,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   IconDashboard,
@@ -81,7 +82,7 @@ const DUMMY_USER = {
 
 export function AppSidebar() {
   return (
-    <Sidebar variant="inset" side="left" collapsible="icon">
+    <Sidebar variant="floating" side="left" collapsible="icon">
       <SidebarHeader>
         <NavSidebarHeader />
       </SidebarHeader>

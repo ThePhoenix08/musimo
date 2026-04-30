@@ -13,7 +13,7 @@ function HeadersSection({ title, icon: Icon, songName }) {
 
   return (
     <div
-      className="flex items-center justify-between px-6 py-3 border-b"
+      className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 border-b"
       style={{
         borderColor: "oklch(0.2684 0.0134 41.6416)",
         background: "oklch(0.1465 0.0057 69.1979)",

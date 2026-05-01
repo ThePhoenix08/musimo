@@ -5,7 +5,6 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -38,29 +37,33 @@ export function AppHeader() {
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 px-3"
+      className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2.5 px-4"
       style={{
-        background: "oklch(0.1465 0.0057 69.1979)",
-        borderBottom: "1px solid oklch(0.2684 0.0134 41.6416)",
+        /* Sits one step lighter than sidebar, one step darker than cards */
+        background: "var(--card)",
+        borderBottom: "1px solid var(--border)",
       }}
     >
-      {/* icon badge */}
+      {/* Icon badge — amber tinted, matches accent system */}
       <div
         className="flex items-center justify-center w-6 h-6 rounded-md shrink-0"
-        style={{ background: "oklch(0.829 0.1712 81.0381 / 0.15)" }}
+        style={{
+          background: "color-mix(in oklch, var(--primary) 15%, transparent)",
+        }}
       >
-        <Icon size={13} style={{ color: "oklch(0.829 0.1712 81.0381)" }} />
+        <Icon size={13} style={{ color: "var(--primary)" }} />
       </div>
 
+      {/* Breadcrumb label */}
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbPage
-              className="font-semibold tracking-wide"
               style={{
-                color: "oklch(0.829 0.1712 81.0381)",
-                fontSize: "15px",
-                letterSpacing: "0.04em",
+                color: "var(--foreground)",
+                fontSize: "14px",
+                fontWeight: 600,
+                letterSpacing: "0.02em",
               }}
             >
               {label}

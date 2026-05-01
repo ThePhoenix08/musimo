@@ -15,60 +15,66 @@ function HeadersSection({ title, icon: Icon, songName }) {
     <div
       className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 border-b"
       style={{
-        borderColor: "oklch(0.2684 0.0134 41.6416)",
-        background: "oklch(0.1465 0.0057 69.1979)",
+        borderColor: "var(--border)",
+        background: "var(--card)",
         animation: "fadeSlideIn 0.35s ease forwards",
       }}
     >
+      {/* Left — icon badge + title */}
       <div className="flex items-center gap-3">
         <div className="relative shrink-0">
+          {/* Icon badge: amber primary bg, dark text on it */}
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "oklch(0.829 0.1712 81.0381)" }}
+            style={{ background: "var(--primary)" }}
           >
-            {
-              <Icon
-                size={16}
-                style={{ color: "oklch(0.1469 0.0041 49.2499)" }}
-              />
-            }
+            <Icon size={16} style={{ color: "var(--primary-foreground)" }} />
           </div>
+
+          {/* Pulse ring when playing */}
           {isPlaying && (
             <div
               className="absolute inset-0 rounded-xl pointer-events-none"
               style={{
                 animation: "pulse-ring 1.5s ease-out infinite",
-                border: "2px solid oklch(0.829 0.1712 81.0381)",
+                border: "2px solid var(--primary)",
               }}
             />
           )}
         </div>
+
         <div>
           <h1
             className="text-sm font-bold shimmer-text"
-            style={{ letterSpacing: "0.06em" }}
+            style={{
+              letterSpacing: "0.06em",
+              color: "var(--foreground)",
+            }}
           >
             {title}
           </h1>
           <p
             className="text-[10px]"
-            style={{ color: "oklch(0.7312 0.0102 93.609)" }}
+            style={{ color: "var(--muted-foreground)" }}
           >
             {songName}
           </p>
         </div>
       </div>
+
+      {/* Right — waveform + play button */}
       <div className="flex items-center gap-4">
         <WaveformBars />
+
         <button
           onClick={() => dispatch(togglePlay())}
           className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
           style={{
             background: isPlaying
-              ? "oklch(0.829 0.1712 81.0381 / 0.15)"
+              ? "color-mix(in oklch, var(--primary) 15%, transparent)"
               : "transparent",
-            borderColor: "oklch(0.829 0.1712 81.0381 / 0.45)",
-            color: "oklch(0.829 0.1712 81.0381)",
+            borderColor: "color-mix(in oklch, var(--primary) 45%, transparent)",
+            color: "var(--primary)",
           }}
         >
           {isPlaying ? "■ Stop" : "▶ Play"}

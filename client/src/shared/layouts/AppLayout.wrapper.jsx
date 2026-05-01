@@ -18,7 +18,7 @@ function AppLayout() {
         {isMobile && <SidebarTrigger />}
         <AppSidebar />
         <SidebarInset>
-          <main className="h-full w-full flex flex-col overflow-hidden rounded-sm">
+          <main className="h-full w-full flex flex-col overflow-hidden rounded-sm border">
             <AppHeader />
             <Outlet />
           </main>

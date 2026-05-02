@@ -36,10 +36,7 @@ export default function InstrumentPage() {
         }
       `}</style>
 
-      <div
-        className="w-full"
-        style={{ fontFamily: "system-ui, sans-serif" }}
-      >
+      <div className="w-full" style={{ fontFamily: "system-ui, sans-serif" }}>
         <HeadersSection
           title="INSTRUMENTAL ANALYSIS"
           icon={Guitar}

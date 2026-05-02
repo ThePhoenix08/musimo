@@ -44,9 +44,7 @@ async def process_audio(
                 http_status=400,
             )
 
-        result = await db.execute(
-            select(AudioFile).where(AudioFile.id == audio_uuid)
-        )
+        result = await db.execute(select(AudioFile).where(AudioFile.id == audio_uuid))
         audio = result.scalar_one_or_none()
 
         if not audio:
@@ -187,9 +185,7 @@ async def delete_audio(
     try:
         audio_uuid = uuid.UUID(audio_id)
 
-        result = await db.execute(
-            select(AudioFile).where(AudioFile.id == audio_uuid)
-        )
+        result = await db.execute(select(AudioFile).where(AudioFile.id == audio_uuid))
         audio = result.scalar_one_or_none()
 
         if not audio:
@@ -235,9 +231,7 @@ async def download_stem(
         stem_uuid = uuid.UUID(stem_id)
 
         result = await db.execute(
-            select(SeparatedAudioFile).where(
-                SeparatedAudioFile.id == stem_uuid
-            )
+            select(SeparatedAudioFile).where(SeparatedAudioFile.id == stem_uuid)
         )
         stem = result.scalar_one_or_none()
 
@@ -263,9 +257,7 @@ async def download_stem(
         return StreamingResponse(
             BytesIO(file_bytes),
             media_type="audio/mpeg",
-            headers={
-                "Content-Disposition": f'attachment; filename="{stem.file_name}"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{stem.file_name}"'},
         )
 
     except Exception as e:

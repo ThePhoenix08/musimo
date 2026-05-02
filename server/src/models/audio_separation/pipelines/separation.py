@@ -549,9 +549,7 @@ async def separate_audio_pipeline(
 
                 if demucs_result.returncode != 0:
                     raise Exception(
-                        demucs_result.stderr
-                        or demucs_result.stdout
-                        or "Demucs failed"
+                        demucs_result.stderr or demucs_result.stdout or "Demucs failed"
                     )
 
                 model_dir = output_dir / "htdemucs" / audio_file_path.stem

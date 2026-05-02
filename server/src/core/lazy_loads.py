@@ -132,6 +132,7 @@ WARMUP_TASKS = {
     "supabase": _warmup_supabase,
 }
 
+
 async def background_warmup(config: dict[str, bool] | None = None):
     global _bg_warmed
 

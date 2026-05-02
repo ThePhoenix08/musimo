@@ -1,7 +1,7 @@
 from functools import cached_property, lru_cache
 from typing import List, Literal
 
-from pydantic import Field, ValidationError, computed_field
+from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .logger_setup import logger

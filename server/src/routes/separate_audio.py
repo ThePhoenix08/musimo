@@ -2,8 +2,8 @@ import logging
 import tempfile
 import traceback
 import uuid
-from pathlib import Path
 from io import BytesIO
+from pathlib import Path
 
 import aiofiles
 from fastapi import APIRouter, Depends
@@ -12,13 +12,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from supabase_auth import User
 
+from src.core.settings import CONSTANTS
+from src.core.supabase import SupabaseStorageClient, get_storage
 from src.database.models import AudioFile, SeparatedAudioFile
 from src.database.session import get_db
 from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
+from src.schemas.api.response import ApiErrorResponse, ApiResponse
 from src.services.dependencies import get_current_user
-from src.core.supabase import SupabaseStorageClient, get_storage
-from src.core.settings import CONSTANTS
-from src.schemas.api.response import ApiResponse, ApiErrorResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

@@ -51,7 +51,6 @@ function InterfacePage() {
         setAudioSource({
           url: file_url,
           name: file_name,
-          // duration: project.duration, // optional — will be set by the footer automatically
         }),
       );
     }

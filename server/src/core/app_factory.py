@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from routes.websocket import ws_router
 from src.core.lifespan import lifespan
 from src.core.settings import CONSTANTS
 from src.middlewares.cors import CORS_POLICY
 from src.middlewares.exception_handler import register_exception_handlers
 from src.middlewares.performance import register_process_time_header
-from src.routes import debug, register_routes, ws_router
+from src.routes import debug, register_routes
 
 
 def create_app() -> FastAPI:

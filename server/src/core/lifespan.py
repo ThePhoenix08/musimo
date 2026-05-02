@@ -32,9 +32,9 @@ async def lifespan(app: FastAPI):
 
     app.state.warmup_config = {
         "db": True,
-        "emotion_model": False,
+        "emotion_model": True,
         "storage": True,
-        "supabase": False,
+        "supabase": True,
     }
 
     asyncio.create_task(background_warmup(app.state.warmup_config))

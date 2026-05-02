@@ -61,18 +61,18 @@ async def get_storage():
 _model_lock = asyncio.Lock()
 
 
-async def get_emotion_model():
+async def load_emotion_model():
     app = AppRegistry.get()
 
-    if app.state.emotion_model is None:
+    if app.state.emotion_model_loaded is None:
         async with _model_lock:
-            if app.state.emotion_model is None:
+            if app.state.emotion_model_loaded is None:
                 logger.info("📦 Loading emotion detection model...")
-                app.state.emotion_model = ModelService.initialize_emotion_pipeline()
+                ModelService.initialize_emotion_pipeline()
+                app.state.emotion_model_loaded = True
                 logger.info("✅ Emotion model loaded")
 
-    return app.state.emotion_model
-
+    return app.state.emotion_model_loaded is None
 
 _engine_lock = asyncio.Lock()
 
@@ -100,7 +100,7 @@ async def _warmup_db():
 
 async def _warmup_emotion_model():
     try:
-        await get_emotion_model()
+        await load_emotion_model()
         logger.info("✅ Emotion model warmed")
     except Exception as e:
         logger.warning(f"Model warmup failed: {e}")

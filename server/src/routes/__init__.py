@@ -6,6 +6,7 @@ from src.routes import (
     separate_audio,
     system,
     user,
+    analysis
 )
 
 
@@ -25,3 +26,4 @@ def register_routes(app):
         prefix="/api/projects/{project_id}/audio-files",
         tags=["Audio Files"],
     )
+    app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])

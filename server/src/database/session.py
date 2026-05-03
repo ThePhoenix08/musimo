@@ -20,7 +20,7 @@ _engine: AsyncEngine | None = None
 def get_engine():
     global _engine
     if _engine is None:
-        engine = create_async_engine(
+        _engine = create_async_engine(
             # CONSTANTS.ASYNC_DATABASE_URL,
             CONSTANTS.ASYNC_POOLER_DATABASE_URL,
             echo=CONSTANTS.DEBUG,
@@ -28,7 +28,7 @@ def get_engine():
             future=True,
             poolclass=None,
         )
-    return engine
+    return _engine
 
 
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None

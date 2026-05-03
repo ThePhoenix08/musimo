@@ -1,264 +1,143 @@
-"""
-WebSocket Audio Analysis Router
-Handles real-time emotion and instrument analysis with progress tracking
-"""
-
-import json
 import logging
-import os
 import uuid
-from pathlib import Path
-from tempfile import NamedTemporaryFile
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, WebSocketException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.websockets import WebSocketState
 
-from ...models.model_service import ModelService
-from ...models.progress_tracker import ProgressTracker
+from src.core.lazy_loads import get_storage
+from src.database.session import get_sessionmaker
+from src.models.progress_tracker import ProgressTracker
+from src.services.dependencies import get_current_ws_user
+from src.services.emotion_workflow_service import (
+    EmotionWorkflowService,
+)
 
 logger = logging.getLogger(__name__)
+SessionLocal = get_sessionmaker()
+
 router = APIRouter(prefix="/api/ws", tags=["WebSocket"])
 
+
 EMOTION_PIPELINE_STEPS = [
-    {"id": "load_audio", "name": "Loading Audio File"},
+    {"id": "validate_project", "name": "Validating Project"},
+    {"id": "fetch_audio", "name": "Fetching Audio File"},
+    {"id": "load_audio", "name": "Loading Audio"},
     {"id": "preprocess", "name": "Preprocessing Audio"},
-    {"id": "extract_embeddings", "name": "Extracting Audio Embeddings"},
+    {"id": "extract_embeddings", "name": "Extracting Embeddings"},
     {"id": "predict", "name": "Running Emotion Model"},
     {"id": "postprocess", "name": "Formatting Results"},
+    {"id": "store_results", "name": "Saving Analysis"},
 ]
 
 
 class ConnectionManager:
-    """Manages active WebSocket connections"""
-
     def __init__(self):
         self.active_connections: dict[str, WebSocket] = {}
 
-    async def connect(self, session_id: str, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections[session_id] = websocket
-        logger.info(f"WebSocket connected: {session_id}")
+    async def connect(self, sid: str, ws: WebSocket):
+        await ws.accept()
+        self.active_connections[sid] = ws
 
-    def disconnect(self, session_id: str):
-        if session_id in self.active_connections:
-            del self.active_connections[session_id]
-            logger.info(f"WebSocket disconnected: {session_id}")
+    def disconnect(self, sid: str):
+        self.active_connections.pop(sid, None)
 
-    async def send_json(self, session_id: str, message: dict):
-        """Send JSON message to specific connection"""
-        if session_id in self.active_connections:
-            websocket = self.active_connections[session_id]
-            if websocket.client_state == WebSocketState.CONNECTED:
-                try:
-                    await websocket.send_json(message)
-                except Exception as e:
-                    logger.error(f"Error sending to {session_id}: {e}")
-                    self.disconnect(session_id)
+    async def send_json(self, sid: str, payload: dict):
+        ws = self.active_connections.get(sid)
+
+        if not ws:
+            return
+
+        if ws.client_state != WebSocketState.CONNECTED:
+            return
+
+        await ws.send_json(payload)
 
 
 manager = ConnectionManager()
 
 
-# =========================== HELPER FUNCTIONS ===========================
-
-
-def create_progress_callback(session_id: str):
-    """Create a callback function for progress updates"""
-
+def create_callback(session_id: str):
     async def callback(update: dict):
         await manager.send_json(session_id, update)
 
     return callback
 
 
-async def save_uploaded_file(file_data: bytes, filename: str) -> str:
-    """Save uploaded file data to temporary file"""
-    file_ext = Path(filename).suffix or ".wav"
-    temp_file = NamedTemporaryFile(delete=False, suffix=file_ext)
-    temp_file.close()
-
-    with open(temp_file.name, "wb") as f:
-        f.write(file_data)
-
-    return temp_file.name
-
-
-# =========================== EMOTION ANALYSIS WEBSOCKET ===========================
-
-
-@router.websocket("/analyze-emotion")
-async def ws_analyze_emotion(websocket: WebSocket):
-    """
-    WebSocket endpoint for real-time emotion analysis with progress tracking
-
-    Client sends:
-    {
-        "action": "analyze",
-        "file_data": "base64_encoded_audio",  // or send as binary
-        "filename": "audio.wav",
-        "prediction_type": "both"  // optional: "static", "dynamic", "both"
-    }
-
-    Server sends progress updates:
-    {
-        "type": "step_started" | "progress_update" | "step_completed" | "pipeline_completed" | "error",
-        "session_id": "...",
-        "overall_progress": 45.5,
-        "step": {...},
-        "all_steps": [...]
-    }
-    """
+@router.websocket("/analyze-emotion/{project_id}")
+async def ws_analyze_emotion(
+    websocket: WebSocket, 
+    project_id: str,
+):
     session_id = str(uuid.uuid4())
+
     await manager.connect(session_id, websocket)
-    temp_file_path = None
 
     try:
-        # Send connection confirmation
+        async with SessionLocal() as session:
+            user_id = await get_current_ws_user(websocket, session)
+
+            await websocket.send_json(
+                {
+                    "type": "connected",
+                    "message": "Authenticated successfully",
+                    "user_id": str(user_id),
+                    "project_id": project_id,
+                }
+            )
+
         await websocket.send_json(
             {
                 "type": "connected",
                 "session_id": session_id,
-                "message": "WebSocket connection established",
             }
         )
 
-        while True:
-            # Receive message from client
-            data = await websocket.receive()
+        tracker = ProgressTracker(
+            steps=EMOTION_PIPELINE_STEPS,
+            callback=create_callback(session_id),
+            session_id=session_id,
+        )
 
-            # Handle binary data (raw audio file)
-            if "bytes" in data:
-                file_data = data["bytes"]
-                filename = f"audio_{session_id}.wav"
-                prediction_type = "both"
+        async with SessionLocal() as session:
+            storage = await get_storage()
 
-            # Handle JSON message
-            elif "text" in data:
-                message = json.loads(data["text"])
-                action = message.get("action")
-
-                if action == "analyze":
-                    # Extract file data (base64 or binary)
-                    import base64
-
-                    file_data_b64 = message.get("file_data")
-                    if file_data_b64:
-                        file_data = base64.b64decode(file_data_b64)
-                    else:
-                        await websocket.send_json(
-                            {"type": "error", "error": "No file_data provided"}
-                        )
-                        continue
-
-                    filename = message.get("filename", f"audio_{session_id}.wav")
-                    prediction_type = message.get("prediction_type", "both")
-
-                elif action == "cancel":
-                    await websocket.send_json(
-                        {"type": "cancelled", "message": "Analysis cancelled by user"}
-                    )
-                    break
-
-                else:
-                    await websocket.send_json(
-                        {"type": "error", "error": f"Unknown action: {action}"}
-                    )
-                    continue
-
-            else:
-                continue
-
-            # Save uploaded file
-            temp_file_path = await save_uploaded_file(file_data, filename)
-
-            # Create progress tracker
-            progress_callback = create_progress_callback(session_id)
-            tracker = ProgressTracker(
-                steps=EMOTION_PIPELINE_STEPS,
-                callback=progress_callback,
-                session_id=session_id,
+            workflow = EmotionWorkflowService(
+                session=session,
+                storage=storage,
             )
 
-            # Send analysis started message
-            await websocket.send_json(
-                {
-                    "type": "analysis_started",
-                    "session_id": session_id,
-                    "filename": filename,
-                    "prediction_type": prediction_type,
-                }
+            result = await workflow.run(
+                project_id=project_id,
+                user_id=user_id,
+                tracker=tracker,
             )
 
-            # Run emotion analysis with progress tracking
-            try:
-                result = await ModelService.predict_emotion_with_progress(
-                    audio_path=temp_file_path,
-                    prediction_type=prediction_type,
-                    tracker=tracker,
-                )
+        await tracker.complete_pipeline(result)
 
-                # Send completion with results
-                await tracker.complete_pipeline(result)
-
-                await websocket.send_json(
-                    {
-                        "type": "analysis_complete",
-                        "session_id": session_id,
-                        "result": result,
-                    }
-                )
-
-            except Exception as e:
-                logger.error(f"Emotion analysis error: {e}", exc_info=True)
-                await tracker.fail_pipeline(str(e))
-
-                await websocket.send_json(
-                    {
-                        "type": "error",
-                        "session_id": session_id,
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                    }
-                )
-
-            finally:
-                # Cleanup temp file
-                if temp_file_path and os.path.exists(temp_file_path):
-                    try:
-                        os.unlink(temp_file_path)
-                    except Exception as e:
-                        logger.warning(f"Failed to delete temp file: {e}")
+        await websocket.send_json(
+            {
+                "type": "analysis_complete",
+                "session_id": session_id,
+                **result,
+            }
+        )
 
     except WebSocketDisconnect:
-        logger.info(f"Client disconnected: {session_id}")
+        logger.info("WebSocket disconnected")
 
-    except WebSocketException as e:
-        logger.error(f"WebSocket error: {e}", exc_info=True)
+    except Exception as e:
+        logger.exception("Emotion WS failed")
+
         try:
-            if websocket.client_state == WebSocketState.CONNECTED:
-                await websocket.send_json({"type": "error", "error": str(e)})
-        except Exception as e:
-            logger.warning(f"Failed to send error message: {e}")
+            await websocket.send_json(
+                {
+                    "type": "error",
+                    "session_id": session_id,
+                    "error": str(e),
+                }
+            )
+        except Exception:
+            pass
 
     finally:
         manager.disconnect(session_id)
-        if temp_file_path and os.path.exists(temp_file_path):
-            try:
-                os.unlink(temp_file_path)
-            except Exception as e:
-                logger.warning(f"Failed to delete temp file: {e}")
-
-# WS ROUTE: api/ws/analyze-emotion/{project_id}
-# steps
-    # extract project_id
-    # check if project exists
-        # ProjectService => checkProjectExists
-    # extract main_audio_id of project
-    # seek and grab audio from bucket of that id
-        # AudioFileService => getAudioFileFromBucketById
-    # start the analysis pipeline on the audio
-        # AnalysisService => predict_emotion_with_progress
-    # analysis pipeline
-    # upon completion, store results into emotion_analysis_record
-        # AnalysisService => CreateEmotionAnalysisRecord
-    # send response back

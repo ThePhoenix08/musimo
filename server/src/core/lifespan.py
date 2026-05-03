@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     app.state.supabase = None
     app.state.supabase_service = None
     app.state.storage = None
-    app.state.emotion_model = None
+    app.state.emotion_model_loaded = None
     app.state.db_engine = None
 
     app.state.warmup_config = {

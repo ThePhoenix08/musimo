@@ -751,7 +751,7 @@ export default function AudioPlayerFooter() {
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 38 }}
             className={cn(
-              "fixed bottom-0 left-0 right-0 z-50 border-t-2 border-border bg-card/95 backdrop-blur-md",
+              "z-50 border-t-2 border-border bg-card/95 backdrop-blur-md",
               "flex flex-col",
               isMini && "h-20",
               isNormal && "h-fit",
@@ -1138,7 +1138,7 @@ function ExpandedContent({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Top section: detail waveform (zoomed) ─────────────────────────── */}
-      <div className="flex-[3] min-h-0 px-4 pt-2 flex flex-col gap-1">
+      <div className="flex-3 min-h-0 px-4 pt-2 flex flex-col gap-1">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-0.5">
           <span>
             Zoom ×{zoomFactor} — {fmt(zoomWindow.start * duration)} →{" "}

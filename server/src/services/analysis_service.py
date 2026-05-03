@@ -92,3 +92,44 @@ class AnalysisService:
         logger.debug(row)
 
         return EmotionAnalysisRecordResponse.model_validate(row)
+    
+    async def run_instrument_model(
+        self,
+        *,
+        audio_path: str,
+    ) -> dict:
+        return await ModelService.predict_instrument(
+        audio_path=audio_path,
+        threshold=0.5,
+        detailed=False,
+    )
+
+    async def upsert_instrument_analysis(
+        self,
+        *,
+        project_id: uuid.UUID,
+        audio_file_id: uuid.UUID,
+        prediction_result: dict,
+    ):
+        existing = await self._repo.get_instrument_by_project_id(project_id)
+
+        summary = "Instrument analysis completed successfully."
+
+        if existing:
+            row = await self._repo.update_instrument_record(
+            existing,
+            prediction_result=prediction_result,
+            summary_text=summary,
+            results=prediction_result,
+        )
+        else:
+            row = await self._repo.create_instrument_record(
+            project_id=project_id,
+            audio_file_id=audio_file_id,
+            prediction_result=prediction_result,
+            summary_text=summary,
+            results=prediction_result,
+        )
+
+        await self._session.commit()
+        return row

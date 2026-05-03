@@ -5,6 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models.analysis_record import EmotionAnalysisRecord
+from src.database.models.analysis_record import InstrumentAnalysisRecord
+from src.database.enums import AnalysisType
 
 
 class AnalysisRepository:
@@ -91,3 +93,52 @@ class AnalysisRepository:
 
     async def delete_emotion_record(self, record: EmotionAnalysisRecord) -> None:
         await self._session.delete(record)
+    
+    async def get_instrument_by_project_id(
+        self,
+        project_id: uuid.UUID,
+    ) -> InstrumentAnalysisRecord | None:
+        stmt = select(InstrumentAnalysisRecord).where(
+        InstrumentAnalysisRecord.project_id == project_id
+    )
+
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    async def create_instrument_record(
+        self,
+        *,
+        project_id: uuid.UUID,
+        audio_file_id: uuid.UUID,
+        prediction_result: dict,
+        summary_text: str,
+        results: dict,
+    ) -> InstrumentAnalysisRecord:
+
+        instruments = [
+            item["instrument"]
+            for item in prediction_result.get("detected_instruments", [])
+        ]
+
+        confidence_scores = {
+            item["instrument"]: item["confidence"]
+            for item in prediction_result.get("detected_instruments", [])
+        }
+
+        row = InstrumentAnalysisRecord(
+            project_id=project_id,
+            audio_file_id=audio_file_id,
+            summary_text=summary_text,
+            results=results,
+            instruments=instruments,
+            confidence_scores=confidence_scores,
+            analysis_type=AnalysisType.INSTRUMENT  
+        )
+
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+
+        return row
+    
+

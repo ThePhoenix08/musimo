@@ -2,8 +2,12 @@ import HeadersSection from "../../../components/HeadersSection";
 import LeftSection from "../components/LeftSection";
 import RightSection from "../components/RightSection";
 import { Guitar } from "lucide-react";
+import { useParams } from "react-router";
 
 export default function InstrumentPage() {
+  const params = useParams();
+  const projectId = params?.id || "";
+  
   return (
     <div>
       <style>{`

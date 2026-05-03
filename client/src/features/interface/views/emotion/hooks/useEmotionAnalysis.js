@@ -1,48 +1,31 @@
-// ============================================================
-// FILE: src/hooks/useEmotionAnalysis.ts
-// SMART ORCHESTRATOR HOOK
-// ============================================================
-
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  useGetEmotionAnalysisQuery,
-} from "@/features/interface/api/analysis.api.js";
+import { useGetEmotionAnalysisQuery } from "@/features/interface/api/analysis.api.js";
 import { useEmotionAnalysisSocket } from "./useEmotionAnalysisWebsocket";
 
 export function useEmotionAnalysis(projectId) {
-  const [startSocket, setStartSocket] =
-    useState(false);
+  const [startSocket, setStartSocket] = useState(false);
 
-  const query =
-    useGetEmotionAnalysisQuery(projectId);
+  const query = useGetEmotionAnalysisQuery(projectId);
 
   const socket = useEmotionAnalysisSocket({
     projectId,
-    enabled:
-      startSocket &&
-      query.isError,
+    enabled: startSocket && query.isError,
     onCompleted: () => {
       query.refetch();
     },
   });
 
-  const api404 =
-    (query.error)?.status === 404;
+  const api404 = query.error?.status === 404;
 
-  if (
-    api404 &&
-    !startSocket
-  ) {
+  if (api404 && !startSocket) {
     setTimeout(() => {
       setStartSocket(true);
     }, 0);
   }
 
-  const loading =
-    query.isLoading ||
-    socket.running;
+  const loading = query.isLoading || socket.running;
 
   const result = query.data?.data;
 

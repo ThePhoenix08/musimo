@@ -16,6 +16,7 @@ function AuthLayout() {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
   
+  <Navigate to={ROUTES.PROFILE} replace />;
   return <Outlet />;
 }
 

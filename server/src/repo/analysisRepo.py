@@ -98,9 +98,11 @@ class AnalysisRepository:
         self,
         project_id: uuid.UUID,
     ) -> InstrumentAnalysisRecord | None:
+
         stmt = select(InstrumentAnalysisRecord).where(
-        InstrumentAnalysisRecord.project_id == project_id
-    )
+        InstrumentAnalysisRecord.project_id == project_id,
+        InstrumentAnalysisRecord.analysis_type == AnalysisType.INSTRUMENT
+        )
 
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
@@ -140,5 +142,36 @@ class AnalysisRepository:
         await self._session.refresh(row)
 
         return row
+    
+    async def update_instrument_record(
+        self,
+        record: InstrumentAnalysisRecord,
+        *,
+        prediction_result: dict,
+        summary_text: str,
+        results: dict,
+    ) -> InstrumentAnalysisRecord:
+
+        # Extract again (same logic as create)
+        instruments = [
+            item["instrument"]
+            for item in prediction_result.get("detected_instruments", [])
+        ]
+
+        confidence_scores = {
+            item["instrument"]: item["confidence"]
+            for item in prediction_result.get("detected_instruments", [])
+        }
+
+    # Update fields
+        record.summary_text = summary_text
+        record.results = results
+        record.instruments = instruments
+        record.confidence_scores = confidence_scores
+
+        await self._session.flush()
+        await self._session.refresh(record)
+
+        return record
     
 

@@ -52,7 +52,7 @@ export default function EmotionPage() {
           animation: shimmer 3s linear infinite;
         }
       `}</style>
-      <div className="w-full min-h-screen px-6 pb-10">
+      <div className="w-full" style={{ fontFamily: "system-ui, sans-serif" }}>
         <HeadersSection
           title="EMOTIONAL ANALYSIS"
           icon={Laugh}

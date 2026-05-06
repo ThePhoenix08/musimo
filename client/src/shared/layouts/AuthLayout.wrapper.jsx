@@ -9,13 +9,13 @@ import {
 import { ROUTES } from "@/shared/constants/routes.constants";
 
 function AuthLayout() {
-  // const isUserAuthenticated = useSelector(selectIsAuthenticated);
-  // const userAccessToken = useSelector(selectAccessToken);
+  const isUserAuthenticated = useSelector(selectIsAuthenticated);
+  const userAccessToken = useSelector(selectAccessToken);
 
-  // if (!isUserAuthenticated || !userAccessToken) {
-  //   return <Navigate to={ROUTES.LOGIN} replace />;
-  // }
-
+  if (!isUserAuthenticated || !userAccessToken) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
+  
   return <Outlet />;
 }
 

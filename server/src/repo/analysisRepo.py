@@ -4,9 +4,11 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models.analysis_record import EmotionAnalysisRecord
-from src.database.models.analysis_record import InstrumentAnalysisRecord
 from src.database.enums import AnalysisType
+from src.database.models.analysis_record import (
+    EmotionAnalysisRecord,
+    InstrumentAnalysisRecord,
+)
 
 
 class AnalysisRepository:
@@ -17,7 +19,6 @@ class AnalysisRepository:
     def sanitize_json(value):
         return json.loads(json.dumps(value, default=str))
 
-    @staticmethod
     def sanitize_row(self, row):
         if row.results is not None:
             row.results = self.sanitize_json(row.results)
@@ -66,7 +67,7 @@ class AnalysisRepository:
         await self._session.flush()
         await self._session.refresh(row)
 
-        self.sanitize_row(row)
+        row = self.sanitize_row(row)
 
         return row
 
@@ -87,7 +88,7 @@ class AnalysisRepository:
         await self._session.flush()
         await self._session.refresh(record)
 
-        self.sanitize_row(record)
+        record = self.sanitize_row(record)
 
         return record
 
@@ -100,8 +101,8 @@ class AnalysisRepository:
     ) -> InstrumentAnalysisRecord | None:
 
         stmt = select(InstrumentAnalysisRecord).where(
-        InstrumentAnalysisRecord.project_id == project_id,
-        InstrumentAnalysisRecord.analysis_type == AnalysisType.INSTRUMENT
+            InstrumentAnalysisRecord.project_id == project_id,
+            InstrumentAnalysisRecord.analysis_type == AnalysisType.INSTRUMENT
         )
 
         result = await self._session.execute(stmt)

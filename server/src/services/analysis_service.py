@@ -48,7 +48,7 @@ class AnalysisService:
         embeddings: dict | list | None = None,
         model_id: uuid.UUID | None = None,
     ):
-        existing = await self._repo.get_emotion_by_project_id(project_id)
+        existing = await self._repo.get_emotion_analysis_by_project_id(project_id)
 
         summary = self._generate_summary(prediction_result)
 

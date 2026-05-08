@@ -739,6 +739,8 @@ export default function AudioPlayerFooter() {
   // ── Don't render if no audio loaded and hidden ────────────────────────────
   if (!audioUrl) return null;
 
+  console.log(playerMode);
+
   return (
     <>
       {/* Hidden audio element — always in DOM when URL exists */}
@@ -753,6 +755,7 @@ export default function AudioPlayerFooter() {
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 38 }}
             className={cn(
+              "absolute bottom-0 left-0 right-0",
               "z-50 border-t-2 border-border bg-card/95 backdrop-blur-md",
               "flex flex-col",
               isMini && "h-20",

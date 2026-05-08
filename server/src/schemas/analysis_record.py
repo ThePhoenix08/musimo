@@ -4,6 +4,15 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 
+
+# =====================================================
+# COMMON API RESPONSE
+# =====================================================
+
+class ApiResponse(BaseModel):
+    success: bool = True
+
+
 # =====================================================
 # BASE
 # =====================================================
@@ -13,8 +22,8 @@ class BaseAnalysisRecordResponse(BaseModel):
 
     id: uuid.UUID
     project_id: uuid.UUID
-    audio_file_id: uuid.UUID
-    model_id: Optional[uuid.UUID]
+    audio_file_id: Optional[uuid.UUID] = None
+    model_id: Optional[uuid.UUID] = None
 
     analysis_type: str
     summary_text: Optional[str] = None
@@ -50,13 +59,25 @@ class EmotionAnalysisRecordResponse(BaseModel):
     vgg_embeddings: dict[str, Any] | list[Any] | None = None
 
 
+class EmotionAnalysisApiResponse(ApiResponse):
+    data: EmotionAnalysisRecordResponse
+
+
 # =====================================================
 # INSTRUMENT
 # =====================================================
 
 class InstrumentAnalysisRecordResponse(BaseAnalysisRecordResponse):
+    model_config = ConfigDict(from_attributes=True)
+
     instruments: list[str]
     confidence_scores: dict[str, Any]
+
+    results: dict[str, Any] | None = None
+
+
+class InstrumentAnalysisApiResponse(ApiResponse):
+    data: InstrumentAnalysisRecordResponse
 
 
 # =====================================================
@@ -73,12 +94,3 @@ class FeatureAnalysisRecordResponse(BaseAnalysisRecordResponse):
 
 class SeparationAnalysisRecordResponse(BaseAnalysisRecordResponse):
     separated_files: list[Any]
-
-
-# =====================================================
-# WRAPPERS
-# =====================================================
-
-class EmotionAnalysisApiResponse(BaseModel):
-    success: bool = True
-    data: EmotionAnalysisRecordResponse

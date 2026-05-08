@@ -133,3 +133,20 @@ class AnalysisService:
 
         await self._session.commit()
         return row
+
+    @staticmethod
+    async def get_instrument_analysis(
+        db,
+        project_id: uuid.UUID,
+    ):
+        repo = AnalysisRepository(session=db)
+
+        row = await repo.get_instrument_by_project_id(project_id)
+
+        if not row:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Instrument analysis not found",
+            )
+
+        return row

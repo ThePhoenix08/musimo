@@ -15,32 +15,69 @@ class AnalysisRepository:
     def __init__(self, session: AsyncSession):
         self._session = session
 
+    # ==========================================================
+    # HELPERS
+    # ==========================================================
+
     @staticmethod
     def sanitize_json(value):
         return json.loads(json.dumps(value, default=str))
 
     def sanitize_row(self, row):
-        if row.results is not None:
+        """
+        Convert non-serializable values into JSON-safe values
+        """
+
+        if hasattr(row, "results") and row.results is not None:
             row.results = self.sanitize_json(row.results)
 
-        if hasattr(row, "prediction_result") and row.prediction_result is not None:
-            row.prediction_result = self.sanitize_json(row.prediction_result)
+        if (
+            hasattr(row, "prediction_result")
+            and row.prediction_result is not None
+        ):
+            row.prediction_result = self.sanitize_json(
+                row.prediction_result
+            )
 
-        if hasattr(row, "vgg_embeddings") and row.vgg_embeddings is not None:
-            row.vgg_embeddings = self.sanitize_json(row.vgg_embeddings)
+        if (
+            hasattr(row, "vgg_embeddings")
+            and row.vgg_embeddings is not None
+        ):
+            row.vgg_embeddings = self.sanitize_json(
+                row.vgg_embeddings
+            )
+
+        if (
+            hasattr(row, "confidence_scores")
+            and row.confidence_scores is not None
+        ):
+            row.confidence_scores = self.sanitize_json(
+                row.confidence_scores
+            )
 
         return row
+
+    # ==========================================================
+    # EMOTION ANALYSIS
+    # ==========================================================
 
     async def get_emotion_analysis_by_project_id(
         self,
         project_id: uuid.UUID,
     ) -> EmotionAnalysisRecord | None:
+
         stmt = select(EmotionAnalysisRecord).where(
             EmotionAnalysisRecord.project_id == project_id
         )
 
         result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+
+        row = result.scalar_one_or_none()
+
+        if row:
+            row = self.sanitize_row(row)
+
+        return row
 
     async def create_emotion_record(
         self,
@@ -53,6 +90,7 @@ class AnalysisRepository:
         results: dict,
         embeddings: dict | list | None = None,
     ) -> EmotionAnalysisRecord:
+
         row = EmotionAnalysisRecord(
             project_id=project_id,
             audio_file_id=audio_file_id,
@@ -61,9 +99,11 @@ class AnalysisRepository:
             results=results,
             prediction_result=prediction_result,
             vgg_embeddings=embeddings,
+            analysis_type=AnalysisType.EMOTION,
         )
 
         self._session.add(row)
+
         await self._session.flush()
         await self._session.refresh(row)
 
@@ -80,6 +120,7 @@ class AnalysisRepository:
         results: dict,
         embeddings: dict | list | None = None,
     ) -> EmotionAnalysisRecord:
+
         record.prediction_result = prediction_result
         record.summary_text = summary_text
         record.results = results
@@ -92,22 +133,34 @@ class AnalysisRepository:
 
         return record
 
-    async def delete_emotion_record(self, record: EmotionAnalysisRecord) -> None:
+    async def delete_emotion_record(
+        self,
+        record: EmotionAnalysisRecord,
+    ) -> None:
         await self._session.delete(record)
-    
+
+    # ==========================================================
+    # INSTRUMENT ANALYSIS
+    # ==========================================================
+
     async def get_instrument_by_project_id(
         self,
         project_id: uuid.UUID,
     ) -> InstrumentAnalysisRecord | None:
 
         stmt = select(InstrumentAnalysisRecord).where(
-            InstrumentAnalysisRecord.project_id == project_id,
-            InstrumentAnalysisRecord.analysis_type == AnalysisType.INSTRUMENT
+            InstrumentAnalysisRecord.project_id == project_id
         )
 
         result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
-    
+
+        row = result.scalar_one_or_none()
+
+        if row:
+            row = self.sanitize_row(row)
+
+        return row
+
     async def create_instrument_record(
         self,
         *,
@@ -120,12 +173,18 @@ class AnalysisRepository:
 
         instruments = [
             item["instrument"]
-            for item in prediction_result.get("detected_instruments", [])
+            for item in prediction_result.get(
+                "detected_instruments",
+                [],
+            )
         ]
 
         confidence_scores = {
             item["instrument"]: item["confidence"]
-            for item in prediction_result.get("detected_instruments", [])
+            for item in prediction_result.get(
+                "detected_instruments",
+                [],
+            )
         }
 
         row = InstrumentAnalysisRecord(
@@ -135,15 +194,18 @@ class AnalysisRepository:
             results=results,
             instruments=instruments,
             confidence_scores=confidence_scores,
-            analysis_type=AnalysisType.INSTRUMENT  
+            analysis_type=AnalysisType.INSTRUMENT,
         )
 
         self._session.add(row)
+
         await self._session.flush()
         await self._session.refresh(row)
 
+        row = self.sanitize_row(row)
+
         return row
-    
+
     async def update_instrument_record(
         self,
         record: InstrumentAnalysisRecord,
@@ -153,18 +215,22 @@ class AnalysisRepository:
         results: dict,
     ) -> InstrumentAnalysisRecord:
 
-        # Extract again (same logic as create)
         instruments = [
             item["instrument"]
-            for item in prediction_result.get("detected_instruments", [])
+            for item in prediction_result.get(
+                "detected_instruments",
+                [],
+            )
         ]
 
         confidence_scores = {
             item["instrument"]: item["confidence"]
-            for item in prediction_result.get("detected_instruments", [])
+            for item in prediction_result.get(
+                "detected_instruments",
+                [],
+            )
         }
 
-    # Update fields
         record.summary_text = summary_text
         record.results = results
         record.instruments = instruments
@@ -173,6 +239,6 @@ class AnalysisRepository:
         await self._session.flush()
         await self._session.refresh(record)
 
-        return record
-    
+        record = self.sanitize_row(record)
 
+        return record

@@ -13,12 +13,6 @@ export default function InstrumentPage() {
 
   const { loading, result, socket, dbQuery } = useInstrumentAnalysis(projectId);
 
-  console.log(result);
-
-  // const instruments = result?.prediction_result?.static?.emotions || {};
-
-  // const dominant = Object.entries(emotions).sort((a, b) => b[1] - a[1])[0];
-
   return (
     <div>
       <style>{`
@@ -68,7 +62,7 @@ export default function InstrumentPage() {
                 <h2 className="text-2xl font-semibold">Analyzing Track...</h2>
 
                 <p className="text-zinc-400 text-sm">
-                  Please wait while AI processes emotional data
+                  Please wait while AI processes instrumental data
                 </p>
               </div>
             </div>
@@ -117,32 +111,13 @@ export default function InstrumentPage() {
           </div>
         )}
 
-        {/* ---------------- RESULTS ---------------- */}
-        {/* {result && !loading && (
-          <div className="mt-10 max-w-5xl mx-auto space-y-6">
-            {dominant && (
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-                <p className="text-zinc-400 text-sm uppercase">
-                  Dominant Emotion
-                </p>
+        {result && !loading && (
+          <div key={result.id} className="flex w-full h-full">
+            <LeftSection />
 
-                <h2 className="text-5xl font-bold capitalize mt-2">
-                  {dominant[0]}
-                </h2>
-
-                <p className="text-zinc-400 mt-2">
-                  Confidence: {(Number(dominant[1]) * 100).toFixed(1)}%
-                </p>
-              </div>
-            )}
+            <RightSection result={result} />
           </div>
-        )} */}
-
-        {/* <div className="flex w-full h-full">
-          <LeftSection />
-
-          <RightSection />
-        </div> */}
+        )}
       </div>
     </div>
   );

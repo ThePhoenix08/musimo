@@ -564,6 +564,9 @@ export default function AudioPlayerFooter() {
       modeFromUrl !== playerMode
     ) {
       dispatch(setPlayerMode(modeFromUrl));
+    } else {
+      dispatch(setPlayerMode(PLAYER_MODES.NORMAL));
+      () => setSearchParams(PLAYER_MODES.NORMAL);
     }
   }, [searchParams]); // eslint-disable-line
 
@@ -729,13 +732,12 @@ export default function AudioPlayerFooter() {
   // ── Derived ──────────────────────────────────────────────────────────────────
   const progress = duration > 0 ? currentTime / duration : 0;
   const currentEmotionInfo = currentEmotion ? GES_LABELS[currentEmotion] : null;
-  const isHidden = playerMode === PLAYER_MODES.HIDDEN;
   const isMini = playerMode === PLAYER_MODES.MINI;
   const isNormal = playerMode === PLAYER_MODES.NORMAL;
   const isExpanded = playerMode === PLAYER_MODES.EXPANDED;
 
   // ── Don't render if no audio loaded and hidden ────────────────────────────
-  if (!audioUrl && isHidden) return null;
+  if (!audioUrl) return null;
 
   return (
     <>
@@ -743,7 +745,7 @@ export default function AudioPlayerFooter() {
       <audio ref={audioRef} preload="metadata" />
 
       <AnimatePresence mode="wait">
-        {!isHidden && (
+        {(
           <motion.div
             key="footer"
             initial={{ y: "100%", opacity: 0 }}
@@ -910,13 +912,6 @@ function ModeToggleBar({
           }
         >
           {isExpanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-        </ModeBtn>
-        {/* Hide */}
-        <ModeBtn
-          title="Hide player"
-          onClick={() => onChangeMode(PLAYER_MODES.HIDDEN)}
-        >
-          <EyeOff size={12} className="opacity-60" />
         </ModeBtn>
       </div>
     </div>

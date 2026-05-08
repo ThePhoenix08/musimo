@@ -131,6 +131,11 @@ class AudioFileService:
 
         raw_bytes = await file.read()
         file_size = len(raw_bytes)
+        if file_size == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is empty.",
+            )
         if file_size > MAX_UPLOAD_BYTES:
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -151,8 +156,8 @@ class AudioFileService:
         storage_path = _build_storage_path(
             project_id, file_id, file.filename or f"{file_id}.bin"
         )
-
         content_type = file.content_type or "application/octet-stream"
+        
         try:
             await self._storage.upload_file(
                 bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
@@ -166,7 +171,7 @@ class AudioFileService:
                 detail=f"Storage upload failed: {exc}",
             ) from exc
 
-        duration, sample_rate, channels = AudioFileService._extract_audio_metadata(
+        duration, sample_rate, channels = self._extract_audio_metadata(
             raw_bytes, file.filename or ""
         )
 

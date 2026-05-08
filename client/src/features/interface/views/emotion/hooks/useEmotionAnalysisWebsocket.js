@@ -5,16 +5,18 @@
 
 "use client";
 
+import { clearCredentials, selectAccessToken, setUpdateTokens } from "@/features/auth/state/slices/auth.slice";
 import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
 
 const API_BASE = "/api";
-const WS_BASE = "ws://localhost:8000/api/ws";
 
-/**
- * Try refreshing auth using cookie-based refresh token.
- * Expects backend to return new access token in Authorization header
- * OR JSON body.accessToken
- */
+function getWsBase() {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.host}/api/ws`;
+}
+
 async function refreshAccessToken() {
   try {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
@@ -26,38 +28,11 @@ async function refreshAccessToken() {
     });
 
     if (!res.ok) return null;
-
-    const authHeader = res.headers.get("authorization");
-    const body = await res.json().catch(() => null);
-
-    const tokenFromHeader = authHeader?.replace("Bearer ", "");
-    const tokenFromBody = body?.accessToken;
-
-    const newToken = tokenFromHeader || tokenFromBody;
-
-    if (newToken) {
-      localStorage.setItem("access_token", newToken);
-      return newToken;
-    }
-
-    return null;
-  } catch (err) {
-    console.error("Refresh token failed:", err);
+    const header = res.headers.get("authorization");
+    return header?.replace("Bearer ", "") ?? null;
+  } catch {
     return null;
   }
-}
-
-/**
- * Get token or refresh if missing
- */
-async function getValidAccessToken() {
-  let token = localStorage.getItem("access_token");
-
-  if (token) return token;
-
-  token = await refreshAccessToken();
-
-  return token || "";
 }
 
 export function useEmotionAnalysisSocket({
@@ -65,7 +40,11 @@ export function useEmotionAnalysisSocket({
   enabled,
   onCompleted,
 }) {
+  const dispatch = useDispatch();
+
+  const reduxToken = useSelector(selectAccessToken);
   const wsRef = useRef(null);
+  const onCompletedRef = useRef(onCompleted);
 
   const [connected, setConnected] = useState(false);
   const [running, setRunning] = useState(false);
@@ -73,30 +52,37 @@ export function useEmotionAnalysisSocket({
   const [steps, setSteps] = useState([]);
   const [error, setError] = useState("");
 
+  useEffect(() => {onCompletedRef.current = onCompleted}, [onCompleted]);
+
   useEffect(() => {
     if (!enabled || !projectId) return;
 
-    let socket = null;
-    let closedByCleanup = false;
+    let isCancelled = false;
 
-    const connect = async () => {
+    const connect = async (token) => {
+      if (isCancelled) return;
+
       setError("");
       setRunning(true);
 
-      const token = await getValidAccessToken();
-
-      socket = new WebSocket(
-        `${WS_BASE}/analyze-emotion/${projectId}?token=${token}`,
+      const WS_BASE = getWsBase();
+      const socket = new WebSocket(
+        `${WS_BASE}/analyze-emotion/${projectId}?token=${encodeURIComponent(token)}`,
       );
-
       wsRef.current = socket;
 
       socket.onopen = () => {
-        setConnected(true);
+        if (!isCancelled) setConnected(true);
       };
 
       socket.onmessage = async (event) => {
-        const msg = JSON.parse(event.data);
+        if (isCancelled) return;
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+        } catch {
+          return;
+        }
 
         switch (msg.type) {
           case "connected":
@@ -106,11 +92,8 @@ export function useEmotionAnalysisSocket({
           case "step_completed":
           case "progress_update":
           case "pipeline_completed":
-            if (msg.all_steps) setSteps(msg.all_steps);
-
-            if (
-              typeof msg.overall_progress === "number"
-            ) {
+            if (Array.isArray(msg.all_steps)) setSteps(msg.all_steps);
+            if (typeof msg.overall_progress === "number") {
               setProgress(msg.overall_progress);
             }
             break;
@@ -118,65 +101,62 @@ export function useEmotionAnalysisSocket({
           case "analysis_complete":
             setProgress(100);
             setRunning(false);
-            onCompleted?.(msg.result);
+            onCompletedRef.current?.(msg.result);
             socket.close();
             break;
 
           case "error":
-          case "pipeline_failed":
-            /**
-             * If backend says unauthorized / token expired
-             * try refresh once and reconnect
-             */
-            if (
-              msg.error?.toLowerCase?.().includes("token") ||
-              msg.error?.toLowerCase?.().includes("unauthorized")
-            ) {
-              const newToken =
-                await refreshAccessToken();
+          case "pipeline_failed": {
+            const errMsg = msg.error ?? "Analysis failed";
+            const isAuthError =
+              errMsg.toLowerCase().includes("token") ||
+              errMsg.toLowerCase().includes("unauthorized");
 
-              if (newToken && !closedByCleanup) {
+            if (isAuthError) {
+              const newToken = await refreshAccessToken();
+              if (newToken && !isCancelled) {
+                dispatch(setUpdateTokens({ accessToken: newToken }));
                 socket.close();
-
-                socket = new WebSocket(
-                  `${WS_BASE}/analyze-emotion/${projectId}?token=${newToken}`,
-                );
-
-                wsRef.current = socket;
+                connect(newToken);
                 return;
               }
+              // Refresh failed — clear session
+              dispatch(clearCredentials());
             }
 
-            setError(
-              msg.error || "Analysis failed",
-            );
+            setError(errMsg);
             setRunning(false);
             socket.close();
+            break;
+          }
+
+          default:
             break;
         }
       };
 
       socket.onerror = () => {
-        setError("WebSocket connection failed");
-        setRunning(false);
-      };
-
-      socket.onclose = () => {
-        setConnected(false);
-
-        if (!closedByCleanup) {
+        if (!isCancelled) {
+          setError("WebSocket connection failed");
           setRunning(false);
         }
       };
+
+      socket.onclose = () => {
+        if (!isCancelled) setConnected(false);
+      };
     };
 
-    connect();
+    const token = reduxToken ?? "";
+    connect(token);
 
     return () => {
-      closedByCleanup = true;
+      isCancelled = true;
       wsRef.current?.close();
+      setRunning(false);
+      setConnected(false);
     };
-  }, [enabled, projectId, onCompleted]);
+  }, [enabled, projectId, reduxToken, dispatch]);
 
   return {
     connected,

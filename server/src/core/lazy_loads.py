@@ -61,7 +61,7 @@ async def get_storage():
 _model_lock = asyncio.Lock()
 
 
-async def load_emotion_model():
+async def load_emotion_model() -> bool:
     app = AppRegistry.get()
 
     if app.state.emotion_model_loaded is None:
@@ -72,7 +72,7 @@ async def load_emotion_model():
                 app.state.emotion_model_loaded = True
                 logger.info("✅ Emotion model loaded")
 
-    return app.state.emotion_model_loaded is None
+    return app.state.emotion_model_loaded
 
 _engine_lock = asyncio.Lock()
 

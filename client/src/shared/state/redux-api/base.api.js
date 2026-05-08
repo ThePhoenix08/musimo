@@ -11,14 +11,16 @@ export const BASE_URL = "/api/";
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
   credentials: "include",
-  prepareHeaders: (headers, { getState, endpoint, body }) => {
+  prepareHeaders: (headers, { getState, endpoint }) => {
     const token = selectAccessToken(getState());
 
     if (token && endpoint !== "refreshToken") {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
-    if (!(body instanceof FormData)) {
+    if (
+      !headers.has("Content-Type") && headers.get("Content-Type") !== "multipart/form-data"
+    ) {
       headers.set("Content-Type", "application/json");
     }
     return headers;
@@ -29,34 +31,31 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result?.error?.status === 401) {
-    console.log("Access token expired. Trying refresh...");
+  if (result?.error?.status !== 401) {
+    return result;
+  }
 
-    const refreshResult = await baseQuery(
-      {
-        url: "/auth/refresh",
-        method: "POST",
-        headers: {
-          Authorization: undefined,
-        },
+  const refreshResult = await baseQuery(
+    {
+      url: "/auth/refresh",
+      method: "POST",
+      headers: {
+        Authorization: undefined,
       },
-      api,
-      extraOptions,
-    );
+    },
+    api,
+    extraOptions,
+  );
 
-    const headers = refreshResult?.meta?.response?.headers;
+  const newToken = refreshResult?.meta?.response?.headers
+    .get("authorization")
+    ?.replace("Bearer ", "");
 
-    if (refreshResult?.data) {
-      api.dispatch(
-        setUpdateTokens({
-          accessToken: headers.get("authorization")?.replace("Bearer ", ""),
-        }),
-      );
-
-      result = await baseQuery(args, api, extraOptions);
-    } else {
-      api.dispatch(clearCredentials());
-    }
+  if (refreshResult?.data && newToken) {
+    api.dispatch(setUpdateTokens({ accessToken: newToken }));
+    result = await baseQuery(args, api, extraOptions);
+  } else {
+    api.dispatch(clearCredentials());
   }
 
   return result;

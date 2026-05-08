@@ -164,7 +164,7 @@ class AnalysisRepository:
             for item in prediction_result.get("detected_instruments", [])
         }
 
-    # Update fields
+        # Update fields
         record.summary_text = summary_text
         record.results = results
         record.instruments = instruments

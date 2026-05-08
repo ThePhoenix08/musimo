@@ -58,6 +58,7 @@ const store = configureStore({
       serializableCheck: {
         // Required for redux-persist + RTK Query to work together
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        ignoredPaths: ["audioPlayer.waveformPeaks"],
       },
     })
       .concat(UserAuthenticationApi.middleware)

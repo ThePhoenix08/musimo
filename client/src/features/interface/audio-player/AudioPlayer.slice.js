@@ -24,7 +24,6 @@ export const GES_LABELS = {
  */
 
 const PLAYER_MODES = {
-  HIDDEN: "hidden",
   MINI: "mini", // h-16 collapsed strip
   NORMAL: "normal", // default — waveform + controls
   EXPANDED: "expanded", // fullscreen with zoom, analysis
@@ -44,7 +43,7 @@ const initialState = {
   isMuted: false,
 
   // ── Player mode (URL-synced) ─────────────────────────────────────────────
-  playerMode: PLAYER_MODES.NORMAL, // "hidden" | "mini" | "normal" | "expanded"
+  playerMode: PLAYER_MODES.NORMAL, // "mini" | "normal" | "expanded"
 
   // ── Waveform ─────────────────────────────────────────────────────────────
   // Float32Array peaks, serialised as plain number[] for Redux serialisability
@@ -317,7 +316,7 @@ export const selectCurrentEmotion = (s) => {
  *
  * 5. Change player mode programmatically:
  *
- *    dispatch(setPlayerMode("expanded")); // "mini" | "normal" | "expanded" | "hidden"
+ *    dispatch(setPlayerMode("expanded")); // "mini" | "normal" | "expanded"
  *
  * 6. Add beat markers:
  *

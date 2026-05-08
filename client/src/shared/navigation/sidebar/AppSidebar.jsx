@@ -18,6 +18,9 @@ import { NavProjects } from "@/shared/navigation/sidebar/NavProjects.jsx";
 import { NavSecondary } from "@/shared/navigation/sidebar/NavSecondary.jsx";
 import { NavSidebarHeader } from "@/shared/navigation/sidebar/NavSidebarHeader.jsx";
 import { NavUser } from "@/shared/navigation/sidebar/NavUser.jsx";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "@/features/auth/state/slices/auth.slice";
+import { useGetAllProjectsQuery } from "@/features/library/actions/project.api";
 
 const SIDEBAR_DATA = {
   navMain: [
@@ -81,6 +84,9 @@ const DUMMY_USER = {
 };
 
 export function AppSidebar() {
+  const user = useSelector(selectCurrentUser);
+  const {projectsResponse, loading} = useGetAllProjectsQuery()
+
   return (
     <Sidebar variant="floating" side="left" collapsible="icon">
       <SidebarHeader>
@@ -92,7 +98,7 @@ export function AppSidebar() {
         <NavSecondary items={SIDEBAR_DATA.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={DUMMY_USER} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   );

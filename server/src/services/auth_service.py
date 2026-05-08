@@ -44,7 +44,7 @@ class STORE_REFRESH_TOKEN_METADATA:
     def __init__(self, request: Request, user_id: str):
         self.user_id = user_id
         self.ip_address = request.client.host if request.client else None
-        self.user_agent = dict(request.headers)["user-agent"]
+        self.user_agent = request.headers.get("user-agent")
 
 
 def FIND_ALL_USERS_BY_EMAIL_OR_USERNAME_QUERY(email: str, username: str):
@@ -326,7 +326,7 @@ class AuthService:
         return True if revoked_count > 0 else False
 
     @staticmethod
-    async def set_email_as_verfied(db: AsyncSession, user_id: str) -> bool:
+    async def set_email_as_verified(db: AsyncSession, user_id: str) -> bool:
         query = FIND_USER_BY_ID_QUERY(user_id)
         result = await db_query(db, query, f"Error fetching user by id: {user_id}.")
         user: User = result.scalar_one_or_none()

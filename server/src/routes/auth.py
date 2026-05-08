@@ -94,7 +94,7 @@ async def login(
     refresh_token = AuthService.create_refresh_token(subject_id=user.id)
 
     refresh_token_metadata = STORE_REFRESH_TOKEN_METADATA(request, user.id)
-    await AuthService.store_refresh_token(db, access_token, data=refresh_token_metadata)
+    await AuthService.store_refresh_token(db, refresh_token, data=refresh_token_metadata)
 
     msg: str = f"User logged in: {user.email} | IP={request.client.host}"
     logger.info(msg)
@@ -162,7 +162,7 @@ async def verify_otp(
         )
 
     if payload.purpose == OtpType.EMAIL_VERIFICATION:
-        success: bool = await AuthService.set_email_as_verfied(
+        success: bool = await AuthService.set_email_as_verified(
             db, user_id=current_user.id
         )
         if not success:
@@ -180,7 +180,7 @@ async def verify_otp(
     refresh_token = AuthService.create_refresh_token(subject_id=current_user.id)
 
     refresh_token_metadata = STORE_REFRESH_TOKEN_METADATA(request, current_user.id)
-    await AuthService.store_refresh_token(db, access_token, data=refresh_token_metadata)
+    await AuthService.store_refresh_token(db, refresh_token, data=refresh_token_metadata)
 
     logger.info(f"User logged in: {current_user.email} | IP={request.client.host}")
 

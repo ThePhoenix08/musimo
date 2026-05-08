@@ -4,6 +4,7 @@ import uuid
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.settings import CONSTANTS
 from src.services.analysis_service import AnalysisService
 from src.services.audio_file import AudioFileService
 from src.services.project import ProjectService
@@ -52,7 +53,7 @@ class InstrumentWorkflowService:
             )
 
             file_bytes = await self._audio_service._storage.download_file(
-                bucket="audio_source",
+                bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
                 path=audio.file_path,
             )
 

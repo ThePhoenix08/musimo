@@ -412,6 +412,7 @@
 # src/models/audio_separation/pipelines/separation.py
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 import logging
 import subprocess
 import sys
@@ -419,9 +420,11 @@ import tempfile
 import traceback
 import uuid
 from pathlib import Path
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy import select
 
+from src.core.settings import CONSTANTS
 from src.database.enums import AudioFileStatus, AudioFormat, SeparatedSourceLabel
 from src.database.models import AudioFile, SeparatedAudioFile
 from src.database.session import get_sessionmaker
@@ -447,14 +450,14 @@ def run_demucs(output_dir: Path, audio_file_path: Path):
         str(output_dir),
         str(audio_file_path),
     ]
-
+ 
     kwargs = dict(capture_output=True, text=True)
-
+ 
     if sys.platform == "win32":
         kwargs["creationflags"] = 0x00000200
     else:
         kwargs["start_new_session"] = True
-
+ 
     return subprocess.run(cmd, **kwargs)
 
 
@@ -464,31 +467,39 @@ async def process_stem(
     model_dir: Path,
     audio_id: str,
     project_id: str,
-    db,
+    supabase_client,
 ):
+    """
+    Upload one stem to Supabase and return (orm_object, response_dict).
+    DB writes are intentionally NOT done here to avoid concurrent session access.
+    """
     src = model_dir / f"{stem}.mp3"
-
     if not src.exists():
+        logger.warning(f"Stem file not found: {src}")
         return None
-
+ 
     try:
-        #  Run metadata + checksum in parallel threads
         metadata_task = asyncio.to_thread(get_audio_metadata, src)
         checksum_task = asyncio.to_thread(calculate_checksum, src)
-
-        metadata, checksum = await asyncio.gather(
-            metadata_task,
-            checksum_task,
-        )
-
+        metadata, checksum = await asyncio.gather(metadata_task, checksum_task)
+ 
         storage_path = f"{project_id}/{audio_id}/{stem}_{uuid.uuid4()}.mp3"
-
-        file_url = await upload_to_supabase_bucket(
-            file_path=src,
-            storage_path=storage_path,
-            bucket_name="audio_stem",
+ 
+        with open(src, "rb") as f:
+            file_bytes = f.read()
+ 
+        await supabase_client.storage.from_(CONSTANTS.SUPABASE_AUDIO_STEM_BUCKET).upload(
+            path=storage_path,
+            file=file_bytes,
+            file_options={"content-type": "audio/mpeg", "upsert": "false"},
         )
-
+ 
+        public_url = (
+            f"{CONSTANTS.SUPABASE_URL}/storage/v1/object/public/"
+            f"{CONSTANTS.SUPABASE_AUDIO_STEM_BUCKET}/{storage_path}"
+        )
+ 
+        # Build ORM object but do NOT call db.add() here
         separated = SeparatedAudioFile(
             id=uuid.uuid4(),
             parent_audio_id=uuid.UUID(audio_id),
@@ -499,91 +510,91 @@ async def process_stem(
             duration=metadata["duration"],
             sample_rate=metadata["sample_rate"],
             channels=metadata["channels"],
-            format=AudioFormat.MP3,  # FIXED
+            format=AudioFormat.MP3,
             checksum=checksum,
             status=AudioFileStatus.PROCESSED,
             source_label=SeparatedSourceLabel[stem.upper()],
+            scheduled_deletion_at=datetime.now(timezone.utc) + timedelta(hours=24),
         )
-
-        db.add(separated)
-
+ 
+        logger.info(f"✅ Stem {stem} uploaded to storage")
+ 
         return {
-            "id": str(separated.id),
-            "file_name": src.name,
-            "file_url": file_url,
-            "source_type": stem,
+            "orm_object": separated,
+            "response": {
+                "id": str(separated.id),
+                "file_name": src.name,
+                "file_url": public_url,
+                "source_type": stem,
+            },
         }
-
+ 
     except Exception as e:
-        logger.error(f"Error processing stem {stem}: {e}")
+        logger.error(f"Error processing stem {stem}: {e}\n{traceback.format_exc()}")
         return None
-
 
 # MAIN PIPELINE
 async def separate_audio_pipeline(
     audio_file_path: Path,
     audio_id: str,
     project_id: str,
+    supabase_client,
+    db: AsyncSession,  # FIX #6: injected — no second engine created here
 ):
-    sessionmaker = get_sessionmaker()
-
-    async with sessionmaker() as db:
-        try:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                output_dir = Path(temp_dir)
-
-                # Update status → PROCESSING
-                result = await db.execute(
-                    select(AudioFile).where(AudioFile.id == uuid.UUID(audio_id))
-                )
-                audio_record = result.scalar_one_or_none()
-
-                if audio_record:
-                    audio_record.status = AudioFileStatus.PROCESSING
-                    await db.commit()
-
-                # 🚀 Run Demucs (threaded)
-                demucs_result = await asyncio.to_thread(
-                    run_demucs, output_dir, audio_file_path
-                )
-
-                if demucs_result.returncode != 0:
-                    raise Exception(
-                        demucs_result.stderr or demucs_result.stdout or "Demucs failed"
-                    )
-
-                model_dir = output_dir / "htdemucs" / audio_file_path.stem
-
-                stems = ["vocals", "drums", "bass", "other"]
-
-                tasks = [
-                    process_stem(stem, model_dir, audio_id, project_id, db)
-                    for stem in stems
-                ]
-
-                results = await asyncio.gather(*tasks)
-
-                results = [r for r in results if r is not None]
-
+    audio_record = None  # FIX #4: initialize before try so except block never hits NameError
+ 
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+ 
+            result = await db.execute(
+                select(AudioFile).where(AudioFile.id == uuid.UUID(audio_id))
+            )
+            audio_record = result.scalar_one_or_none()
+ 
+            if audio_record:
+                audio_record.status = AudioFileStatus.PROCESSING
                 await db.commit()
-
-                if audio_record:
-                    audio_record.status = AudioFileStatus.PROCESSED
-                    await db.commit()
-
-                return results
-
-        except Exception as e:
-            logger.error(traceback.format_exc())
-
-            async with sessionmaker() as error_db:
-                result = await error_db.execute(
-                    select(AudioFile).where(AudioFile.id == uuid.UUID(audio_id))
+ 
+            demucs_result = await asyncio.to_thread(
+                run_demucs, output_dir, audio_file_path
+            )
+ 
+            if demucs_result.returncode != 0:
+                raise Exception(
+                    demucs_result.stderr or demucs_result.stdout or "Demucs failed"
                 )
-                audio_record = result.scalar_one_or_none()
-
-                if audio_record:
-                    audio_record.status = AudioFileStatus.FAILED
-                    await error_db.commit()
-
-            raise e
+ 
+            model_dir = output_dir / "htdemucs" / audio_file_path.stem
+ 
+            stems = ["vocals", "drums", "bass", "other"]
+ 
+            # FIX #5: gather only does I/O (upload) — no db.add() inside tasks
+            tasks = [
+                process_stem(stem, model_dir, audio_id, project_id, supabase_client)
+                for stem in stems
+            ]
+            raw_results = await asyncio.gather(*tasks)
+ 
+            # Sequential db.add() after gather — safe for AsyncSession
+            results = []
+            for item in raw_results:
+                if item is None:
+                    continue
+                db.add(item["orm_object"])  # ← sequential, not concurrent
+                results.append(item["response"])
+ 
+            await db.commit()
+ 
+            if audio_record:
+                audio_record.status = AudioFileStatus.PROCESSED
+                await db.commit()
+ 
+            return results
+ 
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        if audio_record:
+            audio_record.status = AudioFileStatus.FAILED
+            await db.commit()
+        raise

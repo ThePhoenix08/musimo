@@ -20,7 +20,6 @@ import { NavSidebarHeader } from "@/shared/navigation/sidebar/NavSidebarHeader.j
 import { NavUser } from "@/shared/navigation/sidebar/NavUser.jsx";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/features/auth/state/slices/auth.slice";
-import { useGetAllProjectsQuery } from "@/features/library/actions/project.api";
 
 const SIDEBAR_DATA = {
   navMain: [
@@ -85,7 +84,6 @@ const DUMMY_USER = {
 
 export function AppSidebar() {
   const user = useSelector(selectCurrentUser);
-  const {projectsResponse, loading} = useGetAllProjectsQuery()
 
   return (
     <Sidebar variant="floating" side="left" collapsible="icon">

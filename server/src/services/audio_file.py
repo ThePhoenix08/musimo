@@ -147,10 +147,10 @@ class AudioFileService:
 
         existing = await self._audio_repo.get_by_checksum(checksum)
         if existing is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"A file with the same content already exists (id={existing.id}).",
-            )
+            # Reuse existing file — just link it to this project
+            await self._project_repo.set_main_audio(project_id, existing.id)
+            await self._session.commit()
+            return AudioFileUploadResponse.model_validate(existing)
 
         file_id = uuid.uuid4()
         storage_path = _build_storage_path(

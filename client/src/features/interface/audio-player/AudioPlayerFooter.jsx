@@ -739,8 +739,6 @@ export default function AudioPlayerFooter() {
   // ── Don't render if no audio loaded and hidden ────────────────────────────
   if (!audioUrl) return null;
 
-  console.log(playerMode);
-
   return (
     <>
       {/* Hidden audio element — always in DOM when URL exists */}

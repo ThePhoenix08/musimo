@@ -11,11 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 
 const API_BASE = "/api";
-
-function getWsBase() {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/api/ws`;
-}
+const WS_BASE = "ws://localhost:8000/api/ws";
 
 async function refreshAccessToken() {
   try {
@@ -65,7 +61,6 @@ export function useEmotionAnalysisSocket({
       setError("");
       setRunning(true);
 
-      const WS_BASE = getWsBase();
       const socket = new WebSocket(
         `${WS_BASE}/analyze-emotion/${projectId}?token=${encodeURIComponent(token)}`,
       );

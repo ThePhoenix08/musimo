@@ -2,11 +2,11 @@ import logging
 import uuid
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from fastapi.websockets import WebSocketState
 
 from src.core.lazy_loads import get_storage
 from src.database.session import get_sessionmaker
 from src.models.progress_tracker import ProgressTracker
+from src.routes.websocket.utils import create_progress_callback, manager
 from src.services.dependencies import get_current_ws_user
 from src.services.emotion_workflow_service import (
     EmotionWorkflowService,
@@ -39,38 +39,6 @@ INSTRUMENT_PIPELINE_STEPS = [
 ]
 
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: dict[str, WebSocket] = {}
-
-    async def connect(self, sid: str, ws: WebSocket):
-        await ws.accept()
-        self.active_connections[sid] = ws
-
-    def disconnect(self, sid: str):
-        self.active_connections.pop(sid, None)
-
-    async def send_json(self, sid: str, payload: dict):
-        ws = self.active_connections.get(sid)
-
-        if not ws:
-            return
-
-        if ws.client_state != WebSocketState.CONNECTED:
-            return
-
-        await ws.send_json(payload)
-
-
-manager = ConnectionManager()
-
-
-def create_callback(session_id: str):
-    async def callback(update: dict):
-        await manager.send_json(session_id, update)
-
-    return callback
-
 
 @router.websocket("/analyze-emotion/{project_id}")
 async def ws_analyze_emotion(
@@ -97,7 +65,7 @@ async def ws_analyze_emotion(
 
             tracker = ProgressTracker(
                 steps=EMOTION_PIPELINE_STEPS,
-                callback=create_callback(session_id),
+                callback=create_progress_callback(session_id),
                 session_id=session_id,
             )
 
@@ -144,7 +112,7 @@ async def ws_analyze_emotion(
         )
 
     finally:
-        manager.disconnect(session_id)
+        await manager.disconnect(session_id)
 
 
 @router.websocket("/analyze-instrument/{project_id}")
@@ -178,7 +146,7 @@ async def ws_analyze_instrument(
 
         tracker = ProgressTracker(
             steps=INSTRUMENT_PIPELINE_STEPS,
-            callback=create_callback(session_id),
+            callback=create_progress_callback(session_id),
             session_id=session_id,
         )
 

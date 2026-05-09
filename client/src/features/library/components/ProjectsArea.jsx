@@ -27,7 +27,7 @@ const ProjectsArea = () => {
     <div>
       <div className="grid grid-cols-3 gap-4">
         {items?.map((p) => (
-          <ProjectCard project={p} />
+          <ProjectCard project={p} key={p.id}/>
         ))}
       </div>
       <div className="flex justify-center items-center gap-4 mt-6">

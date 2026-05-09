@@ -456,8 +456,10 @@ const ProjectCard = ({ project }) => {
                 transition: "border-color 0.2s, color 0.2s",
               }}
               onHoverStart={(e) => {
-                e.currentTarget.style.borderColor = "var(--primary)";
-                e.currentTarget.style.color = "var(--primary)";
+                if(e.currentTarget) {
+                  e.currentTarget.style.borderColor = "var(--primary)";
+                  e.currentTarget.style.color = "var(--primary)";
+                }
               }}
               onHoverEnd={(e) => {
                 e.currentTarget.style.borderColor = "var(--border)";

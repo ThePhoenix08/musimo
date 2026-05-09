@@ -7,6 +7,9 @@ const LandingPage = lazy(() => import("@/features/landing/landing.page.jsx"));
 
 const AuthLayout = lazy(() => import("./shared/layouts/AuthLayout.wrapper"));
 const AppLayout = lazy(() => import("./shared/layouts/AppLayout.wrapper"));
+const PublicLayout = lazy(
+  () => import("./shared/layouts/PublicLayout.wrapper"),
+);
 
 const LoginPage = lazy(() => import("@/features/auth/pages/Login.page.jsx"));
 const RegisterPage = lazy(
@@ -49,14 +52,19 @@ function App() {
         <Suspense fallback={<GlobalLoader />}>
           <Routes>
             {/* PUBLIC ROUTES */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+            </Route>
+
+            {/* DEBUG */}
             <Route path="/debug" element={<DebugPage />}>
               <Route index element={<AvailableTests />} />
               <Route path="emotion" element={<EmotionPredTest />} />
               <Route path="emotion-websocket" element={<EmotionAnalyzer />} />
             </Route>
+            
             {/* AUTHENTICATED */}
             <Route element={<AuthLayout />}>
               <Route path="/app" element={<AppLayout />}>

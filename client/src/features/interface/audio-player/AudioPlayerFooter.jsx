@@ -748,8 +748,8 @@ export default function AudioPlayerFooter() {
         {(
           <motion.div
             key="footer"
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            // initial={{ y: "100%", opacity: 0 }}
+            // animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 38 }}
             className={cn(

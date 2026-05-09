@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useDeleteProjectByIdMutation } from "../actions/project.api";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -438,7 +437,7 @@ const ProjectCard = ({ project }) => {
           </motion.button>
 
           {/* open link */}
-          <Link to={`/app/projects/${project.id}`}>
+          <Link to={`/app/projects/${project.id}?player=mini`}>
             <motion.div
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.94 }}

@@ -1,6 +1,6 @@
 import uuid
 from typing import TYPE_CHECKING, List
-
+from src.database.enums import AnalysisType, SeparationStatus 
 from sqlalchemy import JSON, Enum, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -112,6 +112,13 @@ class SeparationAnalysisRecord(AnalysisRecord):
     id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("analysis_records.id"), primary_key=True
     )
+    
+    separation_status: Mapped[SeparationStatus] = mapped_column(  # 👈 add this
+        Enum(SeparationStatus),
+        default=SeparationStatus.PENDING,
+        nullable=False,
+    )
+
     separated_files: Mapped[List["SeparatedAudioFile"]] = relationship(
         "SeparatedAudioFile",
         lazy="selectin",

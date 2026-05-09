@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import traceback
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile,  status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.services.stem_tasks import separate_stems_task
 from src.core.supabase import SupabaseStorageClient, get_storage
 from src.database.session import get_db
 from src.schemas.api.response import ApiErrorResponse, ApiResponse
@@ -15,6 +17,9 @@ from src.schemas.project import (
 from src.services.audio_file import AudioFileService
 from src.services.dependencies import get_current_user
 from src.services.project import ProjectService
+
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -35,40 +40,57 @@ async def create_project_with_audio(
     try:
         project_service = ProjectService(db)
         audio_service = AudioFileService(session=db, storage=storage)
-
+ 
         project_payload = ProjectCreateRequest(
             name=name,
             description=description,
         )
-
+ 
         created_project = await project_service.create_project(
             user_id=user.id,
             payload=project_payload,
         )
-
+ 
+        logger.info(f"Project created: {created_project.id}")
+ 
         if file:
-            await audio_service.upload_audio_file(
+            audio_response = await audio_service.upload_audio_file(
                 project_id=created_project.id,
                 user_id=user.id,
                 file=file,
             )
-
+ 
+            logger.info(f"File uploaded: {audio_response.id}")
+ 
+            task = separate_stems_task.delay(
+                audio_id=str(audio_response.id),
+                project_id=str(created_project.id),
+            )
+ 
+            logger.info(f"✅ Stem task enqueued: task_id={task.id} audio_id={audio_response.id}")
+ 
         project = await project_service.get_project(created_project.id, user.id)
-
+ 
         return ApiResponse(
             message="Project created successfully"
             + (" and audio uploaded" if file else ""),
             data={"project": project.model_dump()},
             status_code=status.HTTP_201_CREATED,
         )
-
+ 
+    except HTTPException as e:
+        # FIX #8: HTTPException is now imported — re-raise so FastAPI handles it correctly
+        raise
+ 
     except Exception as e:
+        logger.error(traceback.format_exc())
         return ApiErrorResponse(
             code="PROJECT_CREATE_WITH_AUDIO_FAILED",
             message="Failed to create project",
             details=str(e),
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
+ 
 
 @router.get(
     "",

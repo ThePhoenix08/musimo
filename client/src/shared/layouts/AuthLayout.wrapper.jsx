@@ -6,6 +6,7 @@ import {
   selectIsAuthenticated,
   selectAccessToken,
 } from "@/features/auth/state/slices/auth.slice";
+
 import { ROUTES } from "@/shared/constants/routes.constants";
 
 function AuthLayout() {
@@ -15,8 +16,7 @@ function AuthLayout() {
   if (!isUserAuthenticated || !userAccessToken) {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
-  
-  <Navigate to={ROUTES.PROFILE} replace />;
+
   return <Outlet />;
 }
 

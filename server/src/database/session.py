@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from typing import AsyncGenerator
@@ -81,3 +82,22 @@ async def test_db_connection() -> dict:
     except SQLAlchemyError as e:
         logger.error(f"❌ Database connection test failed: {e}")
         return {"ok": False, "latency_ms": None}
+
+
+# Add this to your existing database.py
+
+def run_async(coro):
+    """Run an async coroutine from sync Celery task."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+
+async def get_db_session() -> AsyncSession:
+    """Get a single async session for use in Celery tasks."""
+    sessionmaker = get_sessionmaker()
+    session = sessionmaker()
+    return session

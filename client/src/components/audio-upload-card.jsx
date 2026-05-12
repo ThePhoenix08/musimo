@@ -177,10 +177,10 @@ const UploadCardBase = ({ children, isDragOver, isUploading }) => {
       )}
     >
       {!hasChildren && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-accent">
           <Upload
             size={48}
-            className={cn("transition-colors duration-200 text-secondary")}
+            className={cn("transition-colors duration-200")}
           />
         </div>
       )}

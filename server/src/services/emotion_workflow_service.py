@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from tempfile import NamedTemporaryFile
@@ -11,6 +12,7 @@ from src.services.analysis_service import AnalysisService
 from src.services.audio_file import AudioFileService
 from src.services.project import ProjectService
 
+logger = logging.getLogger(__name__)
 
 class EmotionWorkflowService:
     def __init__(self, session: AsyncSession, storage):
@@ -109,6 +111,9 @@ class EmotionWorkflowService:
                 "project_id": str(project_id),
                 "result": result,
             }
+
+        except Exception:
+            logger.error("[EMOTION WORKFLOW SERVICE] Error:", exc_info=True)
 
         finally:
             if temp_path and os.path.exists(temp_path):

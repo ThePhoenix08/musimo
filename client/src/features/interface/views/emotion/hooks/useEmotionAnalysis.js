@@ -1,23 +1,17 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useGetEmotionAnalysisQuery } from "@/features/interface/api/analysis.api.js";
 import { useEmotionAnalysisSocket } from "./useEmotionAnalysisWebsocket";
 
 export function useEmotionAnalysis(projectId) {
-  const [startSocket, setStartSocket] = useState(false);
-
   const query = useGetEmotionAnalysisQuery(projectId, { skip: !projectId });
 
-  const api404 = query.isError && query.error?.status === 404;
-
-  useEffect(() => {
-    if (api404 && !startSocket) {
-      () => setStartSocket(true);
-    }
-  }, [api404, startSocket]);
+  const api404 =
+    query.error?.status === 404 ||
+    query?.data?.error?.code === "HTTP_404";
 
   const socket = useEmotionAnalysisSocket({
     projectId,
-    enabled: startSocket && !query.data,
+    enabled: api404 && !query.data,
     onCompleted: () => {
       query.refetch();
     },

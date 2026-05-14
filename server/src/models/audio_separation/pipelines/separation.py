@@ -539,59 +539,73 @@ async def separate_audio_pipeline(
     audio_id: str,
     project_id: str,
     supabase_client,
-    db: AsyncSession,  # FIX #6: injected — no second engine created here
+    db: AsyncSession,
 ):
-    audio_record = None  # FIX #4: initialize before try so except block never hits NameError
- 
+    audio_record = None
+
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)
- 
+
             result = await db.execute(
                 select(AudioFile).where(AudioFile.id == uuid.UUID(audio_id))
             )
             audio_record = result.scalar_one_or_none()
- 
+
             if audio_record:
                 audio_record.status = AudioFileStatus.PROCESSING
                 await db.commit()
- 
+
             demucs_result = await asyncio.to_thread(
                 run_demucs, output_dir, audio_file_path
             )
- 
+
             if demucs_result.returncode != 0:
                 raise Exception(
                     demucs_result.stderr or demucs_result.stdout or "Demucs failed"
                 )
- 
+
             model_dir = output_dir / "htdemucs" / audio_file_path.stem
- 
+
             stems = ["vocals", "drums", "bass", "other"]
- 
-            # FIX #5: gather only does I/O (upload) — no db.add() inside tasks
+
             tasks = [
                 process_stem(stem, model_dir, audio_id, project_id, supabase_client)
                 for stem in stems
             ]
             raw_results = await asyncio.gather(*tasks)
- 
-            # Sequential db.add() after gather — safe for AsyncSession
+
+            # fetch separation record to link stems to it
+            from src.database.models.analysis_record import SeparationAnalysisRecord
+            rec_result = await db.execute(
+                select(SeparationAnalysisRecord).where(
+                    SeparationAnalysisRecord.project_id == uuid.UUID(project_id)
+                )
+            )
+            separation_record = rec_result.scalar_one_or_none()
+
+            # sequential db.add() — safe for AsyncSession
             results = []
             for item in raw_results:
                 if item is None:
                     continue
-                db.add(item["orm_object"])  # ← sequential, not concurrent
+                orm_obj = item["orm_object"]
+
+                # link to separation record so SSE query can find stems
+                if separation_record:
+                    orm_obj.separation_analysis_id = separation_record.id
+
+                db.add(orm_obj)
                 results.append(item["response"])
- 
+
             await db.commit()
- 
+
             if audio_record:
                 audio_record.status = AudioFileStatus.PROCESSED
                 await db.commit()
- 
+
             return results
- 
+
     except Exception as e:
         logger.error(traceback.format_exc())
         if audio_record:

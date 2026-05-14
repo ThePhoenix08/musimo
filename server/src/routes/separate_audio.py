@@ -1,4 +1,7 @@
+import asyncio
 from io import BytesIO
+import json 
+from sqlalchemy.orm import selectinload
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import StreamingResponse
@@ -20,10 +23,15 @@ from src.services.dependencies import get_current_user
 from src.services.stem_service import update_stem_status
 from src.services.stem_tasks import separate_stems_task
 from src.database.models.user import User
+
+def _sse(data: dict) -> str:
+    return f"data: {json.dumps(data)}\n\n"
  
 logger = logging.getLogger(__name__)
  
 router = APIRouter()
+
+POLL_INTERVAL = 3
 
 
 # PROCESS AUDIO
@@ -202,63 +210,137 @@ async def process_audio(
 
 
 # GET STEMS
-@router.get("/api/audio/{audio_id}/stems")
-async def get_stems(
-    audio_id: str,
-    db: AsyncSession = Depends(get_db),
+# @router.get("/api/audio/{audio_id}/stems")
+# async def get_stems(
+#     audio_id: str,
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     try:
+#         try:
+#             audio_uuid = uuid.UUID(audio_id)
+#         except ValueError:
+#             return ApiErrorResponse(
+#                 code="INVALID_ID",
+#                 message="Invalid audio ID format",
+#                 http_status=400,
+#             )
+ 
+#         result = await db.execute(
+#             select(SeparatedAudioFile).where(
+#                 SeparatedAudioFile.parent_audio_id == audio_uuid
+#             )
+#         )
+ 
+#         stems = result.scalars().all()
+ 
+#         if not stems:
+#             return ApiErrorResponse(
+#                 code="NO_STEMS",
+#                 message="No stems found",
+#                 http_status=404,
+#             )
+ 
+#         data = [
+#             {
+#                 "id": str(stem.id),
+#                 "file_name": stem.file_name,
+#                 "file_url": f"{CONSTANTS.AUDIO_STORAGE_BASE_URL}/{stem.file_path}",
+#                 "file_size": stem.file_size,
+#                 "source_type": stem.source_label.value,  # FIX #7: was stem.source_type — field is source_label
+#                 "created_at": stem.created_at,
+#             }
+#             for stem in stems
+#         ]
+ 
+#         return ApiResponse(
+#             message="Stems fetched successfully",
+#             data={
+#                 "count": len(data),
+#                 "stems": data,
+#             },
+#         )
+ 
+#     except Exception as e:
+#         logger.error(traceback.format_exc())
+#         return ApiErrorResponse(
+#             code="FETCH_FAILED",
+#             message="Failed to fetch stems",
+#             details=str(e),
+#         )
+
+
+@router.get("/api/projects/{project_id}/stems/stream")
+async def stream_stems(
+    project_id: str,
 ):
     try:
-        try:
-            audio_uuid = uuid.UUID(audio_id)
-        except ValueError:
-            return ApiErrorResponse(
-                code="INVALID_ID",
-                message="Invalid audio ID format",
-                http_status=400,
-            )
- 
-        result = await db.execute(
-            select(SeparatedAudioFile).where(
-                SeparatedAudioFile.parent_audio_id == audio_uuid
-            )
-        )
- 
-        stems = result.scalars().all()
- 
-        if not stems:
-            return ApiErrorResponse(
-                code="NO_STEMS",
-                message="No stems found",
-                http_status=404,
-            )
- 
-        data = [
-            {
-                "id": str(stem.id),
-                "file_name": stem.file_name,
-                "file_url": f"{CONSTANTS.AUDIO_STORAGE_BASE_URL}/{stem.file_path}",
-                "file_size": stem.file_size,
-                "source_type": stem.source_label.value,  # FIX #7: was stem.source_type — field is source_label
-                "created_at": stem.created_at,
-            }
-            for stem in stems
-        ]
- 
-        return ApiResponse(
-            message="Stems fetched successfully",
-            data={
-                "count": len(data),
-                "stems": data,
-            },
-        )
- 
-    except Exception as e:
-        logger.error(traceback.format_exc())
-        return ApiErrorResponse(
-            code="FETCH_FAILED",
-            message="Failed to fetch stems",
-            details=str(e),
-        )
+        project_uuid = uuid.UUID(project_id)
+    except ValueError:
+        return ApiErrorResponse(code="INVALID_ID", message="Invalid project ID", http_status=400)
+
+    async def event_stream():
+        while True:
+            try:
+                async for db in get_db():  # fresh session every poll
+                    result = await db.execute(
+                        select(SeparationAnalysisRecord)
+                        .options(selectinload(SeparationAnalysisRecord.separated_files))  # ← add this
+                        .where(
+                            SeparationAnalysisRecord.project_id == project_uuid
+                        )
+                    )
+
+                    record = result.scalar_one_or_none()
+
+                    if not record:
+                        yield _sse({"code": "NOT_FOUND", "message": "No separation record found"})
+                        return
+
+                    status = record.separation_status
+
+                    if status == SeparationStatus.PENDING:
+                        yield _sse({"status": "pending", "message": "Separation will start soon, please wait."})
+
+                    elif status == SeparationStatus.PROCESSING:
+                        yield _sse({"status": "processing", "message": "Stems are being separated, please wait."})
+
+                    elif status == SeparationStatus.COMPLETED:
+                        stems = [
+                            {
+                                "id": str(stem.id),
+                                "file_name": stem.file_name,
+                                "file_url": f"{CONSTANTS.SUPABASE_URL}/storage/v1/object/public/{CONSTANTS.SUPABASE_AUDIO_STEM_BUCKET}/{stem.file_path}",
+                                "file_size": stem.file_size,
+                                "source_type": stem.source_label.value,
+                                "created_at": stem.created_at.isoformat(),
+                            }
+                            for stem in record.separated_files
+                        ]
+                        yield _sse({"status": "completed", "stems": stems})
+                        return
+
+                    elif status == SeparationStatus.FAILED:
+                        yield _sse({"status": "failed", "message": "Separation failed, please try again."})
+                        return
+
+            except Exception as e:
+                logger.error(f"SSE stream error: {e}")
+                yield _sse({"status": "error", "message": "Stream error occurred"})
+                return
+
+            await asyncio.sleep(POLL_INTERVAL)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # important for nginx
+        },
+    )
+
+
+
 
 
 #  DELETE AUDIO

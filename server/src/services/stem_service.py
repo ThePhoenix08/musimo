@@ -65,7 +65,7 @@ async def update_stem_status(
         # 2. Fetch or create SeparationAnalysisRecord
         rec_result = await db.execute(
             select(SeparationAnalysisRecord).where(
-                SeparationAnalysisRecord.audio_file_id == audio.id
+                SeparationAnalysisRecord.project_id == audio.project_id
             )
         )
         separation_record = rec_result.scalar_one_or_none()

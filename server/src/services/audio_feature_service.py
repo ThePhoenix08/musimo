@@ -27,7 +27,6 @@ def convert_numpy(obj):
         return [convert_numpy(i) for i in obj]
     return obj
 
-
 class AudioFeatureService:
 
     def __init__(self, session, storage):
@@ -37,16 +36,15 @@ class AudioFeatureService:
         self._analysis_repo = FeatureAnalysisRepository(session)
         self._storage = storage
 
-    """# Extract Features"""
-
     async def extract_and_store(self, audio_file_id):
-        """# Get audio"""
+
         audio = await self._audio_repo.get_by_id(audio_file_id)
+
         if not audio:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Audio not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Audio not found",
             )
-
         """ # Download file from Supabase"""
         file_bytes = await self._storage.download_file(
             bucket=CONSTANTS.SUPABASE_AUDIO_SOURCE_BUCKET,
@@ -66,93 +64,157 @@ class AudioFeatureService:
                 tmp.write(file_bytes)
                 temp_path = tmp.name
 
-            """Load audio"""
-            y, sr = librosa.load(temp_path, sr=None)
+            # OPTIMIZED AUDIO LOADING
 
-            """  # Feature Extraction """
+            TARGET_SR = 22050
+            N_FFT = 1024
+            HOP_LENGTH = 512
 
-            mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+            y, sr = librosa.load(
+                temp_path,
+                sr=TARGET_SR,
+            )
 
-            """# MFCC Delta"""
+            y = y.astype(np.float32)
+
+            stft = np.abs(
+                librosa.stft(
+                    y,
+                    n_fft=N_FFT,
+                    hop_length=HOP_LENGTH,
+                )
+            )
+
+            mfcc = librosa.feature.mfcc(
+                y=y,
+                sr=sr,
+                n_mfcc=13,
+                n_fft=N_FFT,
+                hop_length=HOP_LENGTH,
+            )
+
             mfcc_delta = librosa.feature.delta(mfcc)
 
-            """ Spectral Features """
-            centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
-            bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
-            contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
-            rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)
-            flatness = librosa.feature.spectral_flatness(y=y)
+            mfcc_mean = np.mean(mfcc, axis=1)
+            mfcc_std = np.std(mfcc, axis=1)
 
-            """# Rhythm Features"""
-            onset_env = librosa.onset.onset_strength(y=y, sr=sr)
-            tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
-            tempogram = librosa.feature.tempogram(onset_envelope=onset_env, sr=sr)
+            mfcc_delta_mean = np.mean(mfcc_delta, axis=1)
+            mfcc_delta_std = np.std(mfcc_delta, axis=1)
 
-            """Mel Spectrogram"""
-            mel = librosa.feature.melspectrogram(y=y, sr=sr)
-            log_mel = librosa.power_to_db(mel)
+            centroid = librosa.feature.spectral_centroid(
+                S=stft,
+                sr=sr,
+            )
 
-            """ Chroma Features"""
-            chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+            bandwidth = librosa.feature.spectral_bandwidth(
+                S=stft,
+                sr=sr,
+            )
 
-            """ Tonal Features  """
+            contrast = librosa.feature.spectral_contrast(
+                S=stft,
+                sr=sr,
+            )
+
+            rolloff = librosa.feature.spectral_rolloff(
+                S=stft,
+                sr=sr,
+            )
+
+            flatness = librosa.feature.spectral_flatness(
+                S=stft,
+            )
+
+            onset_env = librosa.onset.onset_strength(
+                y=y,
+                sr=sr,
+                hop_length=HOP_LENGTH,
+            )
+
+            tempo, beats = librosa.beat.beat_track(
+                onset_envelope=onset_env,
+                sr=sr,
+            )
+
+            chroma = librosa.feature.chroma_stft(
+                S=stft,
+                sr=sr,
+            )
+
             y_harmonic = librosa.effects.harmonic(y)
-            tonnetz = librosa.feature.tonnetz(y=y_harmonic, sr=sr)
+
+            tonnetz = librosa.feature.tonnetz(
+                y=y_harmonic,
+                sr=sr,
+            )
+
+            zcr = librosa.feature.zero_crossing_rate(
+                y,
+                hop_length=HOP_LENGTH,
+            )
+
+            rms = librosa.feature.rms(
+                S=stft,
+                frame_length=N_FFT,
+                hop_length=HOP_LENGTH,
+            )
 
             features = {
                 "simple_rate": sr,
                 "Audio_Length": len(y) / sr,
+
                 "mfcc": {
-                    "mean": np.mean(mfcc, axis=1).tolist(),
-                    "std": np.std(mfcc, axis=1).tolist(),
+                    "mean": mfcc_mean.tolist(),
+                    "std": mfcc_std.tolist(),
                 },
+
                 "mfcc_delta": {
-                    "mean": np.mean(mfcc_delta, axis=1).tolist(),
-                    "std": np.std(mfcc_delta, axis=1).tolist(),
+                    "mean": mfcc_delta_mean.tolist(),
+                    "std": mfcc_delta_std.tolist(),
                 },
-                # Time-domain features
+
                 "zcr": {
-                    "mean": float(np.mean(librosa.feature.zero_crossing_rate(y))),
-                    "std": float(np.std(librosa.feature.zero_crossing_rate(y))),
+                    "mean": float(np.mean(zcr)),
+                    "std": float(np.std(zcr)),
                 },
-                # Energy
+
                 "rms": {
-                    "mean": float(np.mean(librosa.feature.rms(y=y))),
-                    "std": float(np.std(librosa.feature.rms(y=y))),
+                    "mean": float(np.mean(rms)),
+                    "std": float(np.std(rms)),
                 },
+
                 "spectral_centroid": {
                     "mean": float(np.mean(centroid)),
                     "std": float(np.std(centroid)),
                 },
+
                 "spectral_bandwidth": {
                     "mean": float(np.mean(bandwidth)),
                     "std": float(np.std(bandwidth)),
                 },
+
                 "spectral_contrast": {
                     "mean": np.mean(contrast, axis=1).tolist(),
                     "std": np.std(contrast, axis=1).tolist(),
                 },
+
                 "spectral_rolloff": {
                     "mean": float(np.mean(rolloff)),
                     "std": float(np.std(rolloff)),
                 },
+
                 "spectral_flatness": {
                     "mean": float(np.mean(flatness)),
                     "std": float(np.std(flatness)),
                 },
-                "tempo": tempo,
-                # "tempogram": {
-                #     "mean": np.mean(tempogram, axis=1).tolist(),
-                #     "std": np.std(tempogram, axis=1).tolist(),
-                # },
-                # "mel": {
-                #     "mean": np.mean(log_mel, axis=1).tolist(),
-                #     "std": np.std(log_mel, axis=1).tolist(),
-                # },
+
+                "tempo": float(np.mean(tempo)),
+
                 "chroma": {
                     "mean": np.mean(chroma, axis=1).tolist(),
                     "std": np.std(chroma, axis=1).tolist(),
                 },
+
                 "tonnetz": {
                     "mean": np.mean(tonnetz, axis=1).tolist(),
                     "std": np.std(tonnetz, axis=1).tolist(),
@@ -161,20 +223,17 @@ class AudioFeatureService:
 
             features = convert_numpy(features)
 
-            """          # DB Operations          """
-
             analysis = await self._analysis_repo.get_by_audio(audio_file_id)
 
             if not analysis:
-                # analysis = await self._analysis_repo.create(audio_file_id)
                 analysis = await self._analysis_repo.create(
                     audio_file_id=audio_file_id,
                     project_id=audio.project_id,
                     feature_vector=features,
                 )
 
-            """# Check existing feature"""
             existing_feature = None
+
             for f in audio.audio_features:
                 if f.analysis_record_id == analysis.id:
                     existing_feature = f
@@ -182,6 +241,7 @@ class AudioFeatureService:
 
             if existing_feature:
                 existing_feature.data = features
+
             else:
                 await self._feature_repo.create(
                     audio_file_id=audio.id,
@@ -192,14 +252,20 @@ class AudioFeatureService:
 
             await self._session.commit()
 
-            return {"success": True}
+            return {
+                "analysis_id": str(analysis.id),
+                "audio_file_id": str(audio.id),
+                "features": features,
+            }
 
         finally:
+
             """# Cleanup temp file"""
+
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
 
-    """    # Get Features """
+    """# Get Features"""
 
     async def get_all_features(self, audio_file_id):
 
@@ -207,12 +273,14 @@ class AudioFeatureService:
 
         if not audio:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Audio not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Audio not found",
             )
 
         result = []
 
         for feature in audio.audio_features:
+
             result.append(
                 {
                     "analysis_id": str(feature.analysis_record_id),

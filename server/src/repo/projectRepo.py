@@ -58,7 +58,6 @@ class ProjectRepository:
             .order_by(Project.created_at.desc())
             .offset(offset)
             .limit(page_size)
-            .options(*PROJECT_POPULATE)
         )
 
         total_result, items_result = await asyncio.gather(

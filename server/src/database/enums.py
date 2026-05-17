@@ -69,6 +69,12 @@ class EntityType(enum.Enum):
     analysis_record = "analysis_record"
     project = "project"
 
+class SeparationStatus(enum.Enum):
+    PENDING = "pending"       # audio uploaded, task not yet enqueued
+    PROCESSING = "processing" # celery task running demucs
+    COMPLETED = "completed"   # stems stored in supabase
+    FAILED = "failed"         # something went wrong
+
 
 __all__ = [
     "AudioSourceType",
@@ -81,4 +87,5 @@ __all__ = [
     "OtpType",
     "LogLevel",
     "EntityType",
+    "SeparationStatus", 
 ]

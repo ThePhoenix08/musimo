@@ -1,10 +1,9 @@
 import logging
 
 from fastapi import HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-
-from src.core.settings import CONSTANTS
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -38,19 +37,19 @@ async def test_db_connection() -> bool:
     Test connection to the async database.
     Returns True if reachable, False otherwise.
     """
-    engine = create_async_engine(CONSTANTS.ASYNC_DATABASE_URL, echo=False)
+    import time
+
+    from src.database.session import get_engine
+
+    start = time.perf_counter()
+    engine = get_engine()
+
     try:
-        async with engine.begin() as conn:
-            result = await conn.execute("SELECT 1")
-            row = result.scalar()
-            if row == 1:
-                logger.info("✅ Database connection verified successfully")
-                return True
-            else:
-                logger.warning("⚠️ Database responded but returned unexpected result")
-                return False
-    except SQLAlchemyError as e:
-        logger.error(f"❌ Database connection failed: {e}")
-        return False
-    finally:
-        await engine.dispose()
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            ok = result.scalar() == 1
+            latency_ms = round((time.perf_counter() - start) * 1000, 2)
+            return {"ok": ok, "latency_ms": latency_ms}
+    except SQLAlchemyError as exc:
+        logger.error("❌ Database connection test failed: %s", exc)
+        return {"ok": False, "latency_ms": None}

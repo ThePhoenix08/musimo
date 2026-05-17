@@ -564,6 +564,9 @@ export default function AudioPlayerFooter() {
       modeFromUrl !== playerMode
     ) {
       dispatch(setPlayerMode(modeFromUrl));
+    } else {
+      dispatch(setPlayerMode(PLAYER_MODES.NORMAL));
+      () => setSearchParams(PLAYER_MODES.NORMAL);
     }
   }, [searchParams]); // eslint-disable-line
 
@@ -729,13 +732,12 @@ export default function AudioPlayerFooter() {
   // ── Derived ──────────────────────────────────────────────────────────────────
   const progress = duration > 0 ? currentTime / duration : 0;
   const currentEmotionInfo = currentEmotion ? GES_LABELS[currentEmotion] : null;
-  const isHidden = playerMode === PLAYER_MODES.HIDDEN;
   const isMini = playerMode === PLAYER_MODES.MINI;
   const isNormal = playerMode === PLAYER_MODES.NORMAL;
   const isExpanded = playerMode === PLAYER_MODES.EXPANDED;
 
   // ── Don't render if no audio loaded and hidden ────────────────────────────
-  if (!audioUrl && isHidden) return null;
+  if (!audioUrl) return null;
 
   return (
     <>
@@ -743,15 +745,16 @@ export default function AudioPlayerFooter() {
       <audio ref={audioRef} preload="metadata" />
 
       <AnimatePresence mode="wait">
-        {!isHidden && (
+        {(
           <motion.div
             key="footer"
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            // initial={{ y: "100%", opacity: 0 }}
+            // animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 38 }}
             className={cn(
-              "fixed bottom-0 left-0 right-0 z-50 border-t-2 border-border bg-card/95 backdrop-blur-md",
+              "absolute bottom-0 left-0 right-0",
+              "z-50 border-t-2 border-border bg-card/95 backdrop-blur-md",
               "flex flex-col",
               isMini && "h-20",
               isNormal && "h-fit",
@@ -910,13 +913,6 @@ function ModeToggleBar({
           }
         >
           {isExpanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-        </ModeBtn>
-        {/* Hide */}
-        <ModeBtn
-          title="Hide player"
-          onClick={() => onChangeMode(PLAYER_MODES.HIDDEN)}
-        >
-          <EyeOff size={12} className="opacity-60" />
         </ModeBtn>
       </div>
     </div>
@@ -1138,7 +1134,7 @@ function ExpandedContent({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Top section: detail waveform (zoomed) ─────────────────────────── */}
-      <div className="flex-[3] min-h-0 px-4 pt-2 flex flex-col gap-1">
+      <div className="flex-3 min-h-0 px-4 pt-2 flex flex-col gap-1">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-0.5">
           <span>
             Zoom ×{zoomFactor} — {fmt(zoomWindow.start * duration)} →{" "}

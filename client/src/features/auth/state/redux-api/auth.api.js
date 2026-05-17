@@ -81,9 +81,7 @@ export const UserAuthenticationApi = createApi({
           api,
           extraOptions,
         );
-
-        console.log("result -> ", result);
-
+        
         return result;
       },
     }),

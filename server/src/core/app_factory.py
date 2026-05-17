@@ -6,7 +6,8 @@ from src.core.settings import CONSTANTS
 from src.middlewares.cors import CORS_POLICY
 from src.middlewares.exception_handler import register_exception_handlers
 from src.middlewares.performance import register_process_time_header
-from src.routes import debug, register_routes, ws_router
+from src.routes import debug, register_routes
+from src.routes.websocket import ws_router
 
 
 def create_app() -> FastAPI:
@@ -18,7 +19,7 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
-    app.add_middleware(CORSMiddleware, CORS_POLICY)
+    app.add_middleware(CORSMiddleware, **CORS_POLICY)
     register_process_time_header(app)
 
     register_routes(app)

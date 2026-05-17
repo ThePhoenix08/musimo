@@ -1,12 +1,20 @@
 import logging
-from typing import Annotated
+import uuid
+from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import (
+    Depends,
+    HTTPException,
+    Request,
+    WebSocket,
+    WebSocketException,
+    status,
+)
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models.user import User
-from src.database.session import get_db
+from src.database.session import get_db, get_sessionmaker
 from src.services.auth_service import AuthService
 
 logger = logging.getLogger(__name__)
@@ -68,5 +76,87 @@ async def verify_refresh_token(
         )
 
     user_id: str = await AuthService.verify_refresh_token(db, refresh_token)
+
+    return user_id
+
+
+async def get_current_ws_user(
+    websocket: WebSocket,
+    db: Optional[AsyncSession] = None,
+) -> User:
+    """
+    Authenticate WebSocket user using JWT token from query params.
+
+    Client example:
+        ws://localhost:8000/api/ws/analyze-emotion/{project_id}?token=JWT_HERE
+
+    Returns:
+        Authenticated User object
+
+    Raises:
+        WebSocketException(code=1008) on auth failure
+    """
+
+    token = websocket.query_params.get("token")
+
+    if not token:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Missing access token",
+        )
+
+    # Decode JWT
+    try:
+        payload = AuthService.decode_token(token, "access").model_dump()
+    except Exception as e:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason=f"Invalid token: {str(e)}",
+        )
+
+    user_id = payload.get("sub")
+
+    if not user_id:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Invalid token payload",
+        )
+
+    try:
+        user_uuid = uuid.UUID(str(user_id))
+    except Exception:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Invalid user id in token",
+        )
+
+    # If DB session passed externally, use it
+    # Otherwise create one internally
+    if db is not None:
+        user = await AuthService.get_user_by_id(db, user_uuid)
+    else:
+        SessionLocal = get_sessionmaker()
+
+        async with SessionLocal() as session:
+            user = await AuthService.get_user_by_id(session, user_uuid)
+
+    # Validate user
+    if not user:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="User not found",
+        )
+
+    if hasattr(user, "is_active") and not user.is_active:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Inactive account",
+        )
+
+    if hasattr(user, "email_verified") and not user.email_verified:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Email not verified",
+        )
 
     return user_id

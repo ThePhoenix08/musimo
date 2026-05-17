@@ -1,0 +1,195 @@
+import logging
+import uuid
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+from src.core.lazy_loads import get_storage
+from src.database.session import get_sessionmaker
+from src.models.progress_tracker import ProgressTracker
+from src.routes.websocket.utils import create_progress_callback, manager
+from src.services.dependencies import get_current_ws_user
+from src.services.emotion_workflow_service import (
+    EmotionWorkflowService,
+)
+from src.services.instrument_workflow_service import InstrumentWorkflowService
+
+logger = logging.getLogger(__name__)
+SessionLocal = get_sessionmaker()
+
+router = APIRouter(prefix="/api/ws", tags=["WebSocket"])
+
+
+EMOTION_PIPELINE_STEPS = [
+    {"id": "validate_project", "name": "Validating Project"},
+    {"id": "fetch_audio", "name": "Fetching Audio File"},
+    {"id": "load_audio", "name": "Loading Audio"},
+    {"id": "preprocess", "name": "Preprocessing Audio"},
+    {"id": "extract_embeddings", "name": "Extracting Embeddings"},
+    {"id": "predict", "name": "Running Emotion Model"},
+    {"id": "postprocess", "name": "Formatting Results"},
+    {"id": "store_results", "name": "Saving Analysis"},
+]
+
+INSTRUMENT_PIPELINE_STEPS = [
+    {"id": "validate_project", "name": "Validating Project"},
+    {"id": "fetch_audio", "name": "Fetching Audio File"},
+    {"id": "predict", "name": "Running Instrument Model"},
+    {"id": "postprocess", "name": "Formatting Results"},
+    {"id": "store_results", "name": "Saving Analysis"},
+]
+
+
+
+@router.websocket("/analyze-emotion/{project_id}")
+async def ws_analyze_emotion(
+    websocket: WebSocket,
+    project_id: str,
+):
+    session_id = str(uuid.uuid4())
+
+    await manager.connect(session_id, websocket)
+
+    try:
+        async with SessionLocal() as session:
+            user_id = await get_current_ws_user(websocket, session)
+
+            await websocket.send_json(
+                {
+                    "type": "connected",
+                    "message": "Authenticated successfully",
+                    "user_id": str(user_id),
+                    "project_id": project_id,
+                    "session_id": session_id,
+                }
+            )
+
+            tracker = ProgressTracker(
+                steps=EMOTION_PIPELINE_STEPS,
+                callback=create_progress_callback(session_id),
+                session_id=session_id,
+            )
+
+            storage = await get_storage()
+
+            workflow = EmotionWorkflowService(
+                session=session,
+                storage=storage,
+            )
+
+            result = await workflow.run(
+                project_id=project_id,
+                user_id=user_id,
+                tracker=tracker,
+            )
+
+        await tracker.complete_pipeline(result)
+
+        await websocket.send_json(
+            {
+                "type": "analysis_complete",
+                "session_id": session_id,
+                **result,
+            }
+        )
+
+    except WebSocketDisconnect:
+        logger.info("Emotion WS disconnected: session=%s", session_id)
+
+    except Exception as e:
+        logger.exception("Emotion WS error: session=%s", session_id)
+        try:
+            await tracker.fail_pipeline(str(e))
+        except Exception:
+            pass
+
+        await websocket.send_json(
+            {
+                "type": "error",
+                "session_id": session_id,
+                "error": str(e),
+                "error_type": type(e).__name__,
+            }
+        )
+
+    finally:
+        await manager.disconnect(session_id)
+
+
+@router.websocket("/analyze-instrument/{project_id}")
+async def ws_analyze_instrument(
+    websocket: WebSocket,
+    project_id: str,
+):
+    session_id = str(uuid.uuid4())
+
+    await manager.connect(session_id, websocket)
+
+    try:
+        async with SessionLocal() as session:
+            user_id = await get_current_ws_user(websocket, session)
+
+            await websocket.send_json(
+                {
+                    "type": "connected",
+                    "message": "Authenticated successfully",
+                    "user_id": str(user_id),
+                    "project_id": project_id,
+                }
+            )
+
+        await websocket.send_json(
+            {
+                "type": "connected",
+                "session_id": session_id,
+            }
+        )
+
+        tracker = ProgressTracker(
+            steps=INSTRUMENT_PIPELINE_STEPS,
+            callback=create_progress_callback(session_id),
+            session_id=session_id,
+        )
+
+        async with SessionLocal() as session:
+            storage = await get_storage()
+
+            workflow = InstrumentWorkflowService(
+                session=session,
+                storage=storage,
+            )
+
+            result = await workflow.run(
+                project_id=project_id,
+                user_id=user_id,
+                tracker=tracker,
+            )
+
+        await tracker.complete_pipeline(result)
+
+        await websocket.send_json(
+            {
+                "type": "analysis_complete",
+                "session_id": session_id,
+                **result,
+            }
+        )
+
+    except WebSocketDisconnect:
+        logger.info("Instrument WS disconnected")
+
+    except Exception as e:
+        logger.exception("Instrument WS failed")
+
+        try:
+            await websocket.send_json(
+                {
+                    "type": "error",
+                    "session_id": session_id,
+                    "error": str(e),
+                }
+            )
+        except Exception:
+            pass
+
+    finally:
+        manager.disconnect(session_id)

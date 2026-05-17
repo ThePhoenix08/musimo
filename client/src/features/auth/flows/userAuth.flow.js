@@ -23,6 +23,11 @@ import { requestOtpSchema } from "../validators/AuthApi.validator";
 
 import { toast } from "react-toastify";
 
+function isAuthError(error) {
+  const status = error?.status ?? error?.data?.status;
+  return status === 401 || status === 403;
+}
+
 function useUserAuthFlow() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -139,9 +144,11 @@ function useUserAuthFlow() {
       throw new Error(`No type ${type} flow available for role user.`);
     } catch (error) {
       console.error(`[AUTH ${type?.toUpperCase()} ERROR]:`, error);
-      navigate("/login");
-      dispatch(clearCredentials());
-      dispatch(setAuthStep("login"));
+      if (isAuthError(error)) {
+        dispatch(clearCredentials());
+        dispatch(setAuthStep("login"));
+        navigate("/login");
+      }
       throw error;
     }
   };

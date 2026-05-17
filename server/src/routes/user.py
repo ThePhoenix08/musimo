@@ -1,8 +1,10 @@
-from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.lazy_loads import get_supabase
+from src.database.models import User
+from src.database.session import get_db
 from src.schemas.user import PasswordChange, UserProfile, UserProfileUpdate
 from src.services.auth_service import AuthService
 from src.services.dependencies import get_current_user
@@ -11,44 +13,47 @@ router = APIRouter()
 
 
 @router.get("/profile", response_model=UserProfile)
-async def get_profile(current_user: Dict = Depends(get_current_user)):
+async def get_profile(current_user: User = Depends(get_current_user)):
     return UserProfile(
-        id=current_user["id"],
-        name=current_user["name"],
-        username=current_user["username"],
-        email=current_user["email"],
-        created_at=current_user["created_at"],
+        id=str(current_user.id),
+        name=current_user.name,
+        username=current_user.username,
+        email=current_user.email,
+        created_at=current_user.created_at,
     )
 
 
 @router.put("/profile")
 async def update_profile(
-    profile_update: UserProfileUpdate, current_user: Dict = Depends(get_current_user)
+    profile_update: UserProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     if not profile_update.name:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fields to update",
         )
-
-    supabase = get_supabase()
 
     try:
-        result = (
-            supabase.table("users")
-            .update({"name": profile_update.name})
-            .eq("id", current_user["id"])
-            .execute()
-        )
+        current_user.name = profile_update.name
 
-        if not result.data:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update profile",
-            )
+        await db.commit()
+        await db.refresh(current_user)
 
-        return {"message": "Profile updated successfully", "user": result.data[0]}
+        return {
+            "message": "Profile updated successfully",
+            "user": {
+                "id": str(current_user.id),
+                "name": current_user.name,
+                "username": current_user.username,
+                "email": current_user.email,
+            },
+        }
 
     except Exception as e:
+        await db.rollback()
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating profile: {str(e)}",
@@ -57,103 +62,54 @@ async def update_profile(
 
 @router.post("/change-password")
 async def change_password(
-    password_change: PasswordChange, current_user: Dict = Depends(get_current_user)
+    password_change: PasswordChange,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    supabase = get_supabase()
-
-    user_result = (
-        supabase.table("users")
-        .select("id, password")
-        .eq("id", current_user["id"])
-        .single()
-        .execute()
-    )
-
-    if not user_result.data:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    db_user = user_result.data
     if not AuthService.verify_password(
-        password_change.current_password, db_user["password"]
+        password_change.current_password,
+        current_user.password_hash,
     ):
-        raise HTTPException(status_code=400, detail="Current password is incorrect")
+        raise HTTPException(
+            status_code=400,
+            detail="Current password is incorrect",
+        )
 
-    new_password_hash = AuthService.hash_password(password_change.new_password)
+    try:
+        current_user.password_hash = AuthService.hash_password(
+            password_change.new_password
+        )
 
-    update_result = (
-        supabase.table("users")
-        .update({"password": new_password_hash})
-        .eq("id", current_user["id"])
-        .execute()
-    )
+        await db.commit()
 
-    if not update_result.data:
-        raise HTTPException(status_code=500, detail="Failed to update password")
+        return {"message": "Password changed successfully"}
 
-    return {"message": "Password changed successfully"}
+    except Exception as e:
+        await db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update password: {str(e)}",
+        )
 
 
 @router.delete("/account")
-async def delete_account(current_user: Dict = Depends(get_current_user)):
-    supabase = get_supabase()
-
+async def delete_account(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     try:
-        # 1: Soft delete (mark as deleted)
-        # result = supabase.table('users')\
-        #     .update({"is_deleted": True})\
-        #     .eq('id', current_user["id"])\
-        #     .execute()
-
-        # 2: Hard delete (remove from database)
-        _result = (
-            supabase.table("users").delete().eq("id", current_user["id"]).execute()
-        )
+        await db.delete(current_user)
+        await db.commit()
 
         return {"message": "Account deleted successfully"}
 
     except Exception as e:
+        await db.rollback()
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting account: {str(e)}",
         )
 
 
-@router.get("/stats")
-async def get_user_stats(current_user: Dict = Depends(get_current_user)):
-    supabase = get_supabase()
-
-    try:
-        transactions = (
-            supabase.table("transactions")
-            .select("id", count="exact")
-            .eq("user_id", current_user["id"])
-            .execute()
-        )
-
-        emotion_count = (
-            supabase.table("transactions")
-            .select("id", count="exact")
-            .eq("user_id", current_user["id"])
-            .eq("model_type", "emotion_detection")
-            .execute()
-        )
-
-        instrument_count = (
-            supabase.table("transactions")
-            .select("id", count="exact")
-            .eq("user_id", current_user["id"])
-            .eq("model_type", "instrument_classification")
-            .execute()
-        )
-
-        return {
-            "total_transactions": transactions.count,
-            "emotion_detection_count": emotion_count.count,
-            "instrument_classification_count": instrument_count.count,
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching stats: {str(e)}",
-        )

@@ -7,12 +7,10 @@ export default function MetricCard({
 }) {
   return (
     <div className="group relative bg-card border border-border rounded-xl p-4 sm:p-6 hover:border-primary/60 hover:shadow-xl hover:shadow-primary/20 transition-all duration-300 overflow-hidden">
-      {/* Glassmorphism background gradient on hover */}
+
       <div
         className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
       />
-
-      {/* Top border accent gradient */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       <div className="relative z-10 space-y-2">

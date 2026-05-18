@@ -21,7 +21,7 @@ from src.database.session import get_db
 from src.schemas.api.response import ApiErrorResponse, ApiResponse
 from src.services.dependencies import get_current_user
 from src.services.stem_service import update_stem_status
-from src.services.stem_tasks import separate_stems_task
+# from src.services.stem_tasks import separate_stems_task
 from src.database.models.user import User
 
 def _sse(data: dict) -> str:
@@ -180,24 +180,24 @@ async def process_audio(
                 status_code=status.HTTP_202_ACCEPTED,
             )
  
-        # Case 3: Failed — allow retry
-        if separation_record and separation_record.separation_status == SeparationStatus.FAILED:
-            await update_stem_status(db, str(audio_uuid), "processing")
-            separate_stems_task.delay(audio_id=str(audio_uuid), project_id=str(audio.project_id))
-            return ApiResponse(
-                message="Retrying stem separation",
-                data={"status": "processing"},
-                status_code=status.HTTP_202_ACCEPTED,
-            )
+        # # Case 3: Failed — allow retry
+        # if separation_record and separation_record.separation_status == SeparationStatus.FAILED:
+        #     await update_stem_status(db, str(audio_uuid), "processing")
+        #     separate_stems_task.delay(audio_id=str(audio_uuid), project_id=str(audio.project_id))
+        #     return ApiResponse(
+        #         message="Retrying stem separation",
+        #         data={"status": "processing"},
+        #         status_code=status.HTTP_202_ACCEPTED,
+        #     )
  
-        # Case 4: No record yet / pending — enqueue fresh
-        await update_stem_status(db, str(audio_uuid), "processing")
-        separate_stems_task.delay(audio_id=str(audio_uuid), project_id=str(audio.project_id))
-        return ApiResponse(
-            message="Stem separation started",
-            data={"status": "processing"},
-            status_code=status.HTTP_202_ACCEPTED,
-        )
+        # # Case 4: No record yet / pending — enqueue fresh
+        # await update_stem_status(db, str(audio_uuid), "processing")
+        # separate_stems_task.delay(audio_id=str(audio_uuid), project_id=str(audio.project_id))
+        # return ApiResponse(
+        #     message="Stem separation started",
+        #     data={"status": "processing"},
+        #     status_code=status.HTTP_202_ACCEPTED,
+        # )
  
     except Exception as e:
         logger.error(traceback.format_exc())

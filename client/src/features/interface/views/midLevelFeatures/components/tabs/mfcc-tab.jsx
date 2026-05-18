@@ -72,7 +72,7 @@ export default function MfccTab({ data }) {
 
             <Tooltip
               contentStyle={{
-                backgroundColor: '#151d3a',
+                backgroundColor: 'var(--card)',
                 border: '1px solid #2a3456',
                 borderRadius: '8px',
                 color: '#e0e8ff',
@@ -81,8 +81,8 @@ export default function MfccTab({ data }) {
 
             <Legend />
 
-            <Bar dataKey="mean" fill="#00d9ff" radius={[8, 8, 0, 0]} />
-            <Bar dataKey="std" fill="#7c3aed" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="mean" fill="var(--chart-1)" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="std" fill="var(--chart-3)" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </Card>
@@ -109,7 +109,7 @@ export default function MfccTab({ data }) {
 
             <Tooltip
               contentStyle={{
-                backgroundColor: '#151d3a',
+                backgroundColor: 'var(--card)',
                 border: '1px solid #2a3456',
                 borderRadius: '8px',
                 color: '#e0e8ff',
@@ -121,9 +121,9 @@ export default function MfccTab({ data }) {
             <Line
               type="monotone"
               dataKey="mean"
-              stroke="#00d9ff"
+              stroke="var(--chart-1)"
               strokeWidth={3}
-              dot={{ fill: '#00d9ff', r: 5 }}
+              dot={{ fill: 'var(--chart-1)', r: 5 }}
               activeDot={{ r: 7 }}
               name="Mean"
             />
@@ -131,9 +131,9 @@ export default function MfccTab({ data }) {
             <Line
               type="monotone"
               dataKey="std"
-              stroke="#7c3aed"
+              stroke="var(--chart-3)"
               strokeWidth={3}
-              dot={{ fill: '#7c3aed', r: 5 }}
+              dot={{ fill: 'var(--chart-3)', r: 5 }}
               activeDot={{ r: 7 }}
               name="Std Dev"
             />
@@ -165,7 +165,7 @@ export default function MfccTab({ data }) {
 
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#151d3a',
+                  backgroundColor: 'var(--card)',
                   border: '1px solid #2a3456',
                   borderRadius: '8px',
                   color: '#e0e8ff',
@@ -205,7 +205,7 @@ export default function MfccTab({ data }) {
 
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#151d3a',
+                  backgroundColor: 'var(--card)',
                   border: '1px solid #2a3456',
                   borderRadius: '8px',
                   color: '#e0e8ff',
@@ -236,7 +236,7 @@ export default function MfccTab({ data }) {
 
             <Tooltip
               contentStyle={{
-                backgroundColor: '#151d3a',
+                backgroundColor: 'var(--card)',
                 border: '1px solid #2a3456',
                 borderRadius: '8px',
                 color: '#e0e8ff',

@@ -11,39 +11,63 @@ from sqlalchemy.pool import NullPool
 from supabase import acreate_client
 
 from src.core.settings import CONSTANTS
-from src.database.models.audio_file import AudioFile
-from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
+# from src.database.models.audio_file import AudioFile
+# from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
 from src.services.celery_app import celery_app
 from src.services.stem_service import update_stem_status
 
 logger = logging.getLogger(__name__)
 
 
-def get_fresh_session_factory():
-    engine = create_async_engine(
-        CONSTANTS.ASYNC_POOLER_DATABASE_URL,
-        poolclass=NullPool,
-        echo=False,
-    )
-    session_factory = async_sessionmaker(
-        bind=engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        autoflush=False,
-        autocommit=False,
-    )
-    return session_factory, engine
+_engine = None
+_session_factory = None
+
+def get_session_factory():
+    global _engine, _session_factory
+
+    if _session_factory is None:
+        _engine = create_async_engine(
+            CONSTANTS.ASYNC_POOLER_DATABASE_URL,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+            echo=False,
+        )
+        _session_factory = async_sessionmaker(
+            bind=_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+            autocommit=False,
+        )
+
+    return _session_factory, _engine
+
+_supabase = None
+
+async def get_supabase():
+    global _supabase
+
+    if _supabase is None:
+        _supabase = await acreate_client(
+            CONSTANTS.SUPABASE_URL,
+            CONSTANTS.SUPABASE_SERVICE_KEY,
+        )
+
+    return _supabase
 
 
 async def _run_separation(audio_id: str, project_id: str):
+    from src.database.models.audio_file import AudioFile
+    from src.models.audio_separation.pipelines.separation import (
+        separate_audio_pipeline,
+    )
+
     temp_input: Path | None = None
-    session_factory, engine = get_fresh_session_factory()
+    session_factory, engine = get_session_factory()
 
     # Fresh Supabase client — no singleton, no lifespan needed
-    supabase_client = await acreate_client(
-        CONSTANTS.SUPABASE_URL,
-        CONSTANTS.SUPABASE_SERVICE_KEY,
-    )
+    supabase_client = get_supabase()
 
     try:
         # FIX #6: one session for the entire task — passed into the pipeline

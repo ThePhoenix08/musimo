@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from src.database.models.audio_file import AudioFile, SeparatedAudioFile
+from src.database.models.audio_file import AudioFile
 from src.database.models.analysis_record import SeparationAnalysisRecord
 from src.database.enums import (
     AudioFileStatus,

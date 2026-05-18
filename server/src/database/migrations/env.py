@@ -2,6 +2,7 @@ import asyncio  # noqa: I001
 from logging.config import fileConfig
 
 from dotenv import load_dotenv
+
 load_dotenv(override=True)
 
 from alembic import context

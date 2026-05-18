@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
     app.state.warmup_config = {
         "db": True,
-        "emotion_model": True,
+        "emotion_model": False,
         "storage": True,
         "supabase": True,
     }

@@ -28,7 +28,7 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
 
     # 1-to-1 main/original audio
     main_audio_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("audio_files.id", ondelete="SET NULL"), unique=True
+        ForeignKey("audio_files.id", ondelete="SET NULL")
     )
 
     main_audio: Mapped["AudioFile"] = relationship(

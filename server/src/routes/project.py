@@ -6,7 +6,7 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile,  status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.services.stem_tasks import separate_stems_task
+# from src.services.stem_tasks import separate_stems_task
 from src.core.supabase import SupabaseStorageClient, get_storage
 from src.database.session import get_db
 from src.schemas.api.response import ApiErrorResponse, ApiResponse
@@ -62,12 +62,12 @@ async def create_project_with_audio(
  
             logger.info(f"File uploaded: {audio_response.id}")
  
-            task = separate_stems_task.delay(
-                audio_id=str(audio_response.id),
-                project_id=str(created_project.id),
-            )
+            # task = separate_stems_task.delay(
+            #     audio_id=str(audio_response.id),
+            #     project_id=str(created_project.id),
+            # )
  
-            logger.info(f"✅ Stem task enqueued: task_id={task.id} audio_id={audio_response.id}")
+            # logger.info(f"✅ Stem task enqueued: task_id={task.id} audio_id={audio_response.id}")
  
         project = await project_service.get_project(created_project.id, user.id)
  

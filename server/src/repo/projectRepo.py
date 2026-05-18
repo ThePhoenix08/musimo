@@ -1,4 +1,5 @@
 # src/repo/projectRepo.py
+
 from __future__ import annotations
 
 import asyncio
@@ -7,7 +8,7 @@ from typing import Optional
 
 from sqlalchemy import exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import noload, selectinload
 
 from src.database.models.project import Project
 
@@ -54,6 +55,7 @@ class ProjectRepository:
 
         items_stmt = (
             select(Project)
+            .options(noload("*"))
             .where(Project.user_id == user_id)
             .order_by(Project.created_at.desc())
             .offset(offset)

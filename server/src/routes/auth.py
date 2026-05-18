@@ -231,7 +231,7 @@ async def logout(
     )
     if not ok:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Refresh token not found for user.",
         )
 

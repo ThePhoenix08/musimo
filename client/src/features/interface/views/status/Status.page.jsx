@@ -19,6 +19,7 @@ import {
 } from "../../reducers/interface.slice";
 import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
+import { CardSkeleton } from "@/shared/providers/card.skeleton";
 
 const ANALYSIS_TYPES = [
   {
@@ -89,7 +90,8 @@ function StatusPage({ changeTab }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-muted-foreground">Loading project data...</p>
+        {/* <p className="text-muted-foreground">Loading project data...</p> */}
+        <CardSkeleton/>
       </div>
     );
   }

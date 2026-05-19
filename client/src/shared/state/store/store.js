@@ -1,3 +1,4 @@
+// src/shared/state/store/store.js
 import { configureStore } from "@reduxjs/toolkit";
 
 import { UserAuthenticationApi } from "@/features/auth/state/redux-api/auth.api";
@@ -5,7 +6,7 @@ import { UserAuthenticationApi } from "@/features/auth/state/redux-api/auth.api"
 import authReducer from "@/features/auth/state/slices/auth.slice";
 import themeReducer from "../slices/theme.slice";
 import interfaceReducer from "@/features/interface/reducers/interface.slice";
-
+import { ProfileApi } from "@/features/profile/state/api/profile.api";
 import {
   persistStore,
   persistReducer,
@@ -49,6 +50,7 @@ const store = configureStore({
     [UserAuthenticationApi.reducerPath]: UserAuthenticationApi.reducer,
     [ProjectApi.reducerPath]: ProjectApi.reducer,
     [AnalysisApi.reducerPath]: AnalysisApi.reducer,
+    [ProfileApi.reducerPath]: ProfileApi.reducer,
     audioPlayer: audioPlayerReducer,
     interface: interfaceReducer,
   },
@@ -63,7 +65,9 @@ const store = configureStore({
     })
       .concat(UserAuthenticationApi.middleware)
       .concat(ProjectApi.middleware)
-      .concat(AnalysisApi.middleware),
+      .concat(AnalysisApi.middleware)
+      .concat(ProfileApi.middleware),
+
   devTools: ENVS.DEV_MODE,
 });
 

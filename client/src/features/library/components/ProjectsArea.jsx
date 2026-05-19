@@ -2,6 +2,7 @@ import { useGetAllProjectsQuery } from "@/features/library/actions/project.api.j
 import { useSearchParams } from "react-router";
 import { LibraryPagination } from "@/features/library/components/LibraryPagination.jsx";
 import ProjectCard from "./ProjectCard";
+import { CardSkeleton } from "@/shared/providers/card.skeleton";
 
 const ProjectsArea = () => {
   const [searchParams] = useSearchParams();
@@ -17,7 +18,7 @@ const ProjectsArea = () => {
     page_size: pageSize,
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div><CardSkeleton /></div>;
   if (isError) return <div>Error loading projects</div>;
 
   const totalPages = Math.ceil((response.data?.total ?? 0) / pageSize);

@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.18.4",
     "argon2-cffi>=25.1.0",
-    "asyncpg[binary]>=0.31.0",
+    "asyncpg>=0.31.0",
     "black>=26.5.0",
     "celery>=5.6.3",
     "demucs>=4.0.1",

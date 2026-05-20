@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +10,6 @@ from src.services.dependencies import get_current_user
 
 router = APIRouter()
 
-
 @router.get("/profile", response_model=UserProfile)
 async def get_profile(current_user: User = Depends(get_current_user)):
     return UserProfile(
@@ -20,6 +18,7 @@ async def get_profile(current_user: User = Depends(get_current_user)):
         username=current_user.username,
         email=current_user.email,
         created_at=current_user.created_at,
+        email_verified=current_user.email_verified,
     )
 
 

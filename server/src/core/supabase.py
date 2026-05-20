@@ -28,7 +28,7 @@ class SupabaseStorageClient:
     async def connect(self) -> None:
         """Initialise the Supabase async client using service role key (server)."""
         self._client = await acreate_client(
-            CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_SERVICE_KEY
+            CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_SERVICE_KEY.get_secret_value()
         )
         logger.info(
             "✅ Supabase async storage client initialised with service role key"

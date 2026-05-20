@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_supabase_client() -> Client:
-    return create_client(CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_KEY)
+    return create_client(CONSTANTS.SUPABASE_URL, CONSTANTS.SUPABASE_KEY.get_secret_value())
 
 
 def get_supabase():
@@ -30,7 +30,7 @@ def get_supabase():
 def create_supabase_admin_client() -> Client:
     return create_client(
         CONSTANTS.SUPABASE_URL,
-        CONSTANTS.SUPABASE_SERVICE_KEY,
+        CONSTANTS.SUPABASE_SERVICE_KEY.get_secret_value(),
     )
 
 

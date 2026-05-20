@@ -5,7 +5,6 @@ from sqlalchemy import JSON, Enum, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.base import Base
-from src.database.enums import AnalysisType
 from src.database.mixins import (
     AudioFileReferenceMixin,
     TimestampMixin,
@@ -17,6 +16,7 @@ from src.models.emotion_recognition.pipeline.postprocessor import (
     DynamicPrediction,
     StaticPrediction,
 )
+
 
 if TYPE_CHECKING:
     from src.database.models import AudioFeature, Model, Project
@@ -30,7 +30,7 @@ class AnalysisRecord(
 ):
     analysis_type: Mapped[AnalysisType] = mapped_column(Enum(AnalysisType))
     results: Mapped[dict] = mapped_column(JSON)
-    summary_text: Mapped[str] = mapped_column(Text)
+    summary: Mapped[dict] = mapped_column(JSON, nullable=True)
 
     project_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE"),

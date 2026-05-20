@@ -65,10 +65,9 @@ export default function ProfileHeader({
                             <Badge className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20">
 
                                 <ShieldCheck className="mr-1 h-3 w-3" />
-
                                 {profile?.email_verified
                                     ? "Verified"
-                                    : "Unverified"}
+                                    : "UnVerified"}
                             </Badge>
                         </div>
 

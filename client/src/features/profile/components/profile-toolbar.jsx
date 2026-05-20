@@ -26,13 +26,6 @@ export default function ProfileToolbar({
 
       <div className="flex w-full items-center justify-center gap-3 md:w-auto md:justify-end">
 
-        <Button
-          variant="secondary"
-          className="gap-2 border border-yellow-500/30 bg-yellow-900 hover:bg-zinc-800"
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
-
         <Button className="gap-2 bg-yellow-600 hover:bg-yellow-500">
           <Download className="h-4 w-4" />
         </Button>

@@ -55,6 +55,7 @@ function ProfilePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-red-400">
         Failed to load profile
+        {error.toString()}
       </div>
     );
   }
@@ -74,17 +75,17 @@ function ProfilePage() {
         >
           <div className="sticky top-0 z-20 bg-black/80 py-2 backdrop-blur-xl">
             <TabsList className="grid w-full grid-cols-3 rounded-2xl border border-white/10 bg-zinc-900/80">
-              <TabsTrigger value="analysis">
+              <TabsTrigger value="analysis"className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary">
                 <BarChart3 className="mr-2 h-4 w-4" />
                 Profile Analysis
               </TabsTrigger>
 
-              <TabsTrigger value="activities">
+              <TabsTrigger value="activities" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary">
                 <Activity className="mr-2 h-4 w-4" />
                 Recent Activities
               </TabsTrigger>
 
-              <TabsTrigger value="settings">
+              <TabsTrigger value="settings" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </TabsTrigger>

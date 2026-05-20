@@ -15,10 +15,24 @@ export const ProfileApi = createApi({
         method: "GET",
       }),
     }),
-
+    updateProfile: builder.mutation({
+      query: (body) => ({
+        url: "user/profile",
+        method: "PUT",
+        body,
+      }),
+    }),
+    deleteAccount: builder.mutation({
+      query: () => ({
+        url: "user/account",
+        method: "DELETE",
+      }),
+    }),
   }),
 });
 
 export const {
   useGetProfileQuery,
+  useUpdateProfileMutation,
+  useDeleteAccountMutation,
 } = ProfileApi;

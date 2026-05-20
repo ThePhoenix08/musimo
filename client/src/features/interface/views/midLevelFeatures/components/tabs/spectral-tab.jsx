@@ -220,7 +220,7 @@ export default function SpectralTab({ data }) {
                                     Std Dev
                                 </p>
 
-                                <p className="text-2xl font-bold text-secondary">
+                                <p className="text-2xl font-bold text-primary">
                                     {(data.spectral_centroid.std / 1000).toFixed(2)} kHz
                                 </p>
                             </div>
@@ -273,7 +273,7 @@ export default function SpectralTab({ data }) {
                                     Std Dev
                                 </p>
 
-                                <p className="text-2xl font-bold text-secondary">
+                                <p className="text-2xl font-bold text-primary">
                                     {(data.spectral_rolloff.std / 1000).toFixed(2)} kHz
                                 </p>
                             </div>

@@ -21,7 +21,7 @@ class FeatureAnalysisRepository:
             audio_file_id=audio_file_id,
             project_id=project_id,
             analysis_type=AnalysisType.FEATURES,
-            summary_text="Audio Feature Analysis completed successfully.",
+            summary={"message": "Audio Feature Analysis completed successfully."},
             results=feature_vector,
             feature_vector=feature_vector,
         )

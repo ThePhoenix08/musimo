@@ -1,7 +1,7 @@
 from functools import cached_property, lru_cache
 from typing import List, Literal
 
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .logger_setup import logger
@@ -18,8 +18,8 @@ class Settings(BaseSettings):
 
     # Supabase
     SUPABASE_URL: str
-    SUPABASE_KEY: str
-    SUPABASE_SERVICE_KEY: str
+    SUPABASE_KEY: SecretStr
+    SUPABASE_SERVICE_KEY: SecretStr
     SUPABASE_AUDIO_STEM_BUCKET: str
     SUPABASE_AUDIO_SOURCE_BUCKET: str
 
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     DATABASE_PORT: int = 5432
     DATABASE_NAME: str = "postgres"
     DATABASE_USER: str = "postgres"
-    DATABASE_PASSWORD: str
+    DATABASE_PASSWORD: SecretStr
     DATABASE_POOLER_HOST: str
     DATABASE_POOLER_USER: str
 
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     @cached_property
     def ASYNC_DATABASE_URL(self) -> str:
         return (
-            f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD.get_secret_value()}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
 
@@ -51,22 +51,22 @@ class Settings(BaseSettings):
     # @property
     @cached_property
     def SYNC_DATABASE_URL(self) -> str:
-        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        return f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD.get_secret_value()}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # @computed_field
     # @property
     @cached_property
     def ASYNC_POOLER_DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.DATABASE_POOLER_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_POOLER_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        return f"postgresql+asyncpg://{self.DATABASE_POOLER_USER}:{self.DATABASE_PASSWORD.get_secret_value()}@{self.DATABASE_POOLER_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
 
     # JWT
     JWT_ALGORITHM: str = "HS256"
 
-    JWT_ACCESS_TOKEN_SECRET: str
+    JWT_ACCESS_TOKEN_SECRET: SecretStr
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ACCESS_TOKEN_EXPIRE_SECONDS: int = ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
-    JWT_REFRESH_TOKEN_SECRET: str
+    JWT_REFRESH_TOKEN_SECRET: SecretStr
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REFRESH_TOKEN_EXPIRE_SECONDS: int = REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
 
@@ -80,23 +80,26 @@ class Settings(BaseSettings):
     OTP_LENGTH: int = 6
 
     # Session
-    SESSION_SECRET_KEY: str | None = None
+    # SESSION_SECRET_KEY: SecretStr | None = None
 
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
-    SUPABASE_SERVICE_ROLE_KEY: str
+    # SUPABASE_SERVICE_ROLE_KEY: SecretStr
 
     # Email
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = "mpkadam2004@gmail.com"
-    SMTP_PASSWORD: str
+    SMTP_PASSWORD: SecretStr
     EMAIL_FROM: str = "noreply@musimo.com"
     MAIL_FROM_NAME: str = "Musimo Team"
 
     # USER PASSWORD
     PASSWORD_MIN_LENGTH: int = 8
     PASSWORD_MAX_LENGTH: int = 32
+
+    # LLM SUMMARY
+    LLM_SUMMARY_GEMINI_API_KEY: SecretStr
 
     model_config = SettingsConfigDict(extra="ignore", case_sensitive=True)
 

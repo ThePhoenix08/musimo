@@ -127,7 +127,7 @@ class AuthService:
 
         encoded = jwt.encode(
             dict(payload),
-            CONSTANTS.JWT_ACCESS_TOKEN_SECRET,
+            CONSTANTS.JWT_ACCESS_TOKEN_SECRET.get_secret_value(),
             algorithm=CONSTANTS.JWT_ALGORITHM,
         )
 
@@ -150,7 +150,7 @@ class AuthService:
 
         encoded = jwt.encode(
             dict(payload),
-            CONSTANTS.JWT_REFRESH_TOKEN_SECRET,
+            CONSTANTS.JWT_REFRESH_TOKEN_SECRET.get_secret_value(),
             algorithm=CONSTANTS.JWT_ALGORITHM,
         )
 
@@ -219,9 +219,9 @@ class AuthService:
         """
         try:
             secret = (
-                CONSTANTS.JWT_ACCESS_TOKEN_SECRET
+                CONSTANTS.JWT_ACCESS_TOKEN_SECRET.get_secret_value()
                 if type == "access"
-                else CONSTANTS.JWT_REFRESH_TOKEN_SECRET
+                else CONSTANTS.JWT_REFRESH_TOKEN_SECRET.get_secret_value()
             )
 
             decoded = jwt.decode(token, secret, algorithms=[CONSTANTS.JWT_ALGORITHM])

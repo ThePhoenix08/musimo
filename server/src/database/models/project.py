@@ -44,6 +44,8 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         primaryjoin="and_(Project.id==EmotionAnalysisRecord.project_id, "
         "EmotionAnalysisRecord.analysis_type=='EMOTION')",
         back_populates="project",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         uselist=False,
         lazy="selectin",
     )
@@ -55,6 +57,8 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
             "InstrumentAnalysisRecord.analysis_type=='INSTRUMENT')",
             back_populates="project",
             uselist=False,
+            cascade="all, delete-orphan",
+            passive_deletes=True,
             lazy="selectin",
         )
     )
@@ -65,6 +69,8 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
         "FeatureAnalysisRecord.analysis_type=='FEATURES')",
         back_populates="project",
         uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         lazy="selectin",
     )
 
@@ -75,6 +81,8 @@ class Project(UUIDMixin, TimestampMixin, UserReferenceMixin, Base):
             "SeparationAnalysisRecord.analysis_type=='SEPARATION')",
             back_populates="project",
             uselist=False,
+            cascade="all, delete-orphan",
+            passive_deletes=True,
             lazy="selectin",
         )
     )

@@ -1,4 +1,3 @@
-import json
 import uuid
 
 from sqlalchemy import select
@@ -14,48 +13,6 @@ from src.database.models.analysis_record import (
 class AnalysisRepository:
     def __init__(self, session: AsyncSession):
         self._session = session
-
-    # ==========================================================
-    # HELPERS
-    # ==========================================================
-
-    @staticmethod
-    def sanitize_json(value):
-        return json.loads(json.dumps(value, default=str))
-
-    def sanitize_row(self, row):
-        """
-        Convert non-serializable values into JSON-safe values
-        """
-
-        if hasattr(row, "results") and row.results is not None:
-            row.results = self.sanitize_json(row.results)
-
-        if (
-            hasattr(row, "prediction_result")
-            and row.prediction_result is not None
-        ):
-            row.prediction_result = self.sanitize_json(
-                row.prediction_result
-            )
-
-        if (
-            hasattr(row, "vgg_embeddings")
-            and row.vgg_embeddings is not None
-        ):
-            row.vgg_embeddings = self.sanitize_json(
-                row.vgg_embeddings
-            )
-
-        if (
-            hasattr(row, "confidence_scores")
-            and row.confidence_scores is not None
-        ):
-            row.confidence_scores = self.sanitize_json(
-                row.confidence_scores
-            )
-
-        return row
 
     # ==========================================================
     # EMOTION ANALYSIS
@@ -74,9 +31,6 @@ class AnalysisRepository:
 
         row = result.scalar_one_or_none()
 
-        if row:
-            row = self.sanitize_row(row)
-
         return row
 
     async def create_emotion_record(
@@ -86,7 +40,7 @@ class AnalysisRepository:
         audio_file_id: uuid.UUID,
         model_id: uuid.UUID | None,
         prediction_result: dict,
-        summary_text: str,
+        summary: dict,
         results: dict,
         embeddings: dict | list | None = None,
     ) -> EmotionAnalysisRecord:
@@ -95,7 +49,7 @@ class AnalysisRepository:
             project_id=project_id,
             audio_file_id=audio_file_id,
             model_id=model_id,
-            summary_text=summary_text,
+            summary=summary,
             results=results,
             prediction_result=prediction_result,
             vgg_embeddings=embeddings,
@@ -107,8 +61,6 @@ class AnalysisRepository:
         await self._session.flush()
         await self._session.refresh(row)
 
-        row = self.sanitize_row(row)
-
         return row
 
     async def update_emotion_record(
@@ -116,20 +68,18 @@ class AnalysisRepository:
         record: EmotionAnalysisRecord,
         *,
         prediction_result: dict,
-        summary_text: str,
+        summary: dict,
         results: dict,
         embeddings: dict | list | None = None,
     ) -> EmotionAnalysisRecord:
 
         record.prediction_result = prediction_result
-        record.summary_text = summary_text
+        record.summary = summary
         record.results = results
         record.vgg_embeddings = embeddings
 
         await self._session.flush()
         await self._session.refresh(record)
-
-        record = self.sanitize_row(record)
 
         return record
 
@@ -156,9 +106,6 @@ class AnalysisRepository:
 
         row = result.scalar_one_or_none()
 
-        if row:
-            row = self.sanitize_row(row)
-
         return row
 
     async def create_instrument_record(
@@ -167,7 +114,7 @@ class AnalysisRepository:
         project_id: uuid.UUID,
         audio_file_id: uuid.UUID,
         prediction_result: dict,
-        summary_text: str,
+        summary: dict,
         results: dict,
     ) -> InstrumentAnalysisRecord:
 
@@ -190,7 +137,7 @@ class AnalysisRepository:
         row = InstrumentAnalysisRecord(
             project_id=project_id,
             audio_file_id=audio_file_id,
-            summary_text=summary_text,
+            summary=summary,
             results=results,
             instruments=instruments,
             confidence_scores=confidence_scores,
@@ -202,8 +149,6 @@ class AnalysisRepository:
         await self._session.flush()
         await self._session.refresh(row)
 
-        row = self.sanitize_row(row)
-
         return row
 
     async def update_instrument_record(
@@ -211,7 +156,7 @@ class AnalysisRepository:
         record: InstrumentAnalysisRecord,
         *,
         prediction_result: dict,
-        summary_text: str,
+        summary: dict,
         results: dict,
     ) -> InstrumentAnalysisRecord:
 
@@ -231,14 +176,12 @@ class AnalysisRepository:
             )
         }
 
-        record.summary_text = summary_text
+        record.summary = summary
         record.results = results
         record.instruments = instruments
         record.confidence_scores = confidence_scores
 
         await self._session.flush()
         await self._session.refresh(record)
-
-        record = self.sanitize_row(record)
 
         return record

@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 
@@ -8,6 +9,7 @@ from src.models.model_service import ModelService
 from src.models.progress_tracker import ProgressTracker
 from src.repo.analysisRepo import AnalysisRepository
 from src.schemas.analysis_record import EmotionAnalysisRecordResponse
+from src.services.llm_service import LLMSummaryService
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,7 @@ class AnalysisService:
     def __init__(self, session: AsyncSession):
         self._session = session
         self._repo = AnalysisRepository(session)
+        self._llm_summary = LLMSummaryService()
 
     async def run_emotion_model(
         self,
@@ -30,33 +33,39 @@ class AnalysisService:
             tracker=tracker,
         )
 
-    def _generate_summary(self, result: dict) -> str:
-        """
-        Keep simple for now. Upgrade later with LLM summaries if needed.
-        """
-        if "static" in result:
-            return "Emotion analysis completed successfully."
+    async def _generate_summary(self, result: dict) -> dict | None:
+        try:
+            summary = self._llm_summary.generate(
+                summary_type="emotion",
+                data=json.dumps(result),
+            )
 
-        return "Emotion prediction generated."
+            return summary
+        
+        except Exception:
+            logger.exception("Failed generating emotion summary")
+            return None
 
     async def upsert_emotion_analysis(
         self,
         *,
         project_id: uuid.UUID,
-        audio_file_id: uuid.UUID,
+        audio_file_id: uuid.UUID,    
         prediction_result: dict,
         embeddings: dict | list | None = None,
         model_id: uuid.UUID | None = None,
     ):
         existing = await self._repo.get_emotion_analysis_by_project_id(project_id)
 
-        summary = self._generate_summary(prediction_result)
+        summary = await self._generate_summary(prediction_result)
+        if not summary:
+            summary = {}
 
         if existing:
             row = await self._repo.update_emotion_record(
                 existing,
                 prediction_result=prediction_result,
-                summary_text=summary,
+                summary=summary,
                 results=prediction_result,
                 embeddings=embeddings,
             )
@@ -66,7 +75,7 @@ class AnalysisService:
                 audio_file_id=audio_file_id,
                 model_id=model_id,
                 prediction_result=prediction_result,
-                summary_text=summary,
+                summary=summary,
                 results=prediction_result,
                 embeddings=embeddings,
             )
@@ -92,6 +101,28 @@ class AnalysisService:
         logger.debug(row)
 
         return EmotionAnalysisRecordResponse.model_validate(row)
+
+    async def delete_emotion_analysis(
+        self,
+        project_id: uuid.UUID
+    ):
+        row = await self._repo.get_emotion_analysis_by_project_id(
+            project_id
+        )
+
+        if not row:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Emotion analysis not found",
+            )
+
+        await self._repo.delete_emotion_record(row)
+
+        await self._session.commit()
+
+        return {
+            "message": "Emotion analysis deleted successfully",
+        }
     
     async def run_instrument_model(
         self,
@@ -113,13 +144,13 @@ class AnalysisService:
     ):
         existing = await self._repo.get_instrument_by_project_id(project_id)
 
-        summary = "Instrument analysis completed successfully."
+        summary = {"message": "Instrument analysis completed successfully."}
 
         if existing:
             row = await self._repo.update_instrument_record(
             existing,
             prediction_result=prediction_result,
-            summary_text=summary,
+            summary=summary,
             results=prediction_result,
         )
         else:
@@ -127,7 +158,7 @@ class AnalysisService:
             project_id=project_id,
             audio_file_id=audio_file_id,
             prediction_result=prediction_result,
-            summary_text=summary,
+            summary=summary,
             results=prediction_result,
         )
 

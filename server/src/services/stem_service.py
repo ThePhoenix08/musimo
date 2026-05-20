@@ -76,7 +76,7 @@ async def update_stem_status(
                 audio_file_id=audio.id,
                 analysis_type=AnalysisType.SEPARATION,
                 results={},
-                summary_text="",
+                summary={},
                 separation_status=SeparationStatus.PENDING,
             )
             db.add(separation_record)
@@ -89,12 +89,12 @@ async def update_stem_status(
         # 4. On done: store stem URLs in results JSON
         if status == "done" and stems:
             separation_record.results = {"stems": stems}
-            separation_record.summary_text = f"{len(stems)} stems separated successfully"
+            separation_record.summary = {"message": f"{len(stems)} stems separated successfully"}
 
         # 5. On failed: store error message
         if status == "failed" and error:
             separation_record.results = {"error": error}
-            separation_record.summary_text = f"Separation failed: {error}"
+            separation_record.summary = {"message": f"Separation failed: {error}"}
 
         await db.commit()
         logger.info(f"Audio {audio_id} stem status → {status}")

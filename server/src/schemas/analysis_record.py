@@ -26,7 +26,7 @@ class BaseAnalysisRecordResponse(BaseModel):
     model_id: Optional[uuid.UUID] = None
 
     analysis_type: str
-    summary_text: Optional[str] = None
+    summary: Optional[dict] = None
 
     created_at: datetime
     updated_at: datetime
@@ -49,7 +49,7 @@ class EmotionAnalysisRecordResponse(BaseModel):
     audio_file_id: uuid.UUID | None = None
 
     analysis_type: str
-    summary_text: str
+    summary: dict
 
     created_at: datetime
     updated_at: datetime
@@ -62,6 +62,8 @@ class EmotionAnalysisRecordResponse(BaseModel):
 class EmotionAnalysisApiResponse(ApiResponse):
     data: EmotionAnalysisRecordResponse
 
+class EmotionAnalysisDeleteResponse(ApiResponse):
+    message: str
 
 # =====================================================
 # INSTRUMENT

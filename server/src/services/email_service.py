@@ -13,7 +13,7 @@ def send_otp_email(receiver_email: str, otp: str) -> bool:
     Sends a beautiful HTML OTP email to the given address.
     """
     sender_email = CONSTANTS.SMTP_USERNAME
-    sender_password = CONSTANTS.SMTP_PASSWORD
+    sender_password = CONSTANTS.SMTP_PASSWORD.get_secret_value()
     smtp_host = CONSTANTS.SMTP_HOST or "smtp.gmail.com"
     smtp_port = int(CONSTANTS.SMTP_PORT or 587)
 

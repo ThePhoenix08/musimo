@@ -1,8 +1,8 @@
-// src/features/profile/pages/profile.page.jsx
-
 import {
   Activity,
   BarChart3,
+  Music2,
+  Brain,
   Settings,
 } from "lucide-react";
 
@@ -14,7 +14,12 @@ import {
 } from "@/components/ui/tabs";
 
 import ProfileToolbar from "../components/profile-toolbar";
-import { useGetProfileQuery } from "../state/api/profile.api";
+
+import {
+  useGetProfileQuery,
+  useGetProfileAnalysisQuery,
+} from "../state/api/profile.api";
+
 import ProfileHeader from "../components/profile-header";
 import ProfileStats from "../components/profile-stats";
 import EmotionBreakdown from "../components/emotion-breakdown";
@@ -28,23 +33,30 @@ import SubscriptionCard from "../components/subscription-card";
 import DangerZone from "../components/danger-zone";
 import { ResetPasswordDialog } from "@/features/auth/components/ResetPassword";
 import useProfilePage from "../hooks/useProfilePage";
-
-import {
-  stats,
-  emotions,
-  activities,
-  insights,
-  tags,
-} from "../constants/profile.data";
 import { SkeletonAvatar } from "@/shared/providers/skeleton.avatar";
 
 function ProfilePage() {
 
-  const { data: profile, isLoading: loading, error, } = useGetProfileQuery();
+  const {
+    data: profile,
+    isLoading: loading,
+    error,
+  } = useGetProfileQuery();
 
-  const { openModal, setManualOpen, isForcedReset, handleLogout, } = useProfilePage();
+  const {
+    data: analysis,
+    isLoading: analysisLoading,
+  } = useGetProfileAnalysisQuery();
 
-  if (loading) {
+  const {
+    openModal,
+    setManualOpen,
+    isForcedReset,
+    handleLogout,
+  } = useProfilePage();
+
+  if (loading || analysisLoading) {
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
         <SkeletonAvatar />
@@ -54,38 +66,121 @@ function ProfilePage() {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-red-400">
+
         Failed to load profile
+
         {error.toString()}
       </div>
     );
   }
 
+  const stats = [
+    {
+      title: "Projects",
+      value:
+        analysis?.stats?.total_projects || 0,
+      icon: BarChart3,
+    },
+    {
+      title: "Songs",
+      value:
+        analysis?.stats?.total_songs || 0,
+      icon: Music2,
+    },
+    {
+      title: "AI Insights",
+      value:
+        analysis?.stats?.total_analyses || 0,
+      icon: Brain,
+    },
+  ];
+
+  const emotions =
+    analysis?.emotion_score_breakdown
+      ? Object.entries(
+        analysis.emotion_score_breakdown
+      ).map(([label, value]) => ({
+        label,
+        value: Math.round(value * 100),
+      }))
+      : [];
+
+  const tags =
+    analysis?.top_instruments?.length > 0
+      ? analysis.top_instruments
+      : ["No Instruments Detected"];
+
+  const activities =
+    analysis?.recent_projects?.map(
+      (project) => ({
+        project: project.name,
+        action: "Created",
+        time: new Date(
+          project.created_at
+        ).toLocaleDateString(),
+      })
+    ) || [];
+
+  const insights = [
+    `Dominant emotion: ${analysis?.music_profile
+      ?.dominant_emotion || "Unknown"
+    }`,
+    `Favorite instrument: ${analysis?.music_profile
+      ?.favorite_instrument || "N/A"
+    }`,
+    `Total storage used: ${(
+      (analysis?.stats
+        ?.total_storage_bytes || 0) /
+      (1024 * 1024)
+    ).toFixed(2)} MB`,
+    `Average song duration: ${analysis?.stats
+      ?.average_song_duration_seconds || 0
+    } sec`,
+  ];
+
   return (
 
-    <div className="min-h-screen w-full overflow-y-auto bg-black pb-20 text-white">
+    <div id="profile-page" className="min-h-screen w-full overflow-y-auto bg-black pb-20 text-white">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col space-y-8 px-4 py-6 md:px-8">
-        <ProfileToolbar handleLogout={handleLogout} />
+
+        <ProfileToolbar
+          handleLogout={handleLogout}
+        />
 
         {profile && (
-          <ProfileHeader profile={profile} />
+          <ProfileHeader
+            profile={profile}
+          />
         )}
+
         <Tabs
           defaultValue="analysis"
           className="space-y-6"
         >
+
           <div className="sticky top-0 z-20 bg-black/80 py-2 backdrop-blur-xl">
             <TabsList className="grid w-full grid-cols-3 rounded-2xl border border-white/10 bg-zinc-900/80">
-              <TabsTrigger value="analysis"className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary">
+
+              <TabsTrigger
+                value="analysis"
+                className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary"
+              >
                 <BarChart3 className="mr-2 h-4 w-4" />
                 Profile Analysis
               </TabsTrigger>
 
-              <TabsTrigger value="activities" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary">
+              <TabsTrigger
+                value="activities"
+                className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary"
+              >
                 <Activity className="mr-2 h-4 w-4" />
                 Recent Activities
               </TabsTrigger>
 
-              <TabsTrigger value="settings" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary">
+              <TabsTrigger
+                value="settings"
+                className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary"
+              >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </TabsTrigger>
@@ -113,7 +208,9 @@ function ProfilePage() {
                 tags={tags}
               />
 
-              <ProjectSummary />
+              <ProjectSummary
+                stats={analysis?.stats}
+              />
             </div>
           </TabsContent>
           <TabsContent value="activities">
@@ -129,13 +226,13 @@ function ProfilePage() {
           >
 
             <AccountSettings
-              setManualOpen={setManualOpen}
+              setManualOpen={
+                setManualOpen
+              }
             />
 
             <PreferencesSettings />
-
             <SubscriptionCard />
-
             <DangerZone />
           </TabsContent>
         </Tabs>
@@ -143,7 +240,9 @@ function ProfilePage() {
         {openModal && (
           <ResetPasswordDialog
             open={openModal}
-            forcedReset={isForcedReset}
+            forcedReset={
+              isForcedReset
+            }
             onClose={() => {
               if (!isForcedReset) {
                 setManualOpen(false);

@@ -6,14 +6,31 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { Progress } from "@/components/ui/progress";
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 export default function EmotionBreakdown({
   emotions,
 }) {
+
+  const chartData =
+    emotions.map((emotion) => ({
+      subject: emotion.label,
+      value: emotion.value,
+    }));
+
   return (
     <Card className="border-white/10 bg-zinc-900/70">
+
       <CardHeader>
+
         <CardTitle>
           Emotion Score Breakdown
         </CardTitle>
@@ -23,21 +40,60 @@ export default function EmotionBreakdown({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-5">
-        {emotions.map((emotion) => (
-          <div
-            key={emotion.label}
-            className="space-y-2"
+      <CardContent>
+
+        <div className="h-[420px] w-full">
+
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
           >
-            <div className="flex justify-between text-sm">
-              <span>{emotion.label}</span>
 
-              <span>{emotion.value}%</span>
-            </div>
+            <RadarChart
+              data={chartData}
+            >
 
-            <Progress value={emotion.value} />
-          </div>
-        ))}
+              <PolarGrid
+                stroke="#3f3f46"
+              />
+
+              <PolarAngleAxis
+                dataKey="subject"
+                tick={{
+                  fill: "#d4d4d8",
+                  fontSize: 12,
+                }}
+              />
+
+              <PolarRadiusAxis
+                angle={90}
+                domain={[0, 100]}
+                tick={{
+                  fill: "#71717a",
+                  fontSize: 10,
+                }}
+              />
+
+              <Tooltip
+                contentStyle={{
+                  background: "#18181b",
+                  border:
+                    "1px solid #3f3f46",
+                  borderRadius: "12px",
+                  color: "#fff",
+                }}
+              />
+
+              <Radar
+                name="Emotion"
+                dataKey="value"
+                stroke="#facc15"
+                fill="#facc15"
+                fillOpacity={0.35}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

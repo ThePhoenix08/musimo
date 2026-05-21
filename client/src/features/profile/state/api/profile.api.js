@@ -1,12 +1,9 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-
 import { baseQueryWithReauth } from "@/shared/state/redux-api/base.api";
 
 export const ProfileApi = createApi({
   reducerPath: "ProfileApi",
-
   baseQuery: baseQueryWithReauth,
-
   endpoints: (builder) => ({
 
     getProfile: builder.query({
@@ -15,6 +12,15 @@ export const ProfileApi = createApi({
         method: "GET",
       }),
     }),
+
+    getProfileAnalysis: builder.query({
+      query: () => ({
+        url: "user/profile-analysis",
+        method: "GET",
+      }),
+      providesTags: ["Profile"],
+    }),
+
     updateProfile: builder.mutation({
       query: (body) => ({
         url: "user/profile",
@@ -22,6 +28,7 @@ export const ProfileApi = createApi({
         body,
       }),
     }),
+
     deleteAccount: builder.mutation({
       query: () => ({
         url: "user/account",
@@ -33,6 +40,6 @@ export const ProfileApi = createApi({
 
 export const {
   useGetProfileQuery,
-  useUpdateProfileMutation,
+  useUpdateProfileMutation,useGetProfileAnalysisQuery,
   useDeleteAccountMutation,
 } = ProfileApi;

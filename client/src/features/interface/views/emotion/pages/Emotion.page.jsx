@@ -5,15 +5,14 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import HeadersSection from "@/features/interface/components/HeadersSection";
 import {
   Laugh,
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Play,
-  Pause,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -25,6 +24,11 @@ import { RadarChart, PolarGrid, PolarAngleAxis, Radar, Legend } from "recharts";
 
 import { useEmotionAnalysis } from "@/features/interface/views/emotion/hooks/useEmotionAnalysis";
 import { useParams } from "react-router";
+import {
+  selectCurrentTime,
+  selectDuration,
+  selectIsPlaying,
+} from "@/features/interface/audio-player/AudioPlayer.slice";
 
 // Emotion colors for radar charts
 const EMOTION_COLORS = {
@@ -231,10 +235,11 @@ function DynamicRadarChart({ emotions, timestamps, currentTimestamp }) {
         <Radar
           name="Confidence"
           dataKey="value"
-          stroke={EMOTION_COLORS.Joyful}
+          stroke={EMOTION_COLORS["Joyful Activation"]}
           fill={EMOTION_COLORS["Joyful Activation"]}
           fillOpacity={0.4}
-          animationDuration={300}
+          animationDuration={150}
+          isAnimationActive={true}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
         <Legend />
@@ -244,22 +249,22 @@ function DynamicRadarChart({ emotions, timestamps, currentTimestamp }) {
 }
 
 export default function EmotionPage() {
+  const dispatch = useDispatch();
   const params = useParams();
   const projectId = params?.id || "";
-  const [currentTimestamp, setCurrentTimestamp] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const { loading, result, socket, query } = useEmotionAnalysis(projectId);
+
+  // Get current playback time from audio player Redux state
+  const currentTime = useSelector(selectCurrentTime);
+  const duration = useSelector(selectDuration);
+  const isPlaying = useSelector(selectIsPlaying);
 
   const emotions = result?.prediction_result?.static?.emotions || {};
   const dynamicData = result?.prediction_result?.dynamic;
   const summary = result?.summary;
 
   const dominant = Object.entries(emotions).sort((a, b) => b[1] - a[1])[0];
-
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
 
   return (
     <div>
@@ -427,48 +432,25 @@ export default function EmotionPage() {
               <TabsContent value="dynamic" className="space-y-6">
                 {dynamicData && (
                   <>
-                    {/* Timeline Controls */}
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-                      <div className="flex items-center gap-4 mb-4">
-                        <button
-                          onClick={handlePlayPause}
-                          className="p-2 rounded-full bg-yellow-400 text-black hover:bg-yellow-500 transition"
-                        >
-                          {isPlaying ? (
-                            <Pause className="h-5 w-5" />
-                          ) : (
-                            <Play className="h-5 w-5" />
-                          )}
-                        </button>
-                        <div className="flex-1">
-                          <input
-                            type="range"
-                            min={0}
-                            max={dynamicData.duration_seconds}
-                            step={0.1}
-                            value={currentTimestamp}
-                            onChange={(e) =>
-                              setCurrentTimestamp(parseFloat(e.target.value))
-                            }
-                            className="w-full"
-                          />
-                        </div>
+                    {/* Dynamic Radar Chart - Synced with Audio Player */}
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-2xl font-semibold">
+                          Emotional Profile: {currentTime.toFixed(2)}s
+                        </h3>
                         <span className="text-sm text-zinc-400">
-                          {currentTimestamp.toFixed(2)}s /{" "}
-                          {dynamicData.duration_seconds.toFixed(2)}s
+                          {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
                         </span>
                       </div>
-                    </div>
-
-                    {/* Dynamic Radar Chart */}
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-                      <h3 className="text-2xl font-semibold mb-6">
-                        Emotional Profile at {currentTimestamp.toFixed(2)}s
-                      </h3>
+                      <p className="text-sm text-zinc-400 mb-6">
+                        {isPlaying
+                          ? "Playing - Graph updates in real-time"
+                          : "Use the audio player to control playback"}
+                      </p>
                       <DynamicRadarChart
                         emotions={dynamicData.emotions}
                         timestamps={dynamicData.timestamps}
-                        currentTimestamp={currentTimestamp}
+                        currentTimestamp={currentTime}
                       />
                     </div>
                   </>

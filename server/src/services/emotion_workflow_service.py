@@ -114,6 +114,7 @@ class EmotionWorkflowService:
 
         except Exception:
             logger.error("[EMOTION WORKFLOW SERVICE] Error:", exc_info=True)
+            raise
 
         finally:
             if temp_path and os.path.exists(temp_path):

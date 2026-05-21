@@ -84,6 +84,13 @@ async def ws_analyze_emotion(
 
         await tracker.complete_pipeline(result)
 
+        if result is None:
+            await websocket.send_json({
+                "type": "pipeline_failed",
+                "error": "Emotion workflow returned no result"
+            })
+            return
+
         await websocket.send_json(
             {
                 "type": "analysis_complete",

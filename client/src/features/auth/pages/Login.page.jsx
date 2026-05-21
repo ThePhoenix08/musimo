@@ -1,4 +1,4 @@
-import { LoginForm } from "../components/login-form";
+import { LoginForm } from "../components/Login-form";
 import LogoText from "@/components/Brand/LogoText";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";

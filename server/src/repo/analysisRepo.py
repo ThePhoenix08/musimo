@@ -23,9 +23,11 @@ class AnalysisRepository:
         project_id: uuid.UUID,
     ) -> EmotionAnalysisRecord | None:
 
-        stmt = select(EmotionAnalysisRecord).where(
-            EmotionAnalysisRecord.project_id == project_id
+        stmt = select(EmotionAnalysisRecord).filter_by(
+            project_id=project_id,
+            analysis_type=AnalysisType.EMOTION,
         )
+        
 
         result = await self._session.execute(stmt)
 

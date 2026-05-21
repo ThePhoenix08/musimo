@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from src.models.model_service import ModelService
 from src.models.progress_tracker import ProgressTracker
@@ -46,6 +47,7 @@ class AnalysisService:
             logger.exception("Failed generating emotion summary")
             return None
 
+
     async def upsert_emotion_analysis(
         self,
         *,
@@ -55,11 +57,13 @@ class AnalysisService:
         embeddings: dict | list | None = None,
         model_id: uuid.UUID | None = None,
     ):
-        existing = await self._repo.get_emotion_analysis_by_project_id(project_id)
 
         summary = await self._generate_summary(prediction_result)
+
         if not summary:
             summary = {}
+
+        existing = await self._repo.get_emotion_analysis_by_project_id(project_id)
 
         if existing:
             row = await self._repo.update_emotion_record(
@@ -69,20 +73,43 @@ class AnalysisService:
                 results=prediction_result,
                 embeddings=embeddings,
             )
+
         else:
-            row = await self._repo.create_emotion_record(
-                project_id=project_id,
-                audio_file_id=audio_file_id,
-                model_id=model_id,
-                prediction_result=prediction_result,
-                summary=summary,
-                results=prediction_result,
-                embeddings=embeddings,
-            )
+            try:
+                row = await self._repo.create_emotion_record(
+                    project_id=project_id,
+                    audio_file_id=audio_file_id,
+                    model_id=model_id,
+                    prediction_result=prediction_result,
+                    summary=summary,
+                    results=prediction_result,
+                    embeddings=embeddings,
+                )
+
+            except IntegrityError:
+                await self._session.rollback()
+                self._session.expire_all()
+
+                existing = await self._repo.get_emotion_analysis_by_project_id(
+                    project_id
+                )
+
+                if not existing:
+                    raise
+
+                row = await self._repo.update_emotion_record(
+                    existing,
+                    prediction_result=prediction_result,
+                    summary=summary,
+                    results=prediction_result,
+                    embeddings=embeddings,
+                )
 
         await self._session.commit()
+
         return row
     
+
     @staticmethod
     async def get_emotion_analysis(
         db,

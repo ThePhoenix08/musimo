@@ -28,7 +28,9 @@ import {
   selectCurrentTime,
   selectDuration,
   selectIsPlaying,
+  setEmotionSegments,
 } from "@/features/interface/audio-player/AudioPlayer.slice";
+import { useEffect } from "react";
 
 // Emotion colors for radar charts
 const EMOTION_COLORS = {
@@ -41,6 +43,19 @@ const EMOTION_COLORS = {
   "Joyful Activation": "#fcd34d",
   Tension: "#fb7185",
   Sadness: "#94a3b8",
+};
+
+// Map GEMS emotion names to audio player slice keys (lowercase)
+const EMOTION_KEY_MAP = {
+  Wonder: "wonder",
+  Transcendence: "power", // No transcendence in GES, map to power
+  Tenderness: "tenderness",
+  Nostalgia: "joy", // Map to joy as closest equivalent
+  Peacefulness: "peacefulness",
+  Power: "power",
+  "Joyful Activation": "joy",
+  Tension: "tension",
+  Sadness: "sadness",
 };
 
 const chartConfig = {
@@ -265,6 +280,61 @@ export default function EmotionPage() {
   const summary = result?.summary;
 
   const dominant = Object.entries(emotions).sort((a, b) => b[1] - a[1])[0];
+
+  // Dispatch emotion segments to audio player when data is loaded
+  useEffect(() => {
+    if (!result || !dynamicData) return;
+
+    // Build emotion segments from summary segment_comments and dynamic emotion data
+    const emotionSegments = [];
+
+    if (summary?.segment_comments && summary.segment_comments.length > 0) {
+      // Map segment comments to emotion segments
+      summary.segment_comments.forEach((segment) => {
+        // Find the dominant emotion in this time range
+        const startIdx = dynamicData.timestamps.findIndex(
+          (t) => t >= segment.start_time
+        );
+        const endIdx = dynamicData.timestamps.findIndex(
+          (t) => t >= segment.end_time
+        );
+
+        if (startIdx !== -1) {
+          // Get emotion values at this segment's start time
+          const emotionAtStart = {};
+          Object.entries(emotions).forEach(([emotion, _]) => {
+            const emotionData = dynamicData.emotions[emotion];
+            if (emotionData && emotionData[startIdx] !== undefined) {
+              emotionAtStart[emotion] = emotionData[startIdx];
+            }
+          });
+
+          // Find the emotion with highest confidence in this segment
+          const dominantEmotion = Object.entries(emotionAtStart).sort(
+            (a, b) => b[1] - a[1]
+          )[0];
+
+          if (dominantEmotion) {
+            const emotionKey = EMOTION_KEY_MAP[dominantEmotion[0]];
+            const confidence = dominantEmotion[1];
+
+            emotionSegments.push({
+              startTime: segment.start_time,
+              endTime: segment.end_time,
+              emotion: emotionKey,
+              confidence: confidence,
+            });
+          }
+        }
+      });
+    }
+
+    // Dispatch the emotion segments to the audio player
+    if (emotionSegments.length > 0) {
+      dispatch(setEmotionSegments(emotionSegments));
+      console.log("[v0] Emotion segments dispatched:", emotionSegments);
+    }
+  }, [result, dynamicData, summary, dispatch]);
 
   return (
     <div>

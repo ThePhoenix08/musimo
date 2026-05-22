@@ -35,8 +35,8 @@ export default function RecentActivities({
 
               <div className="flex flex-col items-center">
 
-                <div className="rounded-full bg-emerald-500/20 p-2">
-                  <Clock3 className="h-4 w-4 text-emerald-400" />
+                <div className="rounded-full bg-yellow-500/20 p-2">
+                  <Clock3 className="h-4 w-4 text-orange-400" />
                 </div>
 
                 {index !== activities.length - 1 && (
@@ -60,7 +60,7 @@ export default function RecentActivities({
                 <p className="mt-2 text-sm text-zinc-400">
                   Project was{" "}
 
-                  <span className="text-emerald-400">
+                  <span className="text-primary">
                     {activity.action.toLowerCase()}
                   </span>
                 </p>

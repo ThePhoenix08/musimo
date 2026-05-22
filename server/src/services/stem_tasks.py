@@ -10,10 +10,11 @@
 # from sqlalchemy.pool import NullPool
 # from supabase import acreate_client
 
+# from src.services import celery_app
 # from src.core.settings import CONSTANTS
-# # from src.database.models.audio_file import AudioFile
-# # from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
-# # from src.services.celery_app import celery_app
+# from src.database.models.audio_file import AudioFile
+# from src.models.audio_separation.pipelines.separation import separate_audio_pipeline
+# from src.services.celery_app import celery_app
 # from src.services.stem_service import update_stem_status
 
 # logger = logging.getLogger(__name__)
@@ -67,7 +68,7 @@
 #     session_factory, engine = get_session_factory()
 
 #     # Fresh Supabase client — no singleton, no lifespan needed
-#     supabase_client = get_supabase()
+#     supabase_client =await get_supabase()
 
 #     try:
 #         # FIX #6: one session for the entire task — passed into the pipeline

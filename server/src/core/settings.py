@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from functools import cached_property, lru_cache
 from typing import List, Literal
 

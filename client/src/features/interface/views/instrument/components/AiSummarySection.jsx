@@ -1,9 +1,9 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { Sparkles, TrendingUp, Volume2, ChevronRight } from "lucide-react";
-import StatCard from "../components/StatCard";
+import StatCard from "./StatCard";
 
-function LeftSection() {
+function AiSummarySection() {
   const [activeComment, setActiveComment] = useState(0);
 
   const comments = [
@@ -164,4 +164,4 @@ function LeftSection() {
   );
 }
 
-export default LeftSection;
+export default AiSummarySection;

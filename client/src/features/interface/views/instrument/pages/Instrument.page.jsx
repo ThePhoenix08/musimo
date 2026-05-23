@@ -5,7 +5,7 @@ import HeadersSection from "../../../components/HeadersSection";
 import LeftSection from "../components/LeftSection";
 import RightSection from "../components/RightSection";
 import useInstrumentAnalysis from "../hooks/useInstrumentAnalysis";
-import { Laugh, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function InstrumentPage() {
   const params = useParams();
@@ -52,7 +52,6 @@ export default function InstrumentPage() {
           songName="track_01_final_mix.wav · 4:23"
         />
 
-        {/* ---------------- LOADER ---------------- */}
         {loading && (
           <div className="mt-10 max-w-4xl mx-auto rounded-3xl border border-white/10 bg-white/5 p-8">
             <div className="flex items-center gap-4">
@@ -62,7 +61,7 @@ export default function InstrumentPage() {
                 <h2 className="text-2xl font-semibold">Analyzing Track...</h2>
 
                 <p className="text-zinc-400 text-sm">
-                  Please wait while AI processes instrumental data
+                  Please wait while AI processes emotional data
                 </p>
               </div>
             </div>
@@ -103,7 +102,6 @@ export default function InstrumentPage() {
           </div>
         )}
 
-        {/* ---------------- ERROR ---------------- */}
         {(dbQuery.isError || socket.error) && !loading && (
           <div className="mt-10 max-w-3xl mx-auto rounded-3xl border border-red-500/20 bg-red-500/10 p-6 flex gap-3">
             <AlertCircle className="text-red-400" />

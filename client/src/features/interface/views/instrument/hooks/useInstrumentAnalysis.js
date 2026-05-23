@@ -21,7 +21,7 @@ function useInstrumentAnalysis(projectId) {
 
   const loading = dbQuery.isLoading || socket.running;
 
-  const result = dbQuery.data?.data;
+  const result = dbQuery.data?.data ?? null;
 
   const source = useMemo(() => {
     if (socket.running) return "socket";

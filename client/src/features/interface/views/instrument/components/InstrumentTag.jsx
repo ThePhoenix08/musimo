@@ -1,122 +1,32 @@
-import {
-  AudioWaveform,
-  Drum,
-  Guitar,
-  Mic2,
-  Music2,
-  Piano,
-  Radio,
-  Waves,
-  Disc3,
-  Music4,
-  Speaker,
-  Volume2,
-} from "lucide-react";
+import React from "react";
+import { InstrumentIcon } from "./InstrumentsIcons";
 
-// Map instrument names → lucide icon + oklch color
 const INSTRUMENT_CONFIG = {
-  accordion: {
-    Icon: Music4,
-    color: "oklch(0.82 0.16 80)",
-  },
-
-  banjo: {
-    Icon: Music2,
-    color: "oklch(0.7457 0.1649 65.0805)",
-  },
-
-  bass: {
-    Icon: Speaker ,
-    color: "oklch(0.7457 0.1649 65.0805)",
-  },
-
-  cello: {
-    Icon: AudioWaveform,
-    color: "oklch(0.72 0.15 45)",
-  },
-
-  clarinet: {
-    Icon: Waves,
-    color: "oklch(0.67 0.16 44)",
-  },
-
-  cymbals: {
-    Icon: Disc3,
-    color: "oklch(0.78 0.17 90)",
-  },
-
-  drums: {
-    Icon: Drum,
-    color: "oklch(0.7457 0.1649 65.0805)",
-  },
-
-  flute: {
-    Icon: Waves,
-    color: "oklch(0.8951 0.1506 104.0825)",
-  },
-
-  guitar: {
-    Icon: Guitar,
-    color: "oklch(0.829 0.1712 81.0381)",
-  },
-
-  mallet_percussion: {
-    Icon: Drum,
-    color: "oklch(0.7 0.1 81)",
-  },
-
-  mandolin: {
-    Icon: Music2,
-    color: "oklch(0.829 0.1712 81.0381)",
-  },
-
-  organ: {
-    Icon: Speaker,
-    color: "oklch(0.83 0.13 120)",
-  },
-
-  piano: {
-    Icon: Piano,
-    color: "oklch(0.8951 0.1506 104.0825)",
-  },
-
-  saxophone: {
-    Icon: Waves,
-    color: "oklch(0.6746 0.1682 44.5846)",
-  },
-
-  synthesizer: {
-    Icon: Music4,
-    color: "oklch(0.78 0.18 280)",
-  },
-
-  trombone: {
-    Icon: Radio,
-    color: "oklch(0.73 0.17 70)",
-  },
-
-  trumpet: {
-    Icon: Radio,
-    color: "oklch(0.7457 0.1649 65.0805)",
-  },
-
-  ukulele: {
-    Icon: Music2,
-    color: "oklch(0.8951 0.1506 104.0825)",
-  },
-
-  violin: {
-    Icon: AudioWaveform,
-    color: "oklch(0.75 0.16 55)",
-  },
-
-  voice: {
-    Icon: Mic2,
-    color: "oklch(0.6746 0.1682 44.5846)",
-  },
+  accordion: { color: "var(--chart-1)" },
+  banjo: { color: "var(--chart-3)" },
+  bass: { color: "var(--chart-5)" },
+  cello: { color: "var(--accent-foreground)" },
+  clarinet: { color: "var(--chart-4)" },
+  cymbals: { color: "var(--chart-2)" },
+  drums: { color: "var(--muted-foreground)" },
+  flute: { color: "var(--chart-1)" },
+  guitar: { color: "var(--chart-3)" },
+  mallet_percussion: { color: "var(--chart-2)" },
+  mandolin: { color: "var(--chart-4)" },
+  organ: { color: "var(--accent-foreground)" },
+  piano: { color: "var(--chart-5)" },
+  saxophone: { color: "var(--chart-1)" },
+  synthesizer: { color: "var(--secondary-foreground)" },
+  trombone: { color: "var(--chart-2)" },
+  trumpet: { color: "var(--chart-3)" },
+  ukulele: { color: "var(--chart-4)" },
+  violin: { color: "var(--chart-5)" },
+  voice: { color: "var(--foreground)" },
 };
 
-const FALLBACK = { Icon: Music2, color: "oklch(0.829 0.1712 81.0381)" };
+const FALLBACK = {
+  color: "var(--muted-foreground)",
+};
 
 function getConfig(name) {
   return INSTRUMENT_CONFIG[name?.toLowerCase()] ?? FALLBACK;
@@ -126,14 +36,21 @@ function capitalize(str) {
   return str?.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function InstrumentTag({ label, score, detected = true, delay = "0s" }) {
-  const { Icon, color } = getConfig(label);
+export default function InstrumentTag({
+  label,
+  score,
+  detected = true,
+  delay = "0s",
+}) {
+  const { color } = getConfig(label);
 
-  const activeColor = detected ? color : "oklch(0.48 0.02 81)";
+  const activeColor = detected ? color : "var(--muted-foreground)";
+
   const trackBg = detected
-    ? `${color.replace(")", " / 0.15)").replace("oklch(", "oklch(")}`
-    : "oklch(0.25 0.01 49 / 0.6)";
-  const labelColor = detected ? "#e5e5e5" : "oklch(0.48 0.02 81)";
+    ? "color-mix(in oklch, var(--accent) 18%, transparent)"
+    : "color-mix(in oklch, var(--muted) 40%, transparent)";
+
+  const labelColor = detected ? "var(--foreground)" : "var(--muted-foreground)";
 
   return (
     <div
@@ -144,7 +61,8 @@ function InstrumentTag({ label, score, detected = true, delay = "0s" }) {
     >
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-2">
-          <Icon size={14} style={{ color: activeColor, flexShrink: 0 }} />
+          <InstrumentIcon name={label} size={14} muted={!detected} />
+
           <span
             className="text-sm font-medium capitalize"
             style={{ color: labelColor }}
@@ -152,6 +70,7 @@ function InstrumentTag({ label, score, detected = true, delay = "0s" }) {
             {capitalize(label)}
           </span>
         </div>
+
         <span
           className="text-xs font-mono tabular-nums"
           style={{ color: activeColor }}
@@ -162,20 +81,19 @@ function InstrumentTag({ label, score, detected = true, delay = "0s" }) {
 
       <div
         className="w-full rounded-full overflow-hidden"
-        style={{ height: 5, background: trackBg }}
+        style={{
+          height: 5,
+          background: trackBg,
+        }}
       >
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{
             width: `${score}%`,
-            background: detected
-              ? `linear-gradient(90deg, ${color}, oklch(0.75 0.15 55))`
-              : activeColor,
+            background: detected ? activeColor : "var(--muted-foreground)",
           }}
         />
       </div>
     </div>
   );
 }
-
-export default InstrumentTag;

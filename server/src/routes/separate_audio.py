@@ -180,7 +180,7 @@ async def process_audio(
                 status_code=status.HTTP_202_ACCEPTED,
             )
  
-        # # Case 3: Failed — allow retry
+        # Case 3: Failed — allow retry
         # if separation_record and separation_record.separation_status == SeparationStatus.FAILED:
         #     await update_stem_status(db, str(audio_uuid), "processing")
         #     separate_stems_task.delay(audio_id=str(audio_uuid), project_id=str(audio.project_id))

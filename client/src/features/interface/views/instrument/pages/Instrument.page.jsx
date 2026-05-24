@@ -2,16 +2,30 @@ import { Guitar } from "lucide-react";
 import { useParams } from "react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { useSelector } from "react-redux";
 
 import HeadersSection from "../../../components/HeadersSection";
 import InstrumentalOverviewSection from "../components/InstrumentalOverviewSection";
 import AiSummarySection from "../components/AiSummarySection";
 import useInstrumentAnalysis from "../hooks/useInstrumentAnalysis";
 import TopDetectedHero from "../components/TopDetectedHero";
+import {
+  selectAudioName,
+  selectDuration,
+} from "@/features/interface/audio-player/AudioPlayer.slice";
+
+const fmt = (s) => {
+  if (!s || isNaN(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
 
 export default function InstrumentPage() {
   const params = useParams();
   const projectId = params?.id || "";
+  const audioName = useSelector(selectAudioName);
+  const audioDuration = useSelector(selectDuration);
   const { loading, result, socket, dbQuery } = useInstrumentAnalysis(projectId);
 
   return (
@@ -50,7 +64,7 @@ export default function InstrumentPage() {
         <HeadersSection
           title="INSTRUMENTAL ANALYSIS"
           icon={Guitar}
-          songName="track_01_final_mix.wav · 4:23"
+          songName={`${audioName} · ${fmt(audioDuration)}`}
         />
 
         {loading && (

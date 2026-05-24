@@ -3,12 +3,7 @@
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import HeadersSection from "@/features/interface/components/HeadersSection";
-import {
-  Laugh,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
+import { Laugh, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ChartContainer,
@@ -24,6 +19,7 @@ import {
   selectDuration,
   selectIsPlaying,
   setEmotionSegments,
+  selectAudioName,
 } from "@/features/interface/audio-player/AudioPlayer.slice";
 import { useEffect } from "react";
 
@@ -90,6 +86,13 @@ const chartConfig = {
     label: "Sadness",
     color: EMOTION_COLORS.Sadness,
   },
+};
+
+const fmt = (s) => {
+  if (!s || isNaN(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
 };
 
 function StaticRadarChart({ emotions }) {
@@ -262,6 +265,8 @@ export default function EmotionPage() {
   const dispatch = useDispatch();
   const params = useParams();
   const projectId = params?.id || "";
+  const audioName = useSelector(selectAudioName);
+  const audioDuration = useSelector(selectDuration);
 
   const { loading, result, socket, query } = useEmotionAnalysis(projectId);
 
@@ -337,8 +342,7 @@ export default function EmotionPage() {
 
     for (let i = 0; i < timestamps.length; i++) {
       const currentTime = timestamps[i];
-      const nextTime =
-        timestamps[i + 1] ?? currentTime + 0.1;
+      const nextTime = timestamps[i + 1] ?? currentTime + 0.1;
 
       // -----------------------------
       // FIND DOMINANT EMOTION
@@ -346,15 +350,10 @@ export default function EmotionPage() {
       let dominantEmotion = null;
       let dominantConfidence = -Infinity;
 
-      for (const [emotion, values] of Object.entries(
-        smoothedEmotionData
-      )) {
+      for (const [emotion, values] of Object.entries(smoothedEmotionData)) {
         const score = values[i];
 
-        if (
-          typeof score === "number" &&
-          score > dominantConfidence
-        ) {
+        if (typeof score === "number" && score > dominantConfidence) {
           dominantConfidence = score;
           dominantEmotion = emotion;
         }
@@ -362,9 +361,7 @@ export default function EmotionPage() {
 
       if (!dominantEmotion) continue;
 
-      const emotionKey =
-        EMOTION_KEY_MAP[dominantEmotion] ??
-        dominantEmotion;
+      const emotionKey = EMOTION_KEY_MAP[dominantEmotion] ?? dominantEmotion;
 
       // -----------------------------
       // HYSTERESIS
@@ -375,9 +372,7 @@ export default function EmotionPage() {
       if (currentEmotion === null) {
         shouldSwitch = true;
       } else if (emotionKey !== currentEmotion) {
-        shouldSwitch =
-          dominantConfidence >
-          currentConfidence + SWITCH_MARGIN;
+        shouldSwitch = dominantConfidence > currentConfidence + SWITCH_MARGIN;
       }
 
       // -----------------------------
@@ -409,17 +404,14 @@ export default function EmotionPage() {
         // -----------------------------
         currentSegment.endTime = nextTime;
 
-        currentSegment.totalConfidence +=
-          dominantConfidence;
+        currentSegment.totalConfidence += dominantConfidence;
 
         currentSegment.sampleCount += 1;
 
         currentSegment.confidence =
-          currentSegment.totalConfidence /
-          currentSegment.sampleCount;
+          currentSegment.totalConfidence / currentSegment.sampleCount;
 
-        currentConfidence =
-          currentSegment.confidence;
+        currentConfidence = currentSegment.confidence;
       }
     }
 
@@ -430,34 +422,23 @@ export default function EmotionPage() {
     const filteredSegments = [];
 
     for (const segment of segments) {
-      const duration =
-        segment.endTime - segment.startTime;
+      const duration = segment.endTime - segment.startTime;
 
-      if (
-        duration >= MIN_SEGMENT_DURATION ||
-        filteredSegments.length === 0
-      ) {
+      if (duration >= MIN_SEGMENT_DURATION || filteredSegments.length === 0) {
         filteredSegments.push(segment);
         continue;
       }
 
       // Merge tiny segment into previous
-      const prev =
-        filteredSegments[
-          filteredSegments.length - 1
-        ];
+      const prev = filteredSegments[filteredSegments.length - 1];
 
       prev.endTime = segment.endTime;
 
-      prev.totalConfidence +=
-        segment.totalConfidence;
+      prev.totalConfidence += segment.totalConfidence;
 
-      prev.sampleCount +=
-        segment.sampleCount;
+      prev.sampleCount += segment.sampleCount;
 
-      prev.confidence =
-        prev.totalConfidence /
-        prev.sampleCount;
+      prev.confidence = prev.totalConfidence / prev.sampleCount;
     }
 
     // Cleanup internal fields
@@ -507,7 +488,7 @@ export default function EmotionPage() {
         <HeadersSection
           title="EMOTIONAL ANALYSIS"
           icon={Laugh}
-          songName="track_01_final_mix.wav · 4:23"
+          songName={`${audioName} · ${fmt(audioDuration)}`}
         />
 
         {/* LOADER */}
@@ -704,14 +685,15 @@ export default function EmotionPage() {
                                     />
                                     <div>
                                       <p className="font-semibold">
-                                        {emot.emotion} ({(emot.intensity * 100).toFixed(0)}%)
+                                        {emot.emotion} (
+                                        {(emot.intensity * 100).toFixed(0)}%)
                                       </p>
                                       <p className="text-sm text-zinc-400">
                                         {emot.comment}
                                       </p>
                                     </div>
                                   </div>
-                                )
+                                ),
                               )}
                             </div>
                           </div>
@@ -757,7 +739,7 @@ export default function EmotionPage() {
                                   >
                                     {mood}
                                   </span>
-                                )
+                                ),
                               )}
                             </div>
                           </div>
@@ -803,9 +785,7 @@ export default function EmotionPage() {
                                 </span>
                               </div>
                               <div>
-                                <p className="font-semibold">
-                                  {segment.title}
-                                </p>
+                                <p className="font-semibold">{segment.title}</p>
                                 <p className="text-sm text-zinc-400 mt-1">
                                   {segment.message}
                                 </p>

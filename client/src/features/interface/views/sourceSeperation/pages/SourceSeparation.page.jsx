@@ -23,6 +23,10 @@ import {
 
 import HeadersSection from "../../../components/HeadersSection";
 import { useAudioSeparation } from "../hooks/useAudioSeparation";
+import {
+  selectAudioName,
+  selectDuration,
+} from "@/features/interface/audio-player/AudioPlayer.slice";
 
 // ─── stem order + metadata ────────────────────────────────────
 const STEM_ORDER = ["vocals", "drums", "bass", "other"];
@@ -102,7 +106,7 @@ function StemCard({ stemKey, stem, animationDelay = 0 }) {
   const Icon = meta.icon;
 
   const audioRef = useRef(null);
-  const blobUrlRef = useRef(null);       // object URL so auth-protected audio works
+  const blobUrlRef = useRef(null); // object URL so auth-protected audio works
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -122,12 +126,19 @@ function StemCard({ stemKey, stem, animationDelay = 0 }) {
       .then(async (res) => {
         if (!res.ok) {
           const body = await res.text().catch(() => "");
-          console.error("[StemCard] Supabase 400 body:", body, "\nURL:", stem.file_url);
+          console.error(
+            "[StemCard] Supabase 400 body:",
+            body,
+            "\nURL:",
+            stem.file_url,
+          );
           throw new Error(`${res.status} ${res.statusText}`);
         }
         // Force audio MIME so createObjectURL works regardless of server Content-Type
         return res.blob().then((blob) => {
-          const mime = blob.type.startsWith("audio/") ? blob.type : "audio/mpeg";
+          const mime = blob.type.startsWith("audio/")
+            ? blob.type
+            : "audio/mpeg";
           return new Blob([blob], { type: mime });
         });
       })
@@ -172,7 +183,9 @@ function StemCard({ stemKey, stem, animationDelay = 0 }) {
 
   const fmt = (s) => {
     if (!s || isNaN(s)) return "0:00";
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+    return `${Math.floor(s / 60)}:${Math.floor(s % 60)
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   const handleDownload = async () => {
@@ -215,7 +228,10 @@ function StemCard({ stemKey, stem, animationDelay = 0 }) {
         onLoadedMetadata={() => {
           if (audioRef.current) setDuration(audioRef.current.duration);
         }}
-        onEnded={() => { setPlaying(false); setProgress(0); }}
+        onEnded={() => {
+          setPlaying(false);
+          setProgress(0);
+        }}
       />
 
       {/* Header */}
@@ -241,9 +257,11 @@ function StemCard({ stemKey, stem, animationDelay = 0 }) {
                      text-xs text-zinc-300 hover:bg-white/10 hover:text-white
                      disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
-          {downloading
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            : <Download className="h-3.5 w-3.5" />}
+          {downloading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5" />
+          )}
           {downloading ? "Saving…" : "Download"}
         </button>
       </div>
@@ -279,9 +297,11 @@ function StemCard({ stemKey, stem, animationDelay = 0 }) {
             hover:scale-105 active:scale-95 transition-transform
           `}
         >
-          {playing
-            ? <Pause className="h-4 w-4 text-white fill-white" />
-            : <Play className="h-4 w-4 text-white fill-white ml-0.5" />}
+          {playing ? (
+            <Pause className="h-4 w-4 text-white fill-white" />
+          ) : (
+            <Play className="h-4 w-4 text-white fill-white ml-0.5" />
+          )}
         </button>
       </div>
     </div>
@@ -305,7 +325,9 @@ function SourceAudioPlayer({ audioUrl, fileName }) {
 
   const fmt = (s) => {
     if (!s || isNaN(s)) return "0:00";
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+    return `${Math.floor(s / 60)}:${Math.floor(s % 60)
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
@@ -331,9 +353,11 @@ function SourceAudioPlayer({ audioUrl, fileName }) {
                    bg-linear-to-br from-yellow-400 to-pink-500
                    hover:scale-105 active:scale-95 transition-transform shadow-md"
       >
-        {playing
-          ? <Pause className="h-4 w-4 text-white fill-white" />
-          : <Play className="h-4 w-4 text-white fill-white ml-0.5" />}
+        {playing ? (
+          <Pause className="h-4 w-4 text-white fill-white" />
+        ) : (
+          <Play className="h-4 w-4 text-white fill-white ml-0.5" />
+        )}
       </button>
 
       <div className="flex-1">
@@ -365,14 +389,23 @@ function SourceAudioPlayer({ audioUrl, fileName }) {
 
 // ─── helpers ──────────────────────────────────────────────────
 const sortStems = (stemsArray) =>
-  STEM_ORDER.map((key) =>
-    stemsArray.find((s) => s.source_type === key)
-  ).filter(Boolean);
+  STEM_ORDER.map((key) => stemsArray.find((s) => s.source_type === key)).filter(
+    Boolean,
+  );
+
+const fmt = (s) => {
+  if (!s || isNaN(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function SourceSeparationPage() {
   const params = useParams();
   const projectId = params?.id || "";
+  const audioName = useSelector(selectAudioName);
+  const audioDuration = useSelector(selectDuration);
 
   const project = useSelector((state) => state.interface.project);
   const reduxAudioFile = project?.data?.main_audio;
@@ -440,8 +473,8 @@ export default function SourceSeparationPage() {
   }, []);
 
   const isProcessing = status === "processing";
-  const isCompleted  = status === "completed";
-  const hasError     = status === "failed" || status === "error";
+  const isCompleted = status === "completed";
+  const hasError = status === "failed" || status === "error";
   const displayAudio = audioFile || reduxAudioFile;
 
   return (
@@ -476,7 +509,7 @@ export default function SourceSeparationPage() {
         <HeadersSection
           title="SOURCE SEPARATION"
           icon={Scissors}
-          songName={displayAudio?.file_name || "track_01_final_mix.wav · 4:23"}
+          songName={`${audioName} · ${fmt(audioDuration)}`}
         />
 
         {/* ── Loading primary audio ── */}
@@ -533,9 +566,13 @@ export default function SourceSeparationPage() {
                   "
                 >
                   {isProcessing ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Separating…</>
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Separating…
+                    </>
                   ) : (
-                    <><Scissors className="h-4 w-4" /> Separate Audio</>
+                    <>
+                      <Scissors className="h-4 w-4" /> Separate Audio
+                    </>
                   )}
                 </button>
               </div>
@@ -544,11 +581,16 @@ export default function SourceSeparationPage() {
         )}
 
         {/* ── No audio fallback ── */}
-        {!audioLoading && !displayAudio?.file_url && !audioError && status === "idle" && (
-          <div className="mt-10 max-w-4xl mx-auto rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-            <p className="text-zinc-400">No audio file found for this project.</p>
-          </div>
-        )}
+        {!audioLoading &&
+          !displayAudio?.file_url &&
+          !audioError &&
+          status === "idle" && (
+            <div className="mt-10 max-w-4xl mx-auto rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+              <p className="text-zinc-400">
+                No audio file found for this project.
+              </p>
+            </div>
+          )}
 
         {/* ── Processing ── */}
         {isProcessing && (

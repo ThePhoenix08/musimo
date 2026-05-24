@@ -1,167 +1,230 @@
 import React from "react";
-import { useState, useEffect } from "react";
-import { Sparkles, TrendingUp, Volume2, ChevronRight } from "lucide-react";
-import StatCard from "./StatCard";
+import { InstrumentIcon } from "./InstrumentsIcons";
 
-function AiSummarySection() {
-  const [activeComment, setActiveComment] = useState(0);
+function capitalize(str) {
+  return str?.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
-  const comments = [
-    {
-      icon: Sparkles,
-      title: "Strong Melodic Core",
-      body: "The lead melody demonstrates exceptional tonal clarity with well-placed ornaments. The guitar phrasing in bars 8–16 shows a mature understanding of tension and release.",
-    },
-    {
-      icon: TrendingUp,
-      title: "Dynamic Range",
-      body: "Dynamics shift from ppp to fff across three movements. The crescendo at bar 32 is particularly effective — the orchestral swell feels organic rather than mechanical.",
-    },
-    {
-      icon: Volume2,
-      title: "Mix Suggestion",
-      body: "The low-mid frequencies (200–400 Hz) are slightly congested. A gentle hi-pass on the rhythm guitar track could give the bass guitar more room to breathe.",
-    },
-  ];
+const ROLE_COLORS = {
+  lead: "text-yellow-400 border-yellow-400/30 bg-yellow-400/10",
+  harmony: "text-blue-400 border-blue-400/30 bg-blue-400/10",
+  rhythm: "text-orange-400 border-orange-400/30 bg-orange-400/10",
+  texture: "text-purple-400 border-purple-400/30 bg-purple-400/10",
+  bass: "text-green-400 border-green-400/30 bg-green-400/10",
+  accent: "text-pink-400 border-pink-400/30 bg-pink-400/10",
+};
 
-  useEffect(() => {
-    const id = setInterval(
-      () => setActiveComment((c) => (c + 1) % comments.length),
-      4000,
-    );
-    return () => clearInterval(id);
-  }, []);
+const COMPLEXITY_COLORS = {
+  sparse: "text-blue-300",
+  moderate: "text-green-300",
+  layered: "text-yellow-300",
+  dense: "text-orange-300",
+};
+
+export default function AiSummarySection({ summary }) {
+  if (!summary) return null;
 
   return (
-    <div
-      className="flex flex-col gap-4 p-5 border-r"
-      style={{
-        width: "58%",
-        borderColor: "oklch(0.2684 0.0134 41.6416)",
-      }}
-    >
-      {/* Stat row */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Overall Score" value="81" unit="/ 100" delay="0.1s" />
-        <StatCard label="Tempo (BPM)" value="124" unit="bpm" delay="0.2s" />
-        <StatCard label="Key Detected" value="A♭m" unit="minor" delay="0.3s" />
+    <div className="space-y-6">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+        <h3 className="text-3xl font-bold mb-2">
+          {summary.overall_summary?.title}
+        </h3>
+        <p className="text-zinc-300 text-lg leading-relaxed mb-6">
+          {summary.overall_summary?.summary}
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <p className="text-sm uppercase text-zinc-400 mb-1">
+              Ensemble Character
+            </p>
+            <p className="text-base font-semibold">
+              {summary.overall_summary?.ensemble_character}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm uppercase text-zinc-400 mb-1">
+              Genre Context
+            </p>
+            <p className="text-base font-semibold">
+              {summary.overall_summary?.genre_context}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* AI Summary */}
-      <div
-        className="rounded-2xl border p-5 flex flex-col gap-3"
-        style={{
-          background: "oklch(0.1469 0.0041 49.2499)",
-          borderColor: "oklch(0.2684 0.0134 41.6416)",
-          animation: "fadeSlideIn 0.5s ease 0.35s forwards",
-          opacity: 0,
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <Sparkles
-            size={14}
-            style={{ color: "oklch(0.829 0.1712 81.0381)" }}
-          />
-          <span
-            className="text-xs font-semibold uppercase tracking-widest"
-            style={{ color: "oklch(0.829 0.1712 81.0381)" }}
-          >
-            AI Summary
-          </span>
+      {summary.instrument_roles?.length > 0 && (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h3 className="text-2xl font-semibold mb-6">Instrument Roles</h3>
+          <div className="space-y-4">
+            {summary.instrument_roles.map((item) => (
+              <div
+                key={item.instrument}
+                className="flex items-start gap-4 pb-4 border-b border-white/10 last:border-b-0"
+              >
+                <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/10">
+                  <InstrumentIcon name={item.instrument} size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="font-semibold">
+                      {capitalize(item.instrument)}
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
+                        ROLE_COLORS[item.role] ??
+                        "text-zinc-400 border-white/20 bg-white/5"
+                      }`}
+                    >
+                      {item.role}
+                    </span>
+                    <span className="text-xs text-zinc-500 ml-auto font-mono">
+                      {(item.confidence * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <p className="text-sm text-zinc-400">{item.comment}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <p
-          className="text-sm leading-relaxed"
-          style={{ color: "oklch(0.8884 0.0042 91.45)" }}
-        >
-          This track demonstrates a compelling fusion of neo-soul harmonic
-          progressions with contemporary production techniques. The arrangement
-          achieves a rare balance — rhythmically complex without sacrificing
-          listener accessibility. Standout elements include the interplay
-          between the Rhodes keys and the percussive guitar strumming, creating
-          a textured midrange that feels both warm and present.
-        </p>
-        <div className="flex gap-2 flex-wrap mt-1">
-          {["Neo-soul", "Polyrhythm", "Rich harmonics", "Warm mix"].map(
-            (tag) => (
+      )}
+
+      {summary.sonic_palette && (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h3 className="text-2xl font-semibold mb-6">Sonic Palette</h3>
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <p className="text-sm uppercase text-zinc-400 mb-2">
+                Primary Texture
+              </p>
+              <p className="text-2xl font-bold">
+                {summary.sonic_palette.primary_texture}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm uppercase text-zinc-400 mb-2">
+                Energy Profile
+              </p>
+              <p className="text-2xl font-bold capitalize">
+                {summary.sonic_palette.energy_profile}
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-sm uppercase text-zinc-400 mb-2">
+              Arrangement Complexity
+            </p>
+            <p
+              className={`text-lg font-semibold capitalize ${
+                COMPLEXITY_COLORS[
+                  summary.sonic_palette.arrangement_complexity
+                ] ?? ""
+              }`}
+            >
+              {summary.sonic_palette.arrangement_complexity}
+            </p>
+          </div>
+
+          {summary.sonic_palette.secondary_textures?.length > 0 && (
+            <div>
+              <p className="text-sm uppercase text-zinc-400 mb-2">
+                Secondary Textures
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {summary.sonic_palette.secondary_textures.map((t) => (
+                  <span
+                    key={t}
+                    className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {summary.instrument_tags?.length > 0 && (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h3 className="text-2xl font-semibold mb-4">Instrument Tags</h3>
+          <div className="flex flex-wrap gap-2">
+            {summary.instrument_tags.map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] px-2 py-0.5 rounded-full border"
-                style={{
-                  borderColor: "oklch(0.829 0.1712 81.0381 / 0.3)",
-                  color: "oklch(0.829 0.1712 81.0381)",
-                  background: "oklch(0.829 0.1712 81.0381 / 0.08)",
-                }}
+                className="px-4 py-2 rounded-full bg-linear-to-r from-yellow-400/20 to-pink-500/20 border border-yellow-400/30 text-sm"
               >
                 {tag}
               </span>
-            ),
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Accordion comments */}
-      <div
-        className="rounded-2xl border overflow-hidden"
-        style={{
-          borderColor: "oklch(0.2684 0.0134 41.6416)",
-          animation: "fadeSlideIn 0.5s ease 0.5s forwards",
-          opacity: 0,
-        }}
-      >
-        {comments.map((c, idx) => {
-          const Icon = c.icon;
-          const isActive = idx === activeComment;
-          return (
-            <div
-              key={idx}
-              className="p-4 border-b cursor-pointer transition-all duration-300"
-              style={{
-                borderColor: "oklch(0.2684 0.0134 41.6416)",
-                background: isActive
-                  ? "oklch(0.1469 0.0041 49.2499)"
-                  : "transparent",
-                borderLeft: isActive
-                  ? "3px solid oklch(0.829 0.1712 81.0381)"
-                  : "3px solid transparent",
-              }}
-              onClick={() => setActiveComment(idx)}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <Icon
-                  size={13}
-                  style={{ color: "oklch(0.829 0.1712 81.0381)" }}
-                />
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: "oklch(0.9216 0.0928 92.2138)" }}
-                >
-                  {c.title}
-                </span>
-                <ChevronRight
-                  size={12}
-                  style={{
-                    color: "oklch(0.829 0.1712 81.0381)",
-                    marginLeft: "auto",
-                    opacity: isActive ? 1 : 0.3,
-                    transform: isActive ? "rotate(90deg)" : "rotate(0deg)",
-                    transition: "transform 0.3s ease, opacity 0.3s ease",
-                  }}
-                />
+      {summary.arrangement_notes?.length > 0 && (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h3 className="text-2xl font-semibold mb-6">Arrangement Notes</h3>
+          <div className="space-y-4">
+            {summary.arrangement_notes.map((note, idx) => (
+              <div
+                key={idx}
+                className="flex gap-4 pb-4 border-b border-white/10 last:border-b-0"
+              >
+                <div className="shrink-0 w-6 h-6 rounded-full bg-yellow-400/10 border border-yellow-400/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-yellow-400">
+                    {idx + 1}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">{note.title}</p>
+                  <p className="text-sm text-zinc-400">{note.message}</p>
+                </div>
               </div>
-              {isActive && (
-                <p
-                  className="text-xs leading-relaxed mt-1"
-                  style={{ color: "oklch(0.7312 0.0102 93.609)" }}
-                >
-                  {c.body}
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {summary.mix_feedback && (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h3 className="text-2xl font-semibold mb-6">Mix Analysis</h3>
+          <div className="space-y-4">
+            {[
+              {
+                label: "Tonal Balance",
+                value: summary.mix_feedback.tonal_balance,
+              },
+              {
+                label: "Arrangement Suggestion",
+                value: summary.mix_feedback.arrangement_suggestion,
+              },
+              {
+                label: "Sonic Strength",
+                value: summary.mix_feedback.sonic_strength,
+              },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="font-semibold mb-1">{label}</p>
+                <p className="text-zinc-300">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {summary.listener_impression && (
+        <div className="rounded-3xl border border-white/10 bg-linear-to-r from-yellow-400/10 to-pink-500/10 p-8">
+          <p className="text-sm uppercase text-zinc-400 mb-2">
+            Listener Impression
+          </p>
+          <p className="text-lg leading-relaxed">
+            {summary.listener_impression}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
-
-export default AiSummarySection;

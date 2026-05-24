@@ -137,7 +137,7 @@ export default function InstrumentPage() {
               </TabsContent>
 
               <TabsContent value="summary" className="mt-6">
-                <AiSummarySection />
+                <AiSummarySection summary={result.summary} />
               </TabsContent>
             </Tabs>
           </div>

@@ -34,17 +34,16 @@ class AnalysisService:
             tracker=tracker,
         )
 
-    async def _generate_summary(self, result: dict) -> dict | None:
+    async def _generate_summary(self, result: dict, summary_type: str) -> dict | None:
         try:
             summary = self._llm_summary.generate(
-                summary_type="emotion",
-                data=json.dumps(result),
-            )
-
+            summary_type=summary_type,  
+            data=json.dumps(result),
+        )
             return summary
-        
+
         except Exception:
-            logger.exception("Failed generating emotion summary")
+            logger.exception("Failed generating %s summary", summary_type)
             return None
 
 
@@ -58,7 +57,7 @@ class AnalysisService:
         model_id: uuid.UUID | None = None,
     ):
 
-        summary = await self._generate_summary(prediction_result)
+        summary = await self._generate_summary(prediction_result, summary_type="emotion")
 
         if not summary:
             summary = {}
@@ -169,9 +168,13 @@ class AnalysisService:
         audio_file_id: uuid.UUID,
         prediction_result: dict,
     ):
-        existing = await self._repo.get_instrument_by_project_id(project_id)
+        
+        summary = await self._generate_summary(prediction_result, summary_type="instrument")
 
-        summary = {"message": "Instrument analysis completed successfully."}
+        if not summary:
+            summary = {}
+
+        existing = await self._repo.get_instrument_by_project_id(project_id)
 
         if existing:
             row = await self._repo.update_instrument_record(

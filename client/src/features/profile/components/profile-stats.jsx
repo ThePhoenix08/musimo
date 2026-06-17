@@ -21,7 +21,7 @@ export default function ProfileStats({
                 {stat.title}
               </p>
 
-              <h2 className="mt-2 text-3xl font-bold">
+              <h2 className="mt-2 text-3xl font-bold text-orange-400">
                 {stat.value}
               </h2>
             </div>

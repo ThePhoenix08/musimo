@@ -1,3 +1,4 @@
+
 import {
   Activity,
   BarChart3,
@@ -105,10 +106,8 @@ function ProfilePage() {
       }))
       : [];
 
-  const tags =
-    analysis?.top_instruments?.length > 0
-      ? analysis.top_instruments
-      : ["No Instruments Detected"];
+  const instruments =
+    analysis?.top_instruments || [];
 
   const activities =
     analysis?.recent_projects?.map(
@@ -122,15 +121,19 @@ function ProfilePage() {
     ) || [];
 
   const insights = [
+
     `Dominant emotion: ${analysis?.music_profile
       ?.dominant_emotion || "Unknown"
     }`,
     `Favorite instrument: ${analysis?.music_profile
-      ?.favorite_instrument || "N/A"
+      ?.favorite_instrument
+      ?.instrument || "N/A"
     }`,
     `Total storage used: ${(
-      (analysis?.stats
-        ?.total_storage_bytes || 0) /
+      (
+        analysis?.stats
+          ?.total_storage_bytes || 0
+      ) /
       (1024 * 1024)
     ).toFixed(2)} MB`,
     `Average song duration: ${analysis?.stats
@@ -140,18 +143,26 @@ function ProfilePage() {
 
   return (
 
-    <div id="profile-page" className="min-h-screen w-full overflow-y-auto bg-black pb-20 text-white">
+    <div
+      id="profile-page"
+      className="min-h-screen w-full overflow-y-auto bg-black pb-20 text-white"
+    >
+
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col space-y-8 px-4 py-6 md:px-8">
 
         <ProfileToolbar
           handleLogout={handleLogout}
         />
 
-        {profile && (
-          <ProfileHeader
-            profile={profile}
-          />
-        )}
+        {/* HEADER */}
+
+        {
+          profile && (
+            <ProfileHeader
+              profile={profile}
+            />
+          )
+        }
 
         <Tabs
           defaultValue="analysis"
@@ -171,7 +182,7 @@ function ProfilePage() {
 
               <TabsTrigger
                 value="activities"
-                className="data-[state=active]:bg-yellow-400 data-[state=active]:text-primary"
+                className=" data-[state=active]:bg-yellow-400 data-[state=active]:text-primary"
               >
                 <Activity className="mr-2 h-4 w-4" />
                 Recent Activities
@@ -191,7 +202,6 @@ function ProfilePage() {
             value="analysis"
             className="space-y-6"
           >
-
             <ProfileStats stats={stats} />
             <div className="grid gap-6 lg:grid-cols-2">
               <EmotionBreakdown
@@ -205,11 +215,14 @@ function ProfilePage() {
             <div className="grid gap-6 lg:grid-cols-2">
 
               <InstrumentalAnalysis
-                tags={tags}
+                instruments={instruments}
               />
 
               <ProjectSummary
                 stats={analysis?.stats}
+                analysisDistribution={
+                  analysis?.analysis_distribution
+                }
               />
             </div>
           </TabsContent>
@@ -237,19 +250,26 @@ function ProfilePage() {
           </TabsContent>
         </Tabs>
 
-        {openModal && (
-          <ResetPasswordDialog
-            open={openModal}
-            forcedReset={
-              isForcedReset
-            }
-            onClose={() => {
-              if (!isForcedReset) {
-                setManualOpen(false);
+        {
+          openModal && (
+            <ResetPasswordDialog
+              open={openModal}
+              forcedReset={
+                isForcedReset
               }
-            }}
-          />
-        )}
+              onClose={() => {
+
+                if (!isForcedReset) {
+
+                  setManualOpen(false);
+
+                }
+
+              }}
+            />
+          )
+        }
+
       </div>
     </div>
   );

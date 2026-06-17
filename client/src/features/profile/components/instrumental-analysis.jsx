@@ -1,34 +1,41 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 import { Badge } from "@/components/ui/badge";
 
 export default function InstrumentalAnalysis({
-  tags,
+  instruments = [],
 }) {
-  return (
-    <Card className="border-white/10 bg-zinc-900/70">
-      <CardHeader>
-        <CardTitle>
-          Instrumental Analysis
-        </CardTitle>
-      </CardHeader>
 
-      <CardContent className="flex flex-wrap gap-3">
-        {tags.map((tag) => (
-          <Badge
-            key={tag}
-            variant="secondary"
-            className="rounded-full bg-zinc-800 px-4 py-2"
-          >
-            {tag}
-          </Badge>
-        ))}
-      </CardContent>
-    </Card>
+  return (
+    <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
+
+      <h2 className="mb-6 text-xl font-semibold text-white">
+        Instrumental Analysis
+      </h2>
+
+      {
+        instruments.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-center text-zinc-400">
+            No Instruments Detected
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-3">
+
+            {
+              instruments.map((item, index) => (
+
+                <Badge
+                  key={index}
+                  className="rounded-full bg-zinc-800 px-4 py-2 text-sm text-white hover:bg-zinc-700 text-primary"
+                >
+                  {item.instrument} ({item.count})
+                </Badge>
+
+              ))
+            }
+
+          </div>
+        )
+      }
+
+    </div>
   );
 }

@@ -1,30 +1,32 @@
 import { useSelector } from "react-redux";
 
-import {
-  BarChart2,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { BarChart2, Loader2, AlertCircle } from "lucide-react";
 
 import HeadersSection from "../../../components/HeadersSection";
 import useFeatureAnalysis from "../hooks/useFeatureAnalysis";
 import DashboardFeatures from "../components/dashboardfeatures";
+import {
+  selectAudioName,
+  selectDuration,
+} from "@/features/interface/audio-player/AudioPlayer.slice";
+
+const fmt = (s) => {
+  if (!s || isNaN(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
 
 export default function FeaturesPage() {
   // GET PROJECT FROM REDUX
-  const project = useSelector(
-    (state) => state.interface.project
-  );
+  const project = useSelector((state) => state.interface.project);
+  const audioName = useSelector(selectAudioName);
+  const audioDuration = useSelector(selectDuration);
 
-  const audioFileId =
-    project?.data?.main_audio?.id;
+  const audioFileId = project?.data?.main_audio?.id;
 
-  const {
-    loading,
-    result,
-    dbQuery,
-    extractionState,
-  } = useFeatureAnalysis(audioFileId);
+  const { loading, result, dbQuery, extractionState } =
+    useFeatureAnalysis(audioFileId);
 
   return (
     <>
@@ -64,7 +66,7 @@ export default function FeaturesPage() {
         <HeadersSection
           title="FEATURE EXTRACTION"
           icon={BarChart2}
-          songName="track_01_final_mix.wav · 4:23"
+          songName={`${audioName} · ${fmt(audioDuration)}`}
         />
 
         {/* ---------------- LOADING ---------------- */}
@@ -89,17 +91,13 @@ export default function FeaturesPage() {
 
         {/* ---------------- ERROR ---------------- */}
 
-        {(dbQuery.isError ||
-          extractionState.isError) &&
-          !loading && (
-            <div className="mt-10 max-w-3xl mx-auto rounded-3xl border border-red-500/20 bg-red-500/10 p-6 flex gap-3">
-              <AlertCircle className="text-red-400" />
+        {(dbQuery.isError || extractionState.isError) && !loading && (
+          <div className="mt-10 max-w-3xl mx-auto rounded-3xl border border-red-500/20 bg-red-500/10 p-6 flex gap-3">
+            <AlertCircle className="text-red-400" />
 
-              <div>
-                Failed to load feature extraction
-              </div>
-            </div>
-          )}
+            <div>Failed to load feature extraction</div>
+          </div>
+        )}
 
         {/* ---------------- RESULT ---------------- */}
 

@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from functools import cached_property, lru_cache
 from typing import List, Literal
 
@@ -100,6 +103,9 @@ class Settings(BaseSettings):
 
     # LLM SUMMARY
     LLM_SUMMARY_GEMINI_API_KEY: SecretStr
+
+    # REDIS
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     model_config = SettingsConfigDict(extra="ignore", case_sensitive=True)
 

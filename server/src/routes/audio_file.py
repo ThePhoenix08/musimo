@@ -1,9 +1,10 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.services.audio_service import AudioService
 from src.core.supabase import SupabaseStorageClient, get_storage
 from src.database.enums import AudioFileStatus, AudioSourceType
 from src.database.session import get_db
@@ -51,6 +52,37 @@ router = APIRouter()
 #             details=str(e),
 #         )
 
+
+# @router.get(
+#     "/primary",
+#     summary="Get the single audio file for a project",
+# )
+# async def get_project_audio(
+#     project_id: uuid.UUID,
+#     db: AsyncSession = Depends(get_db),
+#     user=Depends(get_current_user),
+#     storage: SupabaseStorageClient = Depends(get_storage),
+# ):
+#     try:
+#         service = AudioService(session=db, storage=storage)
+
+#         result = await service.get_project_primary_audio(
+#             project_id=project_id,
+#             user_id=user.id,
+#         )
+
+#         return ApiResponse(
+#             message="Audio file fetched successfully",
+#             data=result.model_dump(),
+#         )
+
+#     except Exception as e:
+#         return ApiErrorResponse(
+#             code="AUDIO_FETCH_FAILED",
+#             message="Failed to fetch audio file",
+#             details=str(e),
+#         )
+    
 
 # =========================
 # List Audio Files
@@ -113,7 +145,7 @@ async def get_audio_file(
     storage: SupabaseStorageClient = Depends(get_storage),
 ):
     try:
-        service = AudioFileService(session=db, storage=storage)
+        service = AudioService(session=db, storage=storage)
 
         result = await service.get_audio_file(
             audio_file_id=audio_id,

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "../../../assets/Images/hero-img.jpg";
+import Image from "../../../assets/Images/library.jpg";
 import {
   Card,
   CardContent,

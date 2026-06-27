@@ -24,11 +24,6 @@ import { selectCurrentUser } from "@/features/auth/state/slices/auth.slice";
 const SIDEBAR_DATA = {
   navMain: [
     {
-      title: "Dashboard",
-      url: "/app/dashboard",
-      icon: IconDashboard,
-    },
-    {
       title: "Library",
       url: "/app/projects?view=all",
       icon: IconFolder,
@@ -41,11 +36,6 @@ const SIDEBAR_DATA = {
       icon: IconSettings,
     },
     {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
       title: "Search",
       url: "/app/projects?view=search",
       icon: IconSearch,
@@ -53,34 +43,23 @@ const SIDEBAR_DATA = {
   ],
 };
 
-const DUMMY_PROJECTS = [
-  {
-    name: "Interstellar",
-    url: "/app/projects/12",
-    icon: IconFileAnalytics,
-  },
-  {
-    name: "Believer",
-    url: "/app/projects/100",
-    icon: IconFileAnalytics,
-  },
-  {
-    name: "Why This Kolaveri Di? (The Soup of Love)",
-    url: "/app/projects/2046",
-    icon: IconFileAnalytics,
-  },
-];
-
-const DUMMY_USER = {
-  user_id: "1abdaa86-e6ca-4312-8753-5b4bc3d50531",
-  name: "Chu Feng",
-  username: "Qiankun",
-  email: "v8ganesh@gmail.com",
-  created_at: "2026-02-20T04:57:41.519458+00:00",
-  updated_at: "2026-02-20T04:58:09.139349+00:00",
-  email_verified: true,
-  avatar: "https://i.pravatar.cc/150?img=57",
-};
+// const DUMMY_PROJECTS = [
+//   {
+//     name: "Interstellar",
+//     url: "/app/projects/12",
+//     icon: IconFileAnalytics,
+//   },
+//   {
+//     name: "Believer",
+//     url: "/app/projects/100",
+//     icon: IconFileAnalytics,
+//   },
+//   {
+//     name: "Why This Kolaveri Di? (The Soup of Love)",
+//     url: "/app/projects/2046",
+//     icon: IconFileAnalytics,
+//   },
+// ];
 
 export function AppSidebar() {
   const user = useSelector(selectCurrentUser);
@@ -92,7 +71,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={SIDEBAR_DATA.navMain} />
-        <NavProjects items={DUMMY_PROJECTS} />
+        {/* <NavProjects items={DUMMY_PROJECTS} /> */}
         <NavSecondary items={SIDEBAR_DATA.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

@@ -41,9 +41,6 @@ const InterfacePage = lazy(
 const DashboardPage = lazy(
   () => import("@/features/dashboard/Dashboard.page.jsx"),
 );
-const NotificationsPage = lazy(
-  () => import("@/features/profile/pages/Notifications.page"),
-);
 
 function App() {
   return (
@@ -71,10 +68,6 @@ function App() {
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="user/profile" element={<ProfilePage />} />
                 <Route path="user/settings" element={<SettingsPage />} />
-                <Route
-                  path="user/notifications"
-                  element={<NotificationsPage />}
-                />
                 <Route path="projects" element={<LibraryPage />} />
                 <Route path="projects/:id" element={<InterfacePage />} />
               </Route>

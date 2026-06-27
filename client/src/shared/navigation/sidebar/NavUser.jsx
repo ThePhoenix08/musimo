@@ -109,12 +109,6 @@ export function NavUser({ user }) {
                   Profile
                 </DropdownMenuItem>
               </Link>
-              <Link to="/app/user/notifications">
-                <DropdownMenuItem>
-                  <IconBell />
-                  Notifications
-                </DropdownMenuItem>
-              </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>

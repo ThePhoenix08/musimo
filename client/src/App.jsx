@@ -3,7 +3,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
 import GlobalLoader from "./components/misc/GlobalLoader";
 
-const LandingPage = lazy(() => import("@/features/landing/landing.page.jsx"));
+const LandingPage = lazy(() => import("@/features/landing/pages/landing.page.jsx"));
 
 const AuthLayout = lazy(() => import("./shared/layouts/AuthLayout.wrapper"));
 const AppLayout = lazy(() => import("./shared/layouts/AppLayout.wrapper"));
@@ -47,7 +47,7 @@ const NotificationsPage = lazy(
 
 function App() {
   return (
-    <div className="w-screen h-screen flex flex-col bg-background overflow-hidden">
+    <div className="w-screen h-screen flex flex-col bg-background overflow-x-hidden overflow-y-auto">
       <Router>
         <Suspense fallback={<GlobalLoader />}>
           <Routes>

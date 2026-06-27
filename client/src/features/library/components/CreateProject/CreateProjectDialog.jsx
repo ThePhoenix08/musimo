@@ -82,11 +82,19 @@ function CreateProjectDialog({ open, changeView, children }) {
 
     try {
       const response = await createProject(payload).unwrap();
-      toast.success("Project Created Successfully");
+      toast.success("Project Created Successfully", {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "dark",
+      });
       const projectId = response?.data?.project?.id;
       navigate(`/app/projects/${projectId}`);
     } catch (error) {
-      toast.error("Error while creating your project.");
+      toast.error("Error while creating your project.", {
+        position: "top-right",
+        autoClose: 1000,
+        theme: "dark",
+      });
       console.debug("Error occured while creating project: ", error);
     }
   };

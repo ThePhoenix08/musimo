@@ -99,7 +99,7 @@ function CreateProjectDialog({ open, changeView, children }) {
       }}
     >
       {children}
-      <DialogContent className="sm:max-w-md lg:max-w-4xl lg:max-h-11/12">
+      <DialogContent className="sm:max-w-md lg:max-w-4xl lg:max-h-11/12 overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Create new Project</DialogTitle>
           <DialogDescription>

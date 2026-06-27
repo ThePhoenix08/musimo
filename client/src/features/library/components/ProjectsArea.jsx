@@ -21,18 +21,14 @@ const ProjectsArea = () => {
   if (isLoading) return <div><CardSkeleton /></div>;
   if (isError) return <div>Error loading projects</div>;
 
-  const totalPages = Math.ceil((response.data?.total ?? 0) / pageSize);
   const items = response?.data?.items || [];
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 p-5">
         {items?.map((p) => (
           <ProjectCard project={p} key={p.id}/>
         ))}
-      </div>
-      <div className="flex justify-center items-center gap-4 mt-6">
-        <LibraryPagination totalPages={totalPages} />
       </div>
     </div>
   );

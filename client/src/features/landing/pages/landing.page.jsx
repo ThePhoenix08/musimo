@@ -5,6 +5,10 @@ import { LampDemo } from "../components/LampDemo";
 import CanvasTextDemo from "../components/canvas-text-demo";
 import { useNavigate } from "react-router";
 import { ROUTES } from "@/shared/constants/routes.constants";
+import { motion } from "framer-motion";
+import ColourfulTextDemo from "../components/colourful-text-demo";
+import HeroHighlightDemo from "../components/hero-highlight-demo";
+import VortexDemo from "../components/vortex-demo";
 
 function useInView() {
   const ref = useRef(null);
@@ -345,7 +349,7 @@ export default function LandingPage() {
   );
 
   return (
-    <div className="bg-zinc-950 text-zinc-100 font-sans antialiased">
+    <div className="bg-black text-zinc-100 font-sans antialiased">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
         .font-display{ font-family:'Space Grotesk', sans-serif; }
@@ -374,7 +378,7 @@ export default function LandingPage() {
       <div className="musimo-root">
         {/* ============================= NAVBAR ============================= */}
         <nav
-          className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-sm ${
             scrolled
               ? "bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 py-3"
               : "py-5"
@@ -517,6 +521,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <VortexDemo />
+
         {/* ============================= HOW IT WORKS ============================= */}
         <section id="how-it-works">
           <div className="mx-auto px-6">
@@ -599,6 +605,7 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <HeroHighlightDemo />
         {/* ============================= USE CASES ============================= */}
         <section id="use-cases" className="py-28">
           <div className="max-w-6xl mx-auto px-6">
@@ -607,9 +614,12 @@ export default function LandingPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 Who It's For
               </span>
-              <h2 className="font-display text-3xl md:text-4xl font-semibold">
-                Built for the People Behind the Sound
-              </h2>
+              <motion.h1 className="text-5xl font-sans">
+                Built for the People{" "}
+                <span className="text-transparent font-medium bg-clip-text bg-gradient-to-r from-pink-400 to-blue-500">
+                  Behind the Sound
+                </span>
+              </motion.h1>
               <p className="text-zinc-400">
                 Musimo fits into the workflow you already have — as a second
                 pair of ears, not a replacement for your own.
@@ -631,6 +641,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <ColourfulTextDemo />
 
         {/* ============================= CTA BAND ============================= */}
         <section id="cta" className="py-28 border-t border-zinc-800">
